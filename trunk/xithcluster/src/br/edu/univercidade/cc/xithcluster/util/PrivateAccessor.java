@@ -7,45 +7,82 @@ import junit.framework.Assert;
 
 public class PrivateAccessor {
 
-	public static Object getPrivateField(Object o, String fieldName) {
-		// Check we have valid arguments...
-		Assert.assertNotNull(o);
-		Assert.assertNotNull(fieldName);
+	public static Object getPrivateField(Object src, String fieldName) {
+		Class<?> clazz;
+		Field field;
+		
+		if (src == null || fieldName == null)
+			throw new IllegalArgumentException();
 
-		// Go and find the private field...
-		final Field fields[] = o.getClass().getDeclaredFields();
-		for (int i = 0; i < fields.length; ++i) {
-			if (fieldName.equals(fields[i].getName())) {
-				try {
-					fields[i].setAccessible(true);
-					return fields[i].get(o);
-				} catch (IllegalAccessException ex) {
-					Assert.fail("IllegalAccessException accessing " + fieldName);
-				}
+		clazz = src.getClass();
+		field = null;
+		while (clazz != Object.class) {
+			field = findField(clazz, fieldName);
+			
+			if (field != null) {
+				break;
+			} else {
+				clazz = clazz.getSuperclass();
 			}
 		}
-		Assert.fail("Field '" + fieldName + "' not found");
+		
+		if (field != null) {
+			field.setAccessible(true);
+			
+			try {
+				return field.get(src);
+			} catch (Throwable t) {
+				t.printStackTrace();
+			}
+		}
+		
 		return null;
 	}
 
-	public static void setPrivateField(Object o, String fieldName, Object value) {
-		// Check we have valid arguments...
-		Assert.assertNotNull(o);
-		Assert.assertNotNull(fieldName);
-
-		// Go and find the private field...
-		final Field fields[] = o.getClass().getDeclaredFields();
-		for (int i = 0; i < fields.length; ++i) {
-			if (fieldName.equals(fields[i].getName())) {
-				try {
-					fields[i].setAccessible(true);
-					fields[i].set(o, value);
-				} catch (IllegalAccessException ex) {
-					Assert.fail("IllegalAccessException accessing " + fieldName);
-				}
+	private static Field findField(Class<?> clazz, String fieldName) {
+		Field fields[] = clazz.getDeclaredFields();
+		
+		for (Field field : fields) {
+			if (fieldName.equals(field.getName())) {
+				return field;
 			}
 		}
-		Assert.fail("Field '" + fieldName + "' not found");
+		
+		return null;
+	}
+
+	public static boolean setPrivateField(Object src, String fieldName, Object value) {
+		Class<?> clazz;
+		Field field;
+		
+		if (src == null || fieldName == null)
+			throw new IllegalArgumentException();
+
+		clazz = src.getClass();
+		field = null;
+		while (clazz != Object.class) {
+			field = findField(clazz, fieldName);
+			
+			if (field != null) {
+				break;
+			} else {
+				clazz = clazz.getSuperclass();
+			}
+		}
+		
+		if (field != null) {
+			field.setAccessible(true);
+			
+			try {
+				field.set(src, value);
+				
+				return true;
+			} catch (Throwable t) {
+				t.printStackTrace();
+			}
+		}
+		
+		return false;
 	}
 
 	public static Object invokePrivateMethod(Object o, String methodName,
