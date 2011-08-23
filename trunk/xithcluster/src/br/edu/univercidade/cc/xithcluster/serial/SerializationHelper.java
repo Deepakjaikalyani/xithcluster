@@ -292,7 +292,11 @@ public class SerializationHelper {
 		}
 	}
 	
-	public static void writeGeomNioFloatData(DataOutputStream out, GeomNioFloatData data) throws IOException {
+	public static void writeGeomNioFloatData(DataOutputStream out, org.xith3d.scenegraph.GeomNioFloatData data) throws IOException {
+		writeGeomNioFloatDataJagatoo(out, data);
+	}
+	
+	public static void writeGeomNioFloatDataJagatoo(DataOutputStream out, GeomNioFloatData data) throws IOException {
 		if (nullCheck(out, data)) {
 			out.writeInt(data.getMaxElements());
 			out.writeInt(data.getElemSize());
@@ -302,7 +306,20 @@ public class SerializationHelper {
 		}
 	}
 	
-	public static GeomNioFloatData readGeomNioFloatData(DataInputStream in) throws IOException {
+	public static org.xith3d.scenegraph.GeomNioFloatData readGeomNioFloatData(DataInputStream in) throws IOException {
+		org.xith3d.scenegraph.GeomNioFloatData data;
+		
+		if (nullCheck(in)) {
+			data = new org.xith3d.scenegraph.GeomNioFloatData(in.readInt(), in.readInt(), in.readInt(), in.readBoolean());
+			data.setBuffer(readFloatBuffer(in));
+			
+			return data;
+		} else {
+			return null;
+		}
+	}
+	
+	public static GeomNioFloatData readGeomNioFloatDataJagatoo(DataInputStream in) throws IOException {
 		GeomNioFloatData data;
 		
 		if (nullCheck(in)) {
@@ -1049,20 +1066,20 @@ public class SerializationHelper {
 	        
 	        out.writeBoolean(geometryDataContainer.isInterleaved());
 	        if (geometryDataContainer.isInterleaved()) {
-	        	writeGeomNioFloatData(out, geometryDataContainer.getInterleavedData());
+	        	writeGeomNioFloatDataJagatoo(out, geometryDataContainer.getInterleavedData());
 	        } else {
 	            if (nullCheck(out, geometryDataContainer.getCoordinatesData())) {
-	            	writeGeomNioFloatData(out, geometryDataContainer.getCoordinatesData());
+	            	writeGeomNioFloatDataJagatoo(out, geometryDataContainer.getCoordinatesData());
 	            }
 	            
 	            out.writeBoolean(geometryDataContainer.hasNormals());
 	            if (geometryDataContainer.hasNormals()) {
-	            	writeGeomNioFloatData(out, geometryDataContainer.getNormalsData());
+	            	writeGeomNioFloatDataJagatoo(out, geometryDataContainer.getNormalsData());
 	            }
 	            
 	            out.writeBoolean(geometryDataContainer.hasColors());
 	            if (geometryDataContainer.hasColors()) {
-	            	writeGeomNioFloatData(out, geometryDataContainer.getColorData());
+	            	writeGeomNioFloatDataJagatoo(out, geometryDataContainer.getColorData());
 	            }
 	            
 	            out.writeBoolean(geometryDataContainer.hasTextureCoordinates());
@@ -1071,13 +1088,13 @@ public class SerializationHelper {
 	            	
 	            	out.writeInt(texCoords.length);
 	                for (int i = 0; i < texCoords.length; i++) {
-                    	writeGeomNioFloatData(out, texCoords[i]);
+                    	writeGeomNioFloatDataJagatoo(out, texCoords[i]);
 	                }
 	            }
 	            
 	            out.writeInt(geometryDataContainer.getVertexAttributesCount());
 	            for (int i = 0; i < geometryDataContainer.getVertexAttributesCount(); i++) {
-                	writeGeomNioFloatData(out, geometryDataContainer.getVertexAttribData(i));
+                	writeGeomNioFloatDataJagatoo(out, geometryDataContainer.getVertexAttribData(i));
 	            }
 	        }
 	        
