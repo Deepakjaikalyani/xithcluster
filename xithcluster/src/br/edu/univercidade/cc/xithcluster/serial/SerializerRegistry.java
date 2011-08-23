@@ -2,10 +2,12 @@ package br.edu.univercidade.cc.xithcluster.serial;
 
 import java.util.HashMap;
 import java.util.Map;
+
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Group;
 import org.xith3d.scenegraph.Switch;
 import org.xith3d.scenegraph.TransformGroup;
+
 import br.edu.univercidade.cc.xithcluster.primitives.Cube;
 import br.edu.univercidade.cc.xithcluster.primitives.Rectangle;
 
@@ -17,8 +19,8 @@ public final class SerializerRegistry {
 	
 	// FIXME:
 	static {
-		register(Cube.class, CubeSerializer.class);
-		register(Rectangle.class, RectangleSerializer.class);
+		register(Cube.class, Shape3DSerializer.class);
+		register(Rectangle.class, Shape3DSerializer.class);
 		register(Switch.class, SwitchSerializer.class);
 		register(TransformGroup.class, TransformGroupSerializer.class);
 		register(BranchGroup.class, BranchGroupSerializer.class);

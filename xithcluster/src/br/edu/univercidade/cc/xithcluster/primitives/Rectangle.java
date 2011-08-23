@@ -21,6 +21,10 @@ public class Rectangle extends org.xith3d.scenegraph.primitives.Rectangle {
 	
 	private Colorf color;
 	
+	public Rectangle() {
+		super(1.0f, 1.0f);
+	}
+
 	public Rectangle(float width, float height, Tuple3f offset, Texture texture, Tuple2f texLowerLeft, Tuple2f texUpperRight, Colorf color, Appearance appearance) {
 		super(width, height, offset, texture, texLowerLeft, texUpperRight, color);
 		
