@@ -4,21 +4,24 @@
 	<classpathentry kind="src" path="test"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
-	<classpathentry kind="lib" path="libs/lwjgl-2.2.1/AppleJavaExtensions.jar"/>
-	<classpathentry kind="lib" path="libs/lwjgl-2.2.1/jinput.jar"/>
-	<classpathentry kind="lib" path="libs/lwjgl-2.2.1/lwjgl_test.jar"/>
-	<classpathentry kind="lib" path="libs/lwjgl-2.2.1/lwjgl_util_applet.jar"/>
-	<classpathentry kind="lib" path="libs/lwjgl-2.2.1/lwjgl_util.jar"/>
-	<classpathentry kind="lib" path="libs/lwjgl-2.2.1/lwjgl-debug.jar"/>
-	<classpathentry kind="lib" path="libs/lwjgl-2.2.1/lwjgl.jar"/>
-	<classpathentry kind="lib" path="libs/lwjgl-2.2.1/lzma.jar"/>
-	<classpathentry kind="lib" path="libs/swt/win/swt.jar"/>
-	<classpathentry kind="lib" path="libs/xith3d/joode.jar"/>
-	<classpathentry kind="lib" path="libs/xith3d/jops.jar"/>
-	<classpathentry kind="lib" path="libs/xith3d/xpal-joode.jar"/>
-	<classpathentry kind="lib" path="libs/xSocket-2.8.15/xSocket-2.8.15.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/xith3d"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/jagatoo"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/openmali"/>
+	<classpathentry kind="lib" path="lib/xSocket-2.8.14.jar"/>
+	<classpathentry kind="lib" path="lib/gluegen-rt.jar"/>
+	<classpathentry kind="lib" path="lib/jagatoo.jar"/>
+	<classpathentry kind="lib" path="lib/jdom.jar"/>
+	<classpathentry kind="lib" path="lib/jinput.jar"/>
+	<classpathentry kind="lib" path="lib/joal.jar"/>
+	<classpathentry kind="lib" path="lib/jogl.jar"/>
+	<classpathentry kind="lib" path="lib/joode.jar"/>
+	<classpathentry kind="lib" path="lib/jops.jar"/>
+	<classpathentry kind="lib" path="lib/lwjgl_util.jar"/>
+	<classpathentry kind="lib" path="lib/lwjgl-debug.jar"/>
+	<classpathentry kind="lib" path="lib/lwjgl.jar"/>
+	<classpathentry kind="lib" path="lib/openmali.jar"/>
+	<classpathentry kind="lib" path="lib/stax-1.2.0.jar"/>
+	<classpathentry kind="lib" path="lib/stax-api.jar"/>
+	<classpathentry kind="lib" path="lib/swt.jar"/>
+	<classpathentry kind="lib" path="lib/vorbis.jar"/>
+	<classpathentry kind="lib" path="lib/xpal-joode.jar"/>
+	<classpathentry kind="lib" path="lib/xith3d.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
