@@ -13,12 +13,12 @@
 	<classpathentry kind="lib" path="libs/lwjgl-2.2.1/lwjgl.jar"/>
 	<classpathentry kind="lib" path="libs/lwjgl-2.2.1/lzma.jar"/>
 	<classpathentry kind="lib" path="libs/swt/win/swt.jar"/>
-	<classpathentry kind="lib" path="libs/xith3d/jagatoo.jar"/>
 	<classpathentry kind="lib" path="libs/xith3d/joode.jar"/>
 	<classpathentry kind="lib" path="libs/xith3d/jops.jar"/>
-	<classpathentry kind="lib" path="libs/xith3d/openmali.jar" sourcepath="/openmali"/>
-	<classpathentry kind="lib" path="libs/xith3d/xith3d.jar" sourcepath="/xith3d"/>
 	<classpathentry kind="lib" path="libs/xith3d/xpal-joode.jar"/>
 	<classpathentry kind="lib" path="libs/xSocket-2.8.15/xSocket-2.8.15.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/xith3d"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/jagatoo"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/openmali"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

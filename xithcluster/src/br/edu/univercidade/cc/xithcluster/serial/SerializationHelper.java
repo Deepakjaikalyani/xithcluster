@@ -317,13 +317,7 @@ public class SerializationHelper {
 	
 	public static void writeFloatBuffer(DataOutputStream out, FloatBuffer buffer) throws IOException {
 		if (nullCheck(out, buffer)) {
-			buffer.clear();
-            try {
-				writeFloatArray(out, buffer.array());
-			} catch (UnsupportedOperationException e) {
-				writeFloatArray(out, BufferUtils.array(buffer));
-			}
-			buffer.rewind();
+			writeFloatArray(out, BufferUtils.safeBufferRead(buffer));
 		}
 	}
 	
@@ -405,13 +399,7 @@ public class SerializationHelper {
 	
 	public static void writeIntBuffer(DataOutputStream out, IntBuffer buffer) throws IOException {
 		if (nullCheck(out, buffer)) {
-			buffer.clear();
-            try {
-				writeIntArray(out, buffer.array());
-			} catch (UnsupportedOperationException e) {
-				writeIntArray(out, BufferUtils.array(buffer));
-			}
-			buffer.rewind();
+			writeIntArray(out, BufferUtils.safeBufferRead(buffer));
 		}
 	}
 	
@@ -423,7 +411,7 @@ public class SerializationHelper {
 		if (nullCheck(in)) {
 			data = new GeomNioIntData(in.readInt(), in.readInt(), in.readInt(), in.readBoolean());
 			buffer = readIntBuffer(in);
-			array = BufferUtils.array(buffer);
+			array = BufferUtils.safeBufferRead(buffer);
 			data.set(array, 0, array.length);
 			
 			return data;
@@ -687,17 +675,17 @@ public class SerializationHelper {
 			renderingAttributes.setDepthBufferEnabled(in.readBoolean());
 			renderingAttributes.setDepthBufferWriteEnabled(in.readBoolean());
 			renderingAttributes.setAlphaTestValue(in.readFloat());
-			renderingAttributes.setAlphaTestFunction(TestFunction.values()[in.readInt()]);
+			renderingAttributes.setAlphaTestFunction(readEnum(in, TestFunction.values()));
 			renderingAttributes.setStencilFuncSeparate(readStencilFunctionSeparate(in));
 			renderingAttributes.setStencilOpSeparate(readStencilOperationSeparate(in));
 			renderingAttributes.setStencilMaskSeparate(readStencilMaskSeparate(in));
-			renderingAttributes.setDepthTestFunction(TestFunction.values()[in.readInt()]);
+			renderingAttributes.setDepthTestFunction(readEnum(in, TestFunction.values()));
 			renderingAttributes.setIgnoreVertexColors(in.readBoolean());
 			renderingAttributes.setStencilEnabled(in.readBoolean());
-			renderingAttributes.setStencilOpFail(StencilOperation.values()[in.readInt()]);
-			renderingAttributes.setStencilOpZFail(StencilOperation.values()[in.readInt()]);
-			renderingAttributes.setStencilOpZPass(StencilOperation.values()[in.readInt()]);
-			renderingAttributes.setStencilTestFunction(TestFunction.values()[in.readInt()]);
+			renderingAttributes.setStencilOpFail(readEnum(in, StencilOperation.values()));
+			renderingAttributes.setStencilOpZFail(readEnum(in, StencilOperation.values()));
+			renderingAttributes.setStencilOpZPass(readEnum(in, StencilOperation.values()));
+			renderingAttributes.setStencilTestFunction(readEnum(in, TestFunction.values()));
 			renderingAttributes.setStencilRef(in.readInt());
 			renderingAttributes.setStencilMask(in.readInt());
 			hasColorWriteMask = in.readBoolean();
@@ -725,11 +713,11 @@ public class SerializationHelper {
 		StencilFace stencilFace;
 		
 		if (nullCheck(in)) {
-			stencilFace = StencilFace.values()[in.readInt()];
+			stencilFace = readEnum(in, StencilFace.values());
 			
 			stencilFuncSeparate = new StencilFuncSeparate(stencilFace);
 			
-			stencilFuncSeparate.setTestFunction(TestFunction.values()[in.readInt()]);
+			stencilFuncSeparate.setTestFunction(readEnum(in, TestFunction.values()));
 			stencilFuncSeparate.setRef(in.readInt());
 			stencilFuncSeparate.setMask(in.readInt());
 			
@@ -1083,18 +1071,13 @@ public class SerializationHelper {
 	            	
 	            	out.writeInt(texCoords.length);
 	                for (int i = 0; i < texCoords.length; i++) {
-	                    if (nullCheck(out, texCoords[i])) {
-	                    	writeGeomNioFloatData(out, texCoords[i]);
-	                    }
+                    	writeGeomNioFloatData(out, texCoords[i]);
 	                }
 	            }
 	            
 	            out.writeInt(geometryDataContainer.getVertexAttributesCount());
 	            for (int i = 0; i < geometryDataContainer.getVertexAttributesCount(); i++) {
-	            	GeomNioFloatData vertexAttributeData = geometryDataContainer.getVertexAttribData(i);
-	                if (nullCheck(out, vertexAttributeData)) {
-	                	writeGeomNioFloatData(out, vertexAttributeData);
-	                }
+                	writeGeomNioFloatData(out, geometryDataContainer.getVertexAttribData(i));
 	            }
 	        }
 	        
@@ -1104,15 +1087,15 @@ public class SerializationHelper {
 	        writeIntArray(out, texCoordSetMap_nonPublic);
 	        
         	writeIntArray(out, geometryDataContainer.getTexCoordSetMap());
+        	
 	        for (int unit = 0; unit < GeometryDataContainer.TEXTURE_COORDINATES; unit++) {
 	        	out.writeInt(geometryDataContainer.getTexCoordSize(unit));
 	        }
 	        
 	        out.writeInt(geometryDataContainer.getColorsSize());
 	        out.writeInt(geometryDataContainer.getVertexFormat());
-	        out.writeBoolean(geometryDataContainer.hasNormals());
-	        out.writeBoolean(geometryDataContainer.hasColors());
-	        out.writeInt(geometryDataContainer.getColorsSize());
+	        //out.writeBoolean(geometryDataContainer.hasNormals());
+	        //out.writeBoolean(geometryDataContainer.hasColors());
 	        out.writeLong(geometryDataContainer.getNormalsOffset());
 	        out.writeLong(geometryDataContainer.getColorsOffset());
 	        
@@ -1163,6 +1146,7 @@ public class SerializationHelper {
         int[] textureUnitSize;
         long[] vertexAttribsOffsets;
         long[] texCoordsOffsets;
+        GeomNioFloatData data;
 		
 		if (nullCheck(in)) {
 			name = readString(in);
@@ -1229,24 +1213,32 @@ public class SerializationHelper {
 			
 			hasIndex = in.readBoolean();
 			if (hasIndex) {
+				PrivateAccessor.setPrivateField(geometryDataContainer, "hasIndex", true); 
 				PrivateAccessor.setPrivateField(geometryDataContainer, "indexData", readGeomNioIntData(in));
+	        } else {
+	        	PrivateAccessor.setPrivateField(geometryDataContainer, "hasIndex", false);
 	        }
 	        
 			isInterleaved = in.readBoolean();
 	        if (isInterleaved) {
+	        	PrivateAccessor.setPrivateField(geometryDataContainer, "isInterleaved", true); 
 	        	PrivateAccessor.setPrivateField(geometryDataContainer, "interleavedData", readGeomNioFloatData(in));
 	        } else {
+	        	PrivateAccessor.setPrivateField(geometryDataContainer, "isInterleaved", false);
+	        	
 	            if (nullCheck(in)) {
 	            	PrivateAccessor.setPrivateField(geometryDataContainer, "coords", readGeomNioFloatData(in));
 	            }
 	            
 	            hasNormals = in.readBoolean();
 	            if (hasNormals) {
+	            	// Don't need to set hasNormals to true
 	            	geometryDataContainer.setNormalData(readGeomNioFloatData(in));
 	            }
 	            
 	            hasColors = in.readBoolean();
 	            if (hasColors) {
+	            	// Don't need to set hasColors to true
 	            	geometryDataContainer.setColorData(readGeomNioFloatData(in));
 	            }
 	            
@@ -1254,10 +1246,14 @@ public class SerializationHelper {
 	            if (hasTextureCoordinates) {
 	            	int texCoordsLength;
 	            	texCoordsLength = in.readInt();
-	            	// TODO: Check
 	                for (int i = 0; i < texCoordsLength; i++) {
-	                    if (nullCheck(in)) {
-	                    	geometryDataContainer.setTexCoordData(i, readGeomNioFloatData(in));
+	                	data = readGeomNioFloatData(in);
+	                	
+	                	// FIXME:
+	                	geometryDataContainer.setTextureCoordinate(i, 0, new float[] { 0.0f, 0.0f });
+	                	
+	                    if (data != null) {
+	                    	geometryDataContainer.setTexCoordData(i, data);
 	                    } else {
 	                    	geometryDataContainer.setTexCoordData(i, null);
 	                    }
@@ -1267,11 +1263,7 @@ public class SerializationHelper {
 	            vertexAttributesCount = in.readInt();
 	            vertexAttribs = new GeomNioFloatData[vertexAttributesCount];
 	            for (int i = 0; i < vertexAttributesCount; i++) {
-	                if (nullCheck(in)) {
-	                	vertexAttribs[i] = readGeomNioFloatData(in);
-	                } else {
-	                	vertexAttribs[i] = null;
-	                }
+                	vertexAttribs[i] = readGeomNioFloatData(in);
 	            }
 	            
 	            PrivateAccessor.setPrivateField(geometryDataContainer, "vertexAttribs", vertexAttribs);
@@ -1290,9 +1282,8 @@ public class SerializationHelper {
 	        
 	        PrivateAccessor.setPrivateField(geometryDataContainer, "colorsSize", in.readInt());
 	        PrivateAccessor.setPrivateField(geometryDataContainer, "vertexFormat", in.readInt());
-	        PrivateAccessor.setPrivateField(geometryDataContainer, "hasNormals", in.readBoolean());
-	        PrivateAccessor.setPrivateField(geometryDataContainer, "hasColors", in.readBoolean());
-	        PrivateAccessor.setPrivateField(geometryDataContainer, "colorSize", in.readBoolean());
+	        //PrivateAccessor.setPrivateField(geometryDataContainer, "hasNormals", in.readBoolean());
+	        //PrivateAccessor.setPrivateField(geometryDataContainer, "hasColors", in.readBoolean());
 	        PrivateAccessor.setPrivateField(geometryDataContainer, "normalsOffset", in.readLong());
 	        PrivateAccessor.setPrivateField(geometryDataContainer, "colorsOffset", in.readLong());
 	        
