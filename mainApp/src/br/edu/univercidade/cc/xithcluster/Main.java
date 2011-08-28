@@ -5,6 +5,7 @@ import org.jagatoo.input.devices.components.Key;
 import org.jagatoo.input.events.KeyPressedEvent;
 import org.openmali.vecmath2.Colorf;
 import org.xith3d.base.Xith3DEnvironment;
+import org.xith3d.loaders.texture.TextureLoader;
 import org.xith3d.resources.ResourceLocator;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Group;
@@ -46,7 +47,7 @@ public class Main extends DistributedRenderLoop {
 		TransformGroup transformGroup1 = new TransformGroup(new Transform3D(0.3f, 0.3f, 0.5f));
 		transformGroup1.setName("transformGroup1");
 		
-		Rectangle rectangle1 = new Rectangle(0.5f, 0.5f, Colorf.PINK); //TextureLoader.getInstance().getTexture("crate.jpg"));
+		Rectangle rectangle1 = new Rectangle(0.5f, 0.5f, TextureLoader.getInstance().getTexture("crate.jpg"));
 		rectangle1.setName("rectangle1");
 		
 		transformGroup1.addChild(rectangle1);
