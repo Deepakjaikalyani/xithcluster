@@ -25,12 +25,14 @@ import org.jagatoo.opengl.enums.TextureCombineFunction;
 import org.jagatoo.opengl.enums.TextureCombineMode;
 import org.jagatoo.opengl.enums.TextureCombineSource;
 import org.jagatoo.opengl.enums.TextureCompareMode;
+import org.jagatoo.opengl.enums.TextureFilter;
 import org.jagatoo.opengl.enums.TextureMode;
 import org.openmali.spatial.bounds.BoundingBox;
 import org.openmali.spatial.bounds.BoundingPolytope;
 import org.openmali.spatial.bounds.BoundingSphere;
 import org.openmali.spatial.bounds.Bounds;
 import org.openmali.spatial.bounds.BoundsType;
+import org.openmali.types.twodee.Sized2iRO;
 import org.openmali.vecmath2.Colorf;
 import org.openmali.vecmath2.Matrix4f;
 import org.openmali.vecmath2.Point3f;
@@ -38,7 +40,6 @@ import org.openmali.vecmath2.Tuple2f;
 import org.openmali.vecmath2.Tuple3f;
 import org.openmali.vecmath2.Vector3f;
 import org.openmali.vecmath2.Vector4f;
-import org.xith3d.loaders.texture.TextureLoader;
 import org.xith3d.scenegraph.Appearance;
 import org.xith3d.scenegraph.ColoringAttributes;
 import org.xith3d.scenegraph.Geometry;
@@ -65,7 +66,12 @@ import org.xith3d.scenegraph.StencilOpSeparate;
 import org.xith3d.scenegraph.TexCoordGeneration;
 import org.xith3d.scenegraph.TexCoordGeneration.CoordMode;
 import org.xith3d.scenegraph.Texture;
+import org.xith3d.scenegraph.Texture2D;
+import org.xith3d.scenegraph.Texture2DCanvas;
+import org.xith3d.scenegraph.Texture3D;
 import org.xith3d.scenegraph.TextureAttributes;
+import org.xith3d.scenegraph.TextureCubeMap;
+import org.xith3d.scenegraph.TextureImage;
 import org.xith3d.scenegraph.TextureUnit;
 import org.xith3d.scenegraph.Transform3D;
 import org.xith3d.scenegraph.TransparencyAttributes;
@@ -102,6 +108,12 @@ public class SerializationHelper {
 	private static final int GT_QUAD_ARRAY = 12;
 	
 	private static final int GT_TRIANGLE_ARRAY = 13;
+
+	private static final int TEXTURE_3D = 1;
+
+	private static final int TEXTURE_2D = 2;
+
+	private static final int TEXTURE_CUBE_MAP = 3;
 	
 	private SerializationHelper() {
 	}
@@ -822,41 +834,148 @@ public class SerializationHelper {
 	}
 	
 	public static void writeTexture(DataOutputStream out, Texture texture) throws IOException {
+		Texture2D texture2D;
+		TextureCubeMap textureCubeMap;
+		TextureImage[][] images;
+		
 		if (nullCheck(out, texture)) {
-			// TODO: Serialize textures properly!
-			writeString(out, texture.getResourceName());
+			if (texture instanceof Texture3D) {
+				out.writeInt(TEXTURE_3D);
+				
+				writeEnum(out, ((Texture3D) texture).getBoundaryModeR());
+			} else if (texture instanceof Texture2D) {
+				out.writeInt(TEXTURE_2D);
+				
+				texture2D = (Texture2D) texture;
+				
+				out.writeBoolean(texture2D.hasUpdateList());
+				out.writeBoolean(texture2D.hasTextureCanvas());
+				writeTexture2DCanvas(out, texture2D.getTextureCanvas());
+			} else if (texture instanceof TextureCubeMap) {
+				out.writeInt(TEXTURE_CUBE_MAP);
+				
+				textureCubeMap = (TextureCubeMap) texture;
+				
+				images = (TextureImage[][]) PrivateAccessor.getPrivateField(textureCubeMap, "images");
+				
+				// TODO:
+				for (int i = 0; i < images.length; i++ ) {
+		            for (int j = 0; j < images[i].length; j++ ) {
+		                writeTextureImage(out, images[i][j]);
+		            }
+		        }
+			} else {
+				// TODO:
+				throw new RuntimeException("Unknown texture type");
+			}
+			
+			writeEnum(out, texture.getFormat());
+			out.writeBoolean(texture.isEnabled());
+			
+			out.writeInt(texture.getImagesCount());
+			for (int i = 0; i < texture.getImagesCount(); i++) {
+				writeTextureImage(out, texture.getImage(i));
+	        }
+	        
+	        writeEnum(out, texture.getBoundaryModeS());
+	        writeEnum(out, texture.getBoundaryModeT());
+	        writeColorf(out, texture.getBoundaryColor());
+	        
+	        out.writeInt(texture.getBoundaryWidth());
+	        
+	        writeTextureFilter(out, texture.getFilter());
 		}
 	}
 	
 	public static Texture readTexture(DataInputStream in) throws IOException {
-		String textureName;
+		int textureType;
 		
 		if (nullCheck(in)) {
-			textureName = readString(in);
-			if (textureName != null) {
-				return TextureLoader.getInstance().getTexture(textureName);
+			textureType = in.readInt();
+			
+			switch (textureType) {
+			case TEXTURE_2D:
+				break;
+			case TEXTURE_3D:
+				break;
+			case TEXTURE_CUBE_MAP:
+				break;
+			default:
+				// TODO:
+				throw new RuntimeException("Unknown texture type");
 			}
 		}
+		
+		// TODO:
 		
 		return null;
 	}
 	
-	/*public static void writeTextureImage(DataOutputStream out, TextureImage image) throws IOException {
+	// TODO:
+	public static void writeTexture2DCanvas(DataOutputStream out, Texture2DCanvas textureCanvas) {
+		
+	}
+	
+	// TODO:
+	public static Texture2DCanvas readTexture2DCanvas(DataInputStream in) throws IOException {
+		if (nullCheck(in)) {
+			return null;
+		} else {
+			return null;
+		}
+	}
+	
+	public static void writeTextureImage(DataOutputStream out, TextureImage image) throws IOException {
 		if (nullCheck(out, image)) {
 			writeEnum(out, image.getFormat());
 			writeEnum(out, image.getInternalFormat());
-			writeDimension(out, image.getSize());
-			writeDimension(out, image.getOriginalSize());
+			writeSized2iRO(out, image.getSize());
+			writeSized2iRO(out, image.getOriginalSize());
 			out.writeBoolean(image.hasData());
+			// TODO:
 		}
-	}*/
+	}
 	
-	/*public static void writeDimension(DataOutputStream out, Sized2iRO size) throws IOException {
+	// TODO:
+	public static TextureImage readTextureImage(DataInputStream in) throws IOException {
+		if (nullCheck(in)) {
+			return null;
+		} else {
+			return null;
+		}
+	}
+	
+	// TODO:
+	public static void writeTextureFilter(DataOutputStream out, TextureFilter filter) throws IOException {
+		if (nullCheck(out, filter)) {
+		}
+	}
+	
+	// TODO:
+	public static TextureFilter readTextureFilter(DataInputStream in) throws IOException {
+		if (nullCheck(in)) {
+			return null;
+		} else {
+			return null;
+		}
+	}
+	
+	// TODO:
+	public static void writeSized2iRO(DataOutputStream out, Sized2iRO size) throws IOException {
 		if (nullCheck(out, size)) {
 			out.writeInt(size.getWidth());
 			out.writeInt(size.getHeight());
 		}
-	}*/
+	}
+	
+	// TODO:
+	public static Sized2iRO readSized2iRO(DataInputStream in) throws IOException {
+		if (nullCheck(in)) {
+			return null;
+		} else {
+			return null;
+		}
+	}
 	
 	public static void writeTextureAttributes(DataOutputStream out, TextureAttributes textureAttributes) throws IOException {
 		if (nullCheck(out, textureAttributes)) {
