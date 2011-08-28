@@ -50,6 +50,12 @@ public final class xSocketHelper {
 		}
 	}
 	
+	public static void write(INonBlockingConnection arg0, int arg1) throws BufferOverflowException, IOException {
+		if (arg0.isOpen()) {
+			arg0.write(arg1);
+		}
+	}
+	
 	public static void write(INonBlockingConnection arg0, byte[] arg1) throws BufferOverflowException, IOException {
 		if (arg0.isOpen()) {
 			arg0.write(arg1.length);
@@ -106,5 +112,13 @@ public final class xSocketHelper {
 			return -1;
 		}
 	}
-	
+
+	public static int readInt(IBlockingConnection arg0) throws SocketTimeoutException, IOException {
+		if (arg0.isOpen()) {
+			return arg0.readInt();
+		} else {
+			return -1;
+		}
+	}
+
 }

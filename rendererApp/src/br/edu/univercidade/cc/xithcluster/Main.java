@@ -71,9 +71,10 @@ public class Main extends InputAdapterRenderLoop implements SceneManager {
 	protected void loopIteration(long gameTime, long frameTime, TimingMode timingMode) {
 		super.prepareNextFrame(gameTime, frameTime, timingMode);
 		
-		if (networkManager.renderNewFrame()) {
+		if (networkManager.startFrame()) {
 			synchronized (sceneLock) {
 				super.renderNextFrame(gameTime, frameTime, timingMode);
+				networkManager.notifyFrameFinished();
 			}
 		}
 	}
@@ -95,6 +96,11 @@ public class Main extends InputAdapterRenderLoop implements SceneManager {
 	@Override
 	public BranchGroup getRoot() {
 		return null;
+	}
+	
+	@Override
+	public void setId(int id) {
+		getXith3DEnvironment().getCanvas().setTitle(APP_TITLE + "[id=" + id + "]");
 	}
 	
 	@Override

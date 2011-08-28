@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
+import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -15,6 +17,7 @@ import org.xith3d.scenegraph.Node;
 import org.xith3d.scenegraph.View;
 import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.IConnectHandler;
+import org.xsocket.connection.IDataHandler;
 import org.xsocket.connection.IDisconnectHandler;
 import org.xsocket.connection.INonBlockingConnection;
 import br.edu.univercidade.cc.xithcluster.Configuration;
@@ -30,7 +33,7 @@ import br.edu.univercidade.cc.xithcluster.serial.pack.LightSourcesPackager;
 import br.edu.univercidade.cc.xithcluster.serial.pack.PointOfViewPackager;
 import br.edu.univercidade.cc.xithcluster.serial.pack.UpdatesPackager;
 
-public final class MasterNetworkManager implements IConnectHandler, IDisconnectHandler {
+public final class MasterNetworkManager implements IConnectHandler, IDataHandler, IDisconnectHandler {
 	
 	private List<xSocketServerThread> serverThreads = new ArrayList<xSocketServerThread>();
 	
@@ -52,6 +55,8 @@ public final class MasterNetworkManager implements IConnectHandler, IDisconnectH
 	
 	private SceneManager sceneManager;
 	
+	private BitSet framesFinished = new BitSet();
+	
 	private boolean changed = true;
 	
 	public MasterNetworkManager(SceneManager sceneManager, UpdateManager updateManager, DistributionStrategy distributionStrategy) {
@@ -63,32 +68,6 @@ public final class MasterNetworkManager implements IConnectHandler, IDisconnectH
 	public void initialize() throws UnknownHostException, IOException {
 		serverThreads.add(xSocketHelper.startListening(Configuration.listeningInterface, Configuration.renderersListeningPort, this));
 		serverThreads.add(xSocketHelper.startListening(Configuration.listeningInterface, Configuration.composerListeningPort, this));
-	}
-	
-	@Override
-	public synchronized boolean onConnect(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, MaxReadSizeExceededException {
-		if (isRendererConnection(arg0)) {
-			renderersConnections.add(arg0);
-			
-			// DEBUG:
-			System.out.println("New renderer connected");
-		} else {
-			if (composerConnection != null) {
-				// DEBUG:
-				System.err.println("There can be only one composer");
-				
-				return false;
-			}
-			
-			composerConnection = arg0;
-			
-			// DEBUG:
-			System.out.println("Composer connected");
-		}
-		
-		changed = true;
-		
-		return true;
 	}
 	
 	private boolean isRendererConnection(INonBlockingConnection arg0) {
@@ -117,16 +96,18 @@ public final class MasterNetworkManager implements IConnectHandler, IDisconnectH
 	}
 	
 	public synchronized void notifyFrameStart() {
-		try {
-			notifyRenderers(ClusterMessages.START_FRAME);
-		} catch (IOException e) {
-			// TODO:
-		}
-	}
-	
-	private void notifyRenderers(String message) throws IOException {
-		for (INonBlockingConnection renderer : renderersConnections) {
-			xSocketHelper.write(renderer, message);
+		synchronized (renderersConnections) {
+			if (framesFinished.cardinality() == renderersConnections.size()) {
+				try {
+					for (INonBlockingConnection renderer : renderersConnections) {
+						xSocketHelper.write(renderer, ClusterMessages.START_FRAME);
+					}
+				} catch (IOException e) {
+					// TODO:
+					System.err.println("Error notifying frame start");
+					e.printStackTrace();
+				}
+			}
 		}
 	}
 	
@@ -137,7 +118,7 @@ public final class MasterNetworkManager implements IConnectHandler, IDisconnectH
 		
 		if (updateManager.hasPendingUpdates()) {
 			// DEBUG:
-			System.out.println(updateManager.getPendingUpdates().size() + " pending update(s)");
+			System.out.println("Sending " + updateManager.getPendingUpdates().size() + " pending update(s)");
 			
 			// FIXME: Optimize
 			updatesPerRenderer = new HashMap<INonBlockingConnection, List<PendingUpdate>>();
@@ -161,41 +142,37 @@ public final class MasterNetworkManager implements IConnectHandler, IDisconnectH
 				}
 			}
 			
-			for (int i = 0; i < renderersConnections.size(); i++) {
-				rendererConnection = renderersConnections.get(i);
-				updates = updatesPerRenderer.get(rendererConnection);
-				
-				if (updates != null) {
-					try {
-						xSocketHelper.write(rendererConnection, ClusterMessages.UPDATE);
-						xSocketHelper.write(rendererConnection, updatesPackager.serialize(updates));
-						
-						// DEBUG:
-						System.out.println(updates.size() + " update(s) were sent to renderer " + (i + 1));
-					} catch (IOException e) {
-						// TODO:
-						return false;
-					} catch (BufferOverflowException e) {
-						// TODO:
-						return false;
+			synchronized (renderersConnections) {
+				for (int i = 0; i < renderersConnections.size(); i++) {
+					rendererConnection = renderersConnections.get(i);
+					updates = updatesPerRenderer.get(rendererConnection);
+					
+					if (updates != null) {
+						rendererConnection.setAutoflush(false);
+						try {
+							xSocketHelper.write(rendererConnection, ClusterMessages.UPDATE);
+							xSocketHelper.write(rendererConnection, updatesPackager.serialize(updates));
+							
+							rendererConnection.flush();
+							// DEBUG:
+							System.out.println(updates.size() + " update(s) were sent to renderer " + (i + 1));
+						} catch (IOException e) {
+							// TODO:
+							System.err.println("Error sending pending updates");
+							e.printStackTrace();
+							
+							return false;
+						}
+						rendererConnection.setAutoflush(true);
 					}
 				}
 			}
+			
+			// DEBUG:
+			System.out.println("Pending updates sent successfully");
 		}
 		
 		return true;
-	}
-	
-	private synchronized void notifySessionStart() {
-		try {
-			notifyRenderers(ClusterMessages.SESSION_STARTED);
-			
-			if (composerConnection != null) {
-				xSocketHelper.write(composerConnection, ClusterMessages.SESSION_STARTED);
-			}
-		} catch (IOException e) {
-			// TODO:
-		}
 	}
 	
 	public synchronized boolean startNewSession() {
@@ -209,60 +186,86 @@ public final class MasterNetworkManager implements IConnectHandler, IDisconnectH
 		byte[] lightSourcesData;
 		byte[] geometriesData;
 		
-		if (renderersConnections.isEmpty()) {
-			return true;
-		}
-		
-		// DEBUG:
-		System.out.println("Starting a new session");
-		
-		notifySessionStart();
-		
+		// TODO: Check if this lock is needed!
 		synchronized (sceneManager.getSceneLock()) {
 			root = sceneManager.getRoot();
 			pointOfView = sceneManager.getPointOfView();
 			lightSources = sceneManager.getLightSources();
 		}
 		
-		// DEBUG:
-		System.out.println("Executing " + distributionStrategy.getClass().getSimpleName() + "...");
-		
-		geometries = distributionStrategy.distribute(root, renderersConnections.size());
-		
-		if (geometries.size() != renderersConnections.size()) {
-			// TODO:
-			throw new RuntimeException("The number of distributions is not the same as the number of renderers");
-		}
-		
-		for (int i = 0; i < renderersConnections.size(); i++) {
-			rendererConnection = renderersConnections.get(i);
-			rendererRoot = geometries.get(i);
+		synchronized (renderersConnections) {
+			if (renderersConnections.isEmpty()) {
+				return true;
+			}
 			
-			System.out.println(">> Renderer " + i);
+			// DEBUG:
+			System.out.println("Starting a new session");
 			
-			ConnectionSetter.setConnection(rendererRoot, rendererConnection);
+			// DEBUG:
+			System.out.println("Executing " + distributionStrategy.getClass().getSimpleName() + "...");
 			
-			try {
-				pointOfViewData = pointOfViewPackager.serialize(pointOfView);
-				lightSourcesData = lightSourcesPackager.serialize(lightSources);
-				geometriesData = geometriesPackager.serialize(rendererRoot);
+			geometries = distributionStrategy.distribute(root, renderersConnections.size());
+			
+			if (geometries.size() != renderersConnections.size()) {
+				// TODO:
+				throw new RuntimeException("The number of distributions is not the same as the number of renderers");
+			}
+			
+			for (int i = 0; i < renderersConnections.size(); i++) {
+				rendererConnection = renderersConnections.get(i);
+				rendererRoot = geometries.get(i);
+				
+				// DEBUG:
+				System.out.println(">> Renderer " + i);
+				
+				ConnectionSetter.setConnection(rendererRoot, rendererConnection);
+				
+				try {
+					pointOfViewData = pointOfViewPackager.serialize(pointOfView);
+					lightSourcesData = lightSourcesPackager.serialize(lightSources);
+					geometriesData = geometriesPackager.serialize(rendererRoot);
+				} catch (IOException e) {
+					// TODO:
+					System.err.println("Error serializing the scene");
+					e.printStackTrace();
+					
+					return false;
+				}
 				
 				// DEBUG:
 				System.out.println("POV data: " + pointOfViewData.length + " bytes sent");
 				System.out.println("Light sources data: " + lightSourcesData.length + " bytes sent");
 				System.out.println("Geometries data: " + geometriesData.length + " bytes sent");
 				
-				xSocketHelper.write(rendererConnection, pointOfViewData);
-				xSocketHelper.write(rendererConnection, lightSourcesData);
-				xSocketHelper.write(rendererConnection, geometriesData);
+				rendererConnection.setAutoflush(false);
+				try {
+					xSocketHelper.write(rendererConnection, ClusterMessages.SESSION_STARTED);
+					xSocketHelper.write(rendererConnection, (Integer) rendererConnection.getAttachment());
+					xSocketHelper.write(rendererConnection, pointOfViewData);
+					xSocketHelper.write(rendererConnection, lightSourcesData);
+					xSocketHelper.write(rendererConnection, geometriesData);
+					
+					rendererConnection.flush();
+				} catch (IOException e) {
+					// TODO:
+					System.err.println("Error sending distributed scene");
+					e.printStackTrace();
+					
+					return false;
+				}
+				rendererConnection.setAutoflush(true);
+				
+				framesFinished.set(i);
+			}
+		}
+		
+		if (composerConnection != null) {
+			try {
+				xSocketHelper.write(composerConnection, ClusterMessages.SESSION_STARTED);
 			} catch (IOException e) {
 				// TODO:
-				System.err.println("Error sending distributed scene");
-				
-				return false;
-			} catch (BufferOverflowException e) {
-				// TODO:
-				System.err.println("Error sending distributed scene");
+				System.err.println("Error notifying composer");
+				e.printStackTrace();
 				
 				return false;
 			}
@@ -275,11 +278,81 @@ public final class MasterNetworkManager implements IConnectHandler, IDisconnectH
 		
 		return true;
 	}
+
+	@Override
+	public synchronized boolean onConnect(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, MaxReadSizeExceededException {
+		BitSet newMask;
+		
+		if (isRendererConnection(arg0)) {
+			synchronized (renderersConnections) {
+				arg0.setAttachment(renderersConnections.size());
+				renderersConnections.add(arg0);
+				
+				newMask = new BitSet(renderersConnections.size());
+				newMask.or(framesFinished);
+				framesFinished = newMask;
+			}
+			
+			// DEBUG:
+			System.out.println("New renderer connected");
+		} else {
+			if (composerConnection != null) {
+				// DEBUG:
+				System.err.println("There can be only one composer");
+				
+				return false;
+			}
+			
+			composerConnection = arg0;
+			
+			// DEBUG:
+			System.out.println("Composer connected");
+		}
+		
+		changed = true;
+		
+		return true;
+	}
+	
+	@Override
+	public boolean onData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
+		synchronized (renderersConnections) {
+			framesFinished.set((Integer) arg0.getAttachment());
+		}
+		
+		return true;
+	}
 	
 	@Override
 	public boolean onDisconnect(INonBlockingConnection arg0) throws IOException {
+		BitSet newMask;
+		int i;
+		
 		if (isRendererConnection(arg0)) {
-			renderersConnections.remove(arg0);
+			synchronized (renderersConnections) {
+				renderersConnections.remove(arg0);
+				
+				i = (Integer) arg0.getAttachment();
+				for (int j = i; j < renderersConnections.size(); j++) {
+					renderersConnections.get(j).setAttachment(j);
+				}
+				
+				if (i == 0) {
+					framesFinished = framesFinished.get(1, framesFinished.size() - 1);
+				} else if (i == framesFinished.size() - 1) {
+					framesFinished = framesFinished.get(0, framesFinished.size() - 2);
+				} else {
+					newMask = new BitSet(renderersConnections.size());
+					newMask.or(framesFinished.get(0, i - 1));
+					
+					for (int j = i + 1; j < framesFinished.size(); j++) {
+						newMask.set(i++, framesFinished.get(j));
+					}
+					
+					framesFinished = newMask;
+				}
+			}
+			
 			// DEBUG:
 			System.err.println("Renderer disconnected");
 		} else {
