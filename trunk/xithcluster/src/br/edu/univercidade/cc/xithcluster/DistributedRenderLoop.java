@@ -88,6 +88,7 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 		}
 		
 		// TODO: doSimulations(dT)
+		// TODO: Check if this lock is needed!
 		synchronized (sceneLock) {
 			prepareNextFrame(gameTime, frameTime, timingMode);
 			
@@ -159,6 +160,10 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 
 	@Override
 	public void updateModifications() {
+	}
+
+	@Override
+	public void setId(int id) {
 	}
 	
 }

@@ -24,4 +24,6 @@ public interface SceneManager {
 
 	List<Light> getLightSources();
 
+	void setId(int id);
+
 }
