@@ -67,6 +67,7 @@ public class Rectangle extends org.xith3d.scenegraph.primitives.Rectangle {
 		return color;
 	}
 	
+	@Override
 	protected Shape3D newInstance() {
 		boolean gib = Node.globalIgnoreBounds;
 		Node.globalIgnoreBounds = isIgnoreBounds();
