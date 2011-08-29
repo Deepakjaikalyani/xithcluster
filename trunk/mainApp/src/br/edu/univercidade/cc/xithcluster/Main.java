@@ -1,6 +1,9 @@
 package br.edu.univercidade.cc.xithcluster;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
+
 import org.jagatoo.input.devices.components.Key;
 import org.jagatoo.input.events.KeyPressedEvent;
 import org.openmali.vecmath2.Colorf;
@@ -10,8 +13,10 @@ import org.xith3d.resources.ResourceLocator;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Group;
 import org.xith3d.scenegraph.StaticTransform;
+import org.xith3d.scenegraph.Texture2D;
 import org.xith3d.scenegraph.Transform3D;
 import org.xith3d.scenegraph.TransformGroup;
+
 import br.edu.univercidade.cc.xithcluster.primitives.Rectangle;
 
 public class Main extends DistributedRenderLoop {
@@ -47,7 +52,14 @@ public class Main extends DistributedRenderLoop {
 		TransformGroup transformGroup1 = new TransformGroup(new Transform3D(0.3f, 0.3f, 0.5f));
 		transformGroup1.setName("transformGroup1");
 		
-		Rectangle rectangle1 = new Rectangle(0.5f, 0.5f, TextureLoader.getInstance().getTexture("crate.jpg"));
+		Texture2D texture2D;
+		try {
+			texture2D = TextureLoader.getInstance().loadTexture(new FileInputStream("resources/crate.png"));
+		} catch (FileNotFoundException e) {
+			throw new RuntimeException("Texture not found");
+		}
+		
+		Rectangle rectangle1 = new Rectangle(0.5f, 0.5f, texture2D);
 		rectangle1.setName("rectangle1");
 		
 		transformGroup1.addChild(rectangle1);

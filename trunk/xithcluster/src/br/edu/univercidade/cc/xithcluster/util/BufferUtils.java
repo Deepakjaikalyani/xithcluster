@@ -116,9 +116,6 @@ public final class BufferUtils {
 		
 		if (arg0.isDirect()) {
 			buffer = new float[arg0.limit()];
-			/*for (int i = 0; i < buffer.length; i++) {
-				buffer[i] = arg0.get(i);
-			}*/
 			arg0.rewind();
 			arg0.get(buffer);
 			
@@ -133,9 +130,20 @@ public final class BufferUtils {
 		
 		if (arg0.isDirect()) {
 			buffer = new int[arg0.limit()];
-			/*for (int i = 0; i < buffer.length; i++) {
-				buffer[i] = arg0.get(i);
-			}*/
+			arg0.rewind();
+			arg0.get(buffer);
+			
+			return buffer;
+		} else {
+			return arg0.array();
+		}
+	}
+	
+	public static byte[] safeBufferRead(ByteBuffer arg0) {
+		byte[] buffer;
+		
+		if (arg0.isDirect()) {
+			buffer = new byte[arg0.limit()];
 			arg0.rewind();
 			arg0.get(buffer);
 			
@@ -153,4 +161,8 @@ public final class BufferUtils {
 		return Arrays.equals(safeBufferRead(arg0), safeBufferRead(arg1));
 	}
 
+	public static boolean equals(ByteBuffer arg0, ByteBuffer arg1) {
+		return Arrays.equals(safeBufferRead(arg0), safeBufferRead(arg1));
+	}
+	
 }
