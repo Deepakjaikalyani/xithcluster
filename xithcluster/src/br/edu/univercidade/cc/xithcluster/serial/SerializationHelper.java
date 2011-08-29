@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.BitSet;
+
 import org.jagatoo.geometry.GeomNioFloatData;
 import org.jagatoo.geometry.GeomNioIntData;
 import org.jagatoo.opengl.enums.BlendFunction;
@@ -21,18 +22,22 @@ import org.jagatoo.opengl.enums.StencilFace;
 import org.jagatoo.opengl.enums.StencilOperation;
 import org.jagatoo.opengl.enums.TestFunction;
 import org.jagatoo.opengl.enums.TexCoordGenMode;
+import org.jagatoo.opengl.enums.TextureBoundaryMode;
 import org.jagatoo.opengl.enums.TextureCombineFunction;
 import org.jagatoo.opengl.enums.TextureCombineMode;
 import org.jagatoo.opengl.enums.TextureCombineSource;
 import org.jagatoo.opengl.enums.TextureCompareMode;
 import org.jagatoo.opengl.enums.TextureFilter;
+import org.jagatoo.opengl.enums.TextureFormat;
+import org.jagatoo.opengl.enums.TextureImageFormat;
+import org.jagatoo.opengl.enums.TextureImageInternalFormat;
 import org.jagatoo.opengl.enums.TextureMode;
+import org.jagatoo.opengl.enums.TextureType;
 import org.openmali.spatial.bounds.BoundingBox;
 import org.openmali.spatial.bounds.BoundingPolytope;
 import org.openmali.spatial.bounds.BoundingSphere;
 import org.openmali.spatial.bounds.Bounds;
 import org.openmali.spatial.bounds.BoundsType;
-import org.openmali.types.twodee.Sized2iRO;
 import org.openmali.vecmath2.Colorf;
 import org.openmali.vecmath2.Matrix4f;
 import org.openmali.vecmath2.Point3f;
@@ -67,25 +72,26 @@ import org.xith3d.scenegraph.TexCoordGeneration;
 import org.xith3d.scenegraph.TexCoordGeneration.CoordMode;
 import org.xith3d.scenegraph.Texture;
 import org.xith3d.scenegraph.Texture2D;
-import org.xith3d.scenegraph.Texture2DCanvas;
 import org.xith3d.scenegraph.Texture3D;
 import org.xith3d.scenegraph.TextureAttributes;
 import org.xith3d.scenegraph.TextureCubeMap;
 import org.xith3d.scenegraph.TextureImage;
+import org.xith3d.scenegraph.TextureImage2D;
+import org.xith3d.scenegraph.TextureImage3D;
 import org.xith3d.scenegraph.TextureUnit;
 import org.xith3d.scenegraph.Transform3D;
 import org.xith3d.scenegraph.TransparencyAttributes;
 import org.xith3d.scenegraph.TriangleArray;
 import org.xith3d.scenegraph.TriangleFanArray;
 import org.xith3d.scenegraph.TriangleStripArray;
+
 import br.edu.univercidade.cc.xithcluster.util.BufferUtils;
 import br.edu.univercidade.cc.xithcluster.util.PrivateAccessor;
 
 public class SerializationHelper {
 	
 	private static final int GT_LINE_STRIP_ARRAY = 1;
-	
-	private static final int GT_TRIANGLE_FAN_ARRAY = 2;
+		private static final int GT_TRIANGLE_FAN_ARRAY = 2;
 	
 	private static final int GT_TRIANGLE_STRIP_ARRAY = 3;
 	
@@ -109,11 +115,9 @@ public class SerializationHelper {
 	
 	private static final int GT_TRIANGLE_ARRAY = 13;
 
-	private static final int TEXTURE_3D = 1;
-
-	private static final int TEXTURE_2D = 2;
-
-	private static final int TEXTURE_CUBE_MAP = 3;
+	private static final int TIT_TEXTURE_IMAGE_2D = 1;
+	
+	private static final int TIT_TEXTURE_IMAGE_3D = 2;
 	
 	private SerializationHelper() {
 	}
@@ -834,144 +838,188 @@ public class SerializationHelper {
 	}
 	
 	public static void writeTexture(DataOutputStream out, Texture texture) throws IOException {
-		Texture2D texture2D;
-		TextureCubeMap textureCubeMap;
 		TextureImage[][] images;
 		
 		if (nullCheck(out, texture)) {
-			if (texture instanceof Texture3D) {
-				out.writeInt(TEXTURE_3D);
+			writeString(out, texture.getName());
+			writeEnum(out, texture.getType());
+			writeEnum(out, texture.getFormat());
+			
+			switch (texture.getType()) {
+			case TEXTURE_2D:
+				out.writeBoolean(((Texture2D) texture).hasUpdateList());
 				
+				break;
+			case TEXTURE_3D:
 				writeEnum(out, ((Texture3D) texture).getBoundaryModeR());
-			} else if (texture instanceof Texture2D) {
-				out.writeInt(TEXTURE_2D);
 				
-				texture2D = (Texture2D) texture;
-				
-				out.writeBoolean(texture2D.hasUpdateList());
-				out.writeBoolean(texture2D.hasTextureCanvas());
-				writeTexture2DCanvas(out, texture2D.getTextureCanvas());
-			} else if (texture instanceof TextureCubeMap) {
-				out.writeInt(TEXTURE_CUBE_MAP);
-				
-				textureCubeMap = (TextureCubeMap) texture;
-				
-				images = (TextureImage[][]) PrivateAccessor.getPrivateField(textureCubeMap, "images");
-				
-				// TODO:
-				for (int i = 0; i < images.length; i++ ) {
-		            for (int j = 0; j < images[i].length; j++ ) {
-		                writeTextureImage(out, images[i][j]);
-		            }
-		        }
-			} else {
+				break;
+			case TEXTURE_CUBE_MAP:
+				// Copying texture images exclusively for TextureCubeMap!
+				images = (TextureImage[][]) PrivateAccessor.getPrivateField((TextureCubeMap) texture, "images");
+				// TODO: Is it ok?
+	            for (int j = 0; j < 6; j++ ) {
+	                writeTextureImage(out, images[j][0]);
+	            }
+	            
+	            break;
+		    default:
 				// TODO:
 				throw new RuntimeException("Unknown texture type");
 			}
 			
-			writeEnum(out, texture.getFormat());
+			if (!texture.getType().equals(TextureType.TEXTURE_CUBE_MAP)) {
+				// Copying texture images for Texture2D and Texture3D!
+				
+				out.writeInt(texture.getImagesCount());
+				for (int i = 0; i < texture.getImagesCount(); i++) {
+					writeTextureImage(out, texture.getImage(i));
+		        }
+			}
+			
 			out.writeBoolean(texture.isEnabled());
 			
-			out.writeInt(texture.getImagesCount());
-			for (int i = 0; i < texture.getImagesCount(); i++) {
-				writeTextureImage(out, texture.getImage(i));
-	        }
-	        
 	        writeEnum(out, texture.getBoundaryModeS());
 	        writeEnum(out, texture.getBoundaryModeT());
 	        writeColorf(out, texture.getBoundaryColor());
 	        
 	        out.writeInt(texture.getBoundaryWidth());
 	        
-	        writeTextureFilter(out, texture.getFilter());
+	        writeEnum(out, texture.getFilter());
 		}
 	}
 	
 	public static Texture readTexture(DataInputStream in) throws IOException {
-		int textureType;
+		Texture texture;
+		String name;
+		TextureType type;
+		TextureFormat format;
 		
 		if (nullCheck(in)) {
-			textureType = in.readInt();
+			name = readString(in);
+			type = readEnum(in, TextureType.values());
+			format = readEnum(in, TextureFormat.values());
 			
-			switch (textureType) {
+			switch (type) {
 			case TEXTURE_2D:
+				texture = new Texture2D(format);
+				
+				((Texture2D) texture).setHasUpdateList(in.readBoolean());
+				
 				break;
 			case TEXTURE_3D:
+				texture = new Texture3D(format);
+				
+				((Texture3D) texture).setBoundaryModeR(readEnum(in, TextureBoundaryMode.values()));
+				
 				break;
 			case TEXTURE_CUBE_MAP:
-				break;
+				// TODO: How to read texture images and use textures here?
+				//CubeTextureSet cubeTextureSet;
+				//cubeTextureSet = new CubeTextureSet(texFront, texRight, texBack, texLeft, texTop, texBottom);
+				//texture = new TextureCubeMap(format, 0, cubeTextureSet);
+				//break;
 			default:
 				// TODO:
 				throw new RuntimeException("Unknown texture type");
 			}
-		}
-		
-		// TODO:
-		
-		return null;
-	}
-	
-	// TODO:
-	public static void writeTexture2DCanvas(DataOutputStream out, Texture2DCanvas textureCanvas) {
-		
-	}
-	
-	// TODO:
-	public static Texture2DCanvas readTexture2DCanvas(DataInputStream in) throws IOException {
-		if (nullCheck(in)) {
-			return null;
+			
+			texture.setName(name);
+			
+			if (!texture.getType().equals(TextureType.TEXTURE_CUBE_MAP)) {
+				int imagesCount = in.readInt();
+				
+				for (int i = 0; i < imagesCount; i++) {
+					texture.setImage(i, readTextureImage(in));
+		        }
+			}
+			
+			texture.setEnabled(in.readBoolean());
+	        
+	        texture.setBoundaryModeS(readEnum(in, TextureBoundaryMode.values()));
+	        texture.setBoundaryModeT(readEnum(in, TextureBoundaryMode.values()));
+	        texture.setBoundaryColor(readColorf(in));
+	        
+	        texture.setBoundaryWidth(in.readInt());
+	        
+	        texture.setFilter(readEnum(in, TextureFilter.values()));
+	        
+	        return texture;
 		} else {
 			return null;
 		}
 	}
 	
-	public static void writeTextureImage(DataOutputStream out, TextureImage image) throws IOException {
-		if (nullCheck(out, image)) {
-			writeEnum(out, image.getFormat());
-			writeEnum(out, image.getInternalFormat());
-			writeSized2iRO(out, image.getSize());
-			writeSized2iRO(out, image.getOriginalSize());
-			out.writeBoolean(image.hasData());
-			// TODO:
+	public static void writeTextureImage(DataOutputStream out, TextureImage textureImage) throws IOException {
+		if (nullCheck(out, textureImage)) {
+			writeString(out, textureImage.getName());
+			writeEnum(out, textureImage.getFormat());
+			out.writeInt(textureImage.getWidth());
+			out.writeInt(textureImage.getHeight());
+			writeByteArray(out, BufferUtils.safeBufferRead(textureImage.getDataBuffer()));
+			
+			if (textureImage instanceof TextureImage2D) {
+				out.writeInt(TIT_TEXTURE_IMAGE_2D);
+				out.writeInt(textureImage.getOriginalWidth());
+				out.writeInt(textureImage.getOriginalHeight());
+				out.writeBoolean((Boolean) PrivateAccessor.getPrivateField(textureImage, "yUp"));
+				writeEnum(out, textureImage.getInternalFormat());
+			} else if (textureImage instanceof TextureImage3D) {
+				out.writeInt(TIT_TEXTURE_IMAGE_3D);
+				out.writeInt(((TextureImage3D) textureImage).getDepth());
+			} else {
+				throw new RuntimeException("Unknown texture image type");
+			}
 		}
 	}
 	
-	// TODO:
 	public static TextureImage readTextureImage(DataInputStream in) throws IOException {
+		TextureImage textureImage;
+		String name;
+		TextureImageFormat format;
+		int width;
+		int height;
+		int originalWidth;
+		int originalHeight;
+		boolean yUp;
+		TextureImageInternalFormat internalFormat;
+		int depth;
+		byte[] imageData;
+		int textureImageType;
+		
 		if (nullCheck(in)) {
-			return null;
-		} else {
-			return null;
-		}
-	}
-	
-	// TODO:
-	public static void writeTextureFilter(DataOutputStream out, TextureFilter filter) throws IOException {
-		if (nullCheck(out, filter)) {
-		}
-	}
-	
-	// TODO:
-	public static TextureFilter readTextureFilter(DataInputStream in) throws IOException {
-		if (nullCheck(in)) {
-			return null;
-		} else {
-			return null;
-		}
-	}
-	
-	// TODO:
-	public static void writeSized2iRO(DataOutputStream out, Sized2iRO size) throws IOException {
-		if (nullCheck(out, size)) {
-			out.writeInt(size.getWidth());
-			out.writeInt(size.getHeight());
-		}
-	}
-	
-	// TODO:
-	public static Sized2iRO readSized2iRO(DataInputStream in) throws IOException {
-		if (nullCheck(in)) {
-			return null;
+			name = readString(in);
+			format = readEnum(in, TextureImageFormat.values());
+			width = in.readInt();
+			height = in.readInt();
+			imageData = readByteArray(in);
+			
+			textureImageType = in.readInt();
+			switch (textureImageType) {
+			case TIT_TEXTURE_IMAGE_2D:
+				originalWidth = in.readInt();
+				originalHeight = in.readInt();
+				yUp = in.readBoolean();
+				internalFormat = readEnum(in, TextureImageInternalFormat.values());
+				
+				textureImage = new TextureImage2D(format, width, height, originalWidth, originalHeight, yUp, internalFormat);
+				
+				((TextureImage2D) textureImage).setImageData(imageData);
+				
+				break;
+			case TIT_TEXTURE_IMAGE_3D:
+				depth = in.readInt();
+				
+				textureImage = new TextureImage3D(format, width, height, depth);
+				
+				break;
+			default:
+				throw new RuntimeException("Unknown texture image type");
+			}
+			
+			textureImage.setName(name);
+			
+			return textureImage;
 		} else {
 			return null;
 		}
@@ -1230,8 +1278,6 @@ public class SerializationHelper {
 	        
 	        out.writeInt(geometryDataContainer.getColorsSize());
 	        out.writeInt(geometryDataContainer.getVertexFormat());
-	        //out.writeBoolean(geometryDataContainer.hasNormals());
-	        //out.writeBoolean(geometryDataContainer.hasColors());
 	        out.writeLong(geometryDataContainer.getNormalsOffset());
 	        out.writeLong(geometryDataContainer.getColorsOffset());
 	        
@@ -1418,8 +1464,6 @@ public class SerializationHelper {
 	        
 	        PrivateAccessor.setPrivateField(geometryDataContainer, "colorsSize", in.readInt());
 	        PrivateAccessor.setPrivateField(geometryDataContainer, "vertexFormat", in.readInt());
-	        //PrivateAccessor.setPrivateField(geometryDataContainer, "hasNormals", in.readBoolean());
-	        //PrivateAccessor.setPrivateField(geometryDataContainer, "hasColors", in.readBoolean());
 	        PrivateAccessor.setPrivateField(geometryDataContainer, "normalsOffset", in.readLong());
 	        PrivateAccessor.setPrivateField(geometryDataContainer, "colorsOffset", in.readLong());
 	        
