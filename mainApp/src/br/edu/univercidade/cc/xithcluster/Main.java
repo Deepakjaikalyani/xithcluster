@@ -3,7 +3,6 @@ package br.edu.univercidade.cc.xithcluster;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
-
 import org.jagatoo.input.devices.components.Key;
 import org.jagatoo.input.events.KeyPressedEvent;
 import org.openmali.vecmath2.Colorf;
@@ -16,7 +15,6 @@ import org.xith3d.scenegraph.StaticTransform;
 import org.xith3d.scenegraph.Texture2D;
 import org.xith3d.scenegraph.Transform3D;
 import org.xith3d.scenegraph.TransformGroup;
-
 import br.edu.univercidade.cc.xithcluster.primitives.Rectangle;
 
 public class Main extends DistributedRenderLoop {
@@ -28,6 +26,7 @@ public class Main extends DistributedRenderLoop {
 		
 		new Xith3DEnvironment(0f, 0f, 5f, 0f, 0f, 0f, 0f, 1f, 0f, this);
 		
+		// TODO:
 		resourceLocator = ResourceLocator.create("resources/");
 		try {
 			resourceLocator.createAndAddTSL("textures");
@@ -49,7 +48,12 @@ public class Main extends DistributedRenderLoop {
 		group1.setName("group1");
 		group2.setName("group2");
 		
-		TransformGroup transformGroup1 = new TransformGroup(new Transform3D(0.3f, 0.3f, 0.5f));
+		Transform3D transform;
+		
+		transform = new Transform3D(0.3f, 0.3f, 0.5f);
+		transform.rotY(15);
+		
+		TransformGroup transformGroup1 = new TransformGroup(transform);
 		transformGroup1.setName("transformGroup1");
 		
 		Texture2D texture2D;
@@ -80,7 +84,11 @@ public class Main extends DistributedRenderLoop {
 		rectangle5.setName("rectangle5");
 		StaticTransform.translate(rectangle5, 0.5f, -0.5f, 0.0f);
 		
+		//Sphere sphere1 = new Sphere(1.2f, 0.5f, -0.5f, 2.0f, 20, 20, Colorf.CYAN);
+		//transformGroup1.addChild(sphere1);
+		
 		group2.addChild(transformGroup1);
+		
 		group2.addChild(rectangle2);
 		group2.addChild(rectangle3);
 		group2.addChild(rectangle4);
