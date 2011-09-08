@@ -1,10 +1,12 @@
 package br.edu.univercidade.cc.xithcluster.comm;
 
 import java.io.IOException;
-import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
 import java.util.List;
+import java.util.Observable;
+import java.util.Observer;
+import org.apache.log4j.Logger;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Light;
 import org.xith3d.scenegraph.View;
@@ -14,43 +16,18 @@ import org.xsocket.connection.INonBlockingConnection;
 import org.xsocket.connection.NonBlockingConnection;
 import br.edu.univercidade.cc.xithcluster.PendingUpdate;
 import br.edu.univercidade.cc.xithcluster.RendererConfiguration;
+import br.edu.univercidade.cc.xithcluster.SceneDeserializer;
 import br.edu.univercidade.cc.xithcluster.SceneManager;
 import br.edu.univercidade.cc.xithcluster.net.xSocketHelper;
-import br.edu.univercidade.cc.xithcluster.serial.pack.GeometriesPackager;
-import br.edu.univercidade.cc.xithcluster.serial.pack.LightSourcesPackager;
-import br.edu.univercidade.cc.xithcluster.serial.pack.PointOfViewPackager;
 import br.edu.univercidade.cc.xithcluster.serial.pack.UpdatesPackager;
 
-public final class RendererNetworkManager implements IDataHandler {
+public final class RendererNetworkManager implements IDataHandler, Observer {
 	
-	private class SceneDataDeserializer implements Runnable {
-		
-		private byte[] pointOfViewData;
-		
-		private byte[] lightSourcesData;
-		
-		private byte[] geometriesData;
-		
-		public void setPackagesData(byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) {
-			this.pointOfViewData = pointOfViewData;
-			this.lightSourcesData = lightSourcesData;
-			this.geometriesData = geometriesData;
-		}
-				
-		@Override
-		public void run() {
-			try {
-				rebuildScene(pointOfViewPackager.deserialize(pointOfViewData), lightSourcesPackager.deserialize(lightSourcesData), geometriesPackager.deserialize(geometriesData));
-			} catch (IOException e) {
-				// TODO:
-				throw new RuntimeException("Error deserializing scene data");
-			}
-		}
-	}
+	private Logger log = Logger.getLogger(RendererNetworkManager.class);
 	
 	private int id = -1;
 	
-	private SceneDataDeserializer sceneDataDeserializer = new SceneDataDeserializer();
+	private SceneDeserializer sceneDeserializer;
 	
 	private INonBlockingConnection masterConnection;
 	
@@ -58,13 +35,7 @@ public final class RendererNetworkManager implements IDataHandler {
 	
 	private UpdatesPackager updatesPackager = new UpdatesPackager();
 	
-	private PointOfViewPackager pointOfViewPackager = new PointOfViewPackager();
-	
-	private LightSourcesPackager lightSourcesPackager = new LightSourcesPackager();
-	
-	private GeometriesPackager geometriesPackager = new GeometriesPackager();
-	
-	private Thread dataDeserializationThread;
+	private Thread sceneDeserializationThread;
 	
 	private boolean sessionStarted = false;
 	
@@ -76,6 +47,9 @@ public final class RendererNetworkManager implements IDataHandler {
 	
 	public RendererNetworkManager(SceneManager sceneManager) {
 		this.sceneManager = sceneManager;
+		
+		sceneDeserializer = new SceneDeserializer();
+		sceneDeserializer.addObserver(this);
 	}
 	
 	public void initialize() {
@@ -89,7 +63,7 @@ public final class RendererNetworkManager implements IDataHandler {
 	}
 	
 	private void setId(int id) {
-		sceneManager.setId(id);
+		this.id = id;
 	}
 	
 	private void rebuildScene(View view, List<Light> lightSources, BranchGroup geometries) {
@@ -117,13 +91,19 @@ public final class RendererNetworkManager implements IDataHandler {
 		
 		return param0;
 	}
+	
+	public void notifySessionStarted() {
+		try {
+			xSocketHelper.write(masterConnection, RendererMessages.SESSION_STARTED);
+		} catch (IOException e) {
+			// TODO:
+			e.printStackTrace();
+		}
+	}
 
 	public void notifyFrameFinished() {
 		try {
 			xSocketHelper.write(masterConnection, RendererMessages.FRAME_FINISHED);
-		} catch (BufferOverflowException e) {
-			// TODO:
-			e.printStackTrace();
 		} catch (IOException e) {
 			// TODO:
 			e.printStackTrace();
@@ -133,72 +113,113 @@ public final class RendererNetworkManager implements IDataHandler {
 	@Override
 	public boolean onData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
 		String message;
+		int id;
 		byte[] pointOfViewData;
 		byte[] lightSourcesData;
 		byte[] geometriesData;
 		
-		try {
-			message = xSocketHelper.readString(arg0);
-			
-			if (ClusterMessages.SESSION_STARTED.equals(message)) {
-				sessionStarted = false;
-				
-				// TODO: Check if this is needed!
-				if (dataDeserializationThread != null) {
-					dataDeserializationThread.interrupt();
-					
-					while (dataDeserializationThread.isInterrupted()) {
-						try {
-							Thread.sleep(100L);
-						} catch (InterruptedException e) {
-						}
-					}
-				}
-				
-				id = xSocketHelper.readInt(arg0);
-				pointOfViewData = xSocketHelper.readBytes(arg0);
-				lightSourcesData = xSocketHelper.readBytes(arg0);
-				geometriesData = xSocketHelper.readBytes(arg0);
-				
-				// DEBUG:
-				System.out.println("Received id: " + id);
-				System.out.println("POV data: " + pointOfViewData.length + " bytes received");
-				System.out.println("Light sources data: " + lightSourcesData.length + " bytes received");
-				System.out.println("Geometries data: " + geometriesData.length + " bytes received");
-				
-				sceneDataDeserializer.setPackagesData(pointOfViewData, lightSourcesData, geometriesData);
-				
-				dataDeserializationThread = new Thread(sceneDataDeserializer);
-				dataDeserializationThread.start();
-				
-				setId(id);
-				
-				// DEBUG:
-				System.out.println("Session started successfully");
-				
-				sessionStarted = true;
-			} else if (ClusterMessages.START_FRAME.equals(message)) {
-				if (sessionStarted) {
-					synchronized (startFrameLock) {
-						startFrame = true;
-					}
-				} else {
-					// DEBUG:
-					System.err.println("Cannot render frame before starting a session");
-				}
-			} else if (ClusterMessages.UPDATE.equals(message)) {
-				if (sessionStarted) {
-					updateScene(updatesPackager.deserialize(xSocketHelper.readBytes(arg0)));
-				} else {
-					// DEBUG:
-					System.err.println("Cannot update scene before starting a session");
-				}
-			}
-		} catch (IOException e) {
-			// TODO:
-			throw new RuntimeException("Error receiving message");
-		}
+		message = xSocketHelper.readString(arg0);
 		
-		return true;
+		if (ClusterMessages.SESSION_STARTED.equals(message)) {
+			sessionStarted = false;
+			
+			log.debug("***************");
+			log.debug("Session started");
+			log.debug("***************");
+			
+			if (isParallelSceneDeserializationHappening()) {
+				interruptParallelSceneDeserialization();
+			}
+			
+			id = xSocketHelper.readInt(arg0);
+			pointOfViewData = xSocketHelper.readBytes(arg0);
+			lightSourcesData = xSocketHelper.readBytes(arg0);
+			geometriesData = xSocketHelper.readBytes(arg0);
+			
+			log.trace("Received id: " + id);
+			log.trace("POV data size: " + pointOfViewData.length + " bytes");
+			log.trace("Light sources data size: " + lightSourcesData.length + " bytes");
+			log.trace("Geometries data size: " + geometriesData.length + " bytes");
+			
+			setId(id);
+			
+			notifySceneIdChange();
+			
+			startParallelSceneDeserialization(pointOfViewData, lightSourcesData, geometriesData);
+			
+			log.info("Session started successfully");
+			
+			return true;
+		} else if (ClusterMessages.START_FRAME.equals(message)) {
+			if (sessionStarted) {
+				synchronized (startFrameLock) {
+					startFrame = true;
+				}
+				
+				return true;
+			} else {
+				log.error("Cannot render frame before starting a session");
+				
+				return false;
+			}
+		} else if (ClusterMessages.UPDATE.equals(message)) {
+			if (sessionStarted) {
+				updateScene(updatesPackager.deserialize(xSocketHelper.readBytes(arg0)));
+				
+				return true;
+			} else {
+				log.error("Cannot update scene before starting a session");
+				
+				return false;
+			}
+		} else {
+			log.error("Unknown message received: " + message);
+			
+			return false;
+		}
+	}
+
+	private void notifySceneIdChange() {
+		sceneManager.setId(id);
+	}
+
+	private void startParallelSceneDeserialization(byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) {
+		sceneDeserializer.setPackagesData(pointOfViewData, lightSourcesData, geometriesData);
+		
+		sceneDeserializationThread = new Thread(sceneDeserializer);
+		sceneDeserializationThread.start();
+	}
+
+	private void interruptParallelSceneDeserialization() {
+		sceneDeserializationThread.interrupt();
+		
+		while (sceneDeserializationThread.isInterrupted()) {
+			try {
+				Thread.sleep(100L);
+			} catch (InterruptedException e) {
+			}
+		}
+	}
+
+	private boolean isParallelSceneDeserializationHappening() {
+		return sceneDeserializationThread != null;
+	}
+
+	@Override
+	public void update(Observable o, Object arg) {
+		SceneDeserializer.DeserializationResult result;
+		
+		if (o == sceneDeserializer) {
+			/* Scene rebuilding is an operation that should never cause "abends" 
+			 * so we should never prevent the cluster session to be started because of it. 
+			 */
+			notifySessionStarted();
+			
+			sessionStarted = true;
+			
+			result = (SceneDeserializer.DeserializationResult) arg;
+			
+			rebuildScene(result.getView(), result.getLightSources(), result.getGeometries());
+		}
 	}
 }

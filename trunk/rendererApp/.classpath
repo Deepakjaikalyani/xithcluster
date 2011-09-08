@@ -22,5 +22,6 @@
 	<classpathentry kind="lib" path="/xithcluster/lib/xSocket-2.8.14.jar"/>
 	<classpathentry kind="lib" path="/xithcluster/lib/xith3d.jar"/>
 	<classpathentry kind="lib" path="/xithcluster/lib/swt-windows.jar"/>
+	<classpathentry kind="lib" path="/xithcluster/lib/log4j-1.2.16.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

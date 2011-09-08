@@ -1,4 +1,4 @@
-package br.edu.univercidade.cc.xithcluster.util.nio;
+package br.edu.univercidade.cc.xithcluster.util;
 
 import java.nio.FloatBuffer;
 import java.util.Arrays;

@@ -5,5 +5,7 @@ public abstract class RendererMessages extends Messages {
 	public static final String NEW_IMAGE = "NEW_IMAGE";
 	
 	public static final String FRAME_FINISHED = "FRAME_FINISHED";
+
+	public static final String SESSION_STARTED = "SUCCESSFUL_SESSION_START";
 	
 }

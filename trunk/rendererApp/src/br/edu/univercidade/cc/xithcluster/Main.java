@@ -1,6 +1,8 @@
 package br.edu.univercidade.cc.xithcluster;
 
+import java.io.File;
 import java.util.List;
+import org.apache.log4j.xml.DOMConfigurator;
 import org.jagatoo.input.InputSystem;
 import org.jagatoo.input.InputSystemException;
 import org.jagatoo.input.devices.components.Key;
@@ -18,6 +20,8 @@ import br.edu.univercidade.cc.xithcluster.comm.RendererNetworkManager;
 
 public class Main extends InputAdapterRenderLoop implements SceneManager {
 	
+	private static final String LOG4J_CONFIGURATION_FILE = "log4j.xml";
+	
 	private static final String APP_TITLE = "Renderer";
 	
 	private static final int WIDTH = 800;
@@ -34,13 +38,15 @@ public class Main extends InputAdapterRenderLoop implements SceneManager {
 	
 	private final Object sceneLock = new Object();
 	
-	public Main() throws InputSystemException {
+	public Main() {
 		super(120f);
 		
 		Canvas3D canvas;
 		Xith3DEnvironment xith3DEnvironment;
 		/*Renderer renderer;
 		RenderPassConfig renderPassConfig;*/
+		
+		initializeLog4j();
 		
 		xith3DEnvironment = new Xith3DEnvironment(this);
 		xith3DEnvironment.addCanvas(canvas = Canvas3DFactory.createWindowed(WIDTH, HEIGHT, APP_TITLE));
@@ -64,9 +70,21 @@ public class Main extends InputAdapterRenderLoop implements SceneManager {
 
 		canvas.addWindowClosingListener(new WindowClosingRenderLoopEnder(this));
 		
-		InputSystem.getInstance().registerNewKeyboardAndMouse(canvas.getPeer());
+		try {
+			InputSystem.getInstance().registerNewKeyboardAndMouse(canvas.getPeer());
+		} catch (InputSystemException e) {
+			throw new RuntimeException("Error registering new keyboard and mouse", e);
+		}
 	}
 	
+	private void initializeLog4j() {
+		if (new File(LOG4J_CONFIGURATION_FILE).exists()) {
+			DOMConfigurator.configure(LOG4J_CONFIGURATION_FILE);
+		} else {
+			System.err.println("Log4j not initialized: \"xithcluster-log4j.xml\" could not be found");
+		}
+	}
+
 	@Override
 	protected void loopIteration(long gameTime, long frameTime, TimingMode timingMode) {
 		super.prepareNextFrame(gameTime, frameTime, timingMode);
@@ -100,7 +118,7 @@ public class Main extends InputAdapterRenderLoop implements SceneManager {
 	
 	@Override
 	public void setId(int id) {
-		getXith3DEnvironment().getCanvas().setTitle(APP_TITLE + "[id=" + id + "]");
+		//getXith3DEnvironment().getCanvas().setTitle(APP_TITLE + "[id=" + id + "]");
 	}
 	
 	@Override
