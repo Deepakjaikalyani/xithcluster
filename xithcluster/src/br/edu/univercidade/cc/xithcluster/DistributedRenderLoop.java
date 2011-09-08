@@ -1,8 +1,11 @@
 package br.edu.univercidade.cc.xithcluster;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.List;
+import javax.xml.parsers.FactoryConfigurationError;
+import org.apache.log4j.xml.DOMConfigurator;
 import org.openmali.vecmath2.Tuple3f;
 import org.xith3d.base.Xith3DEnvironment;
 import org.xith3d.loop.InputAdapterRenderLoop;
@@ -15,6 +18,8 @@ import br.edu.univercidade.cc.xithcluster.comm.MasterNetworkManager;
 
 public class DistributedRenderLoop extends InputAdapterRenderLoop implements SceneManager {
 	
+	private static final String LOG4J_CONFIGURATION_FILE = "xithcluster-log4j.xml";
+
 	private UpdateManager updateManager;
 	
 	private MasterNetworkManager networkManager;
@@ -49,6 +54,8 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 	
 	@Override
 	public void begin(RunMode runMode, TimingMode timingMode) {
+		initializeLog4j();
+		
 		if (distributionStrategy == null) {
 			// TODO:
 			throw new RuntimeException("You must set a distribution strategy");
@@ -69,12 +76,20 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 			throw new RuntimeException("Error starting network manager", e);
 		}
 	}
+
+	private void initializeLog4j() throws FactoryConfigurationError {
+		if (new File(LOG4J_CONFIGURATION_FILE).exists()) {
+			DOMConfigurator.configure(LOG4J_CONFIGURATION_FILE);
+		} else {
+			System.err.println("Log4j not initialized: \"xithcluster-log4j.xml\" could not be found");
+		}
+	}
 	
 	@Override
 	protected void loopIteration(long gameTime, long frameTime, UpdatingThread.TimingMode timingMode) {
 		int framesToSkip;
 		
-		if (networkManager.hasChanged()) {
+		if (!networkManager.hasStartedSession()) {
 			if (networkManager.startNewSession()) {
 				return;
 			}
