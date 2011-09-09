@@ -11,11 +11,8 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.Arrays;
 import java.util.BitSet;
-
 import javax.imageio.ImageIO;
-
 import junit.framework.Assert;
-
 import org.jagatoo.opengl.enums.BlendFunction;
 import org.jagatoo.opengl.enums.BlendMode;
 import org.jagatoo.opengl.enums.ColorTarget;
@@ -76,7 +73,7 @@ import org.xith3d.scenegraph.TextureUnit;
 import org.xith3d.scenegraph.Transform3D;
 import org.xith3d.scenegraph.TransparencyAttributes;
 import org.xith3d.scenegraph.TriangleStripArray;
-
+import br.edu.univercidade.cc.xithcluster.serialization.SerializationHelper;
 import br.edu.univercidade.cc.xithcluster.util.BufferUtils;
 import br.edu.univercidade.cc.xithcluster.util.PrivateAccessor;
 
