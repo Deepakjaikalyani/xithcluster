@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import org.junit.Test;
 import org.xith3d.scenegraph.Node;
+import br.edu.univercidade.cc.xithcluster.serialization.Serializer;
+import br.edu.univercidade.cc.xithcluster.serialization.SerializerRegistry;
 
 public abstract class SerializerTester<T extends Node> {
 	
