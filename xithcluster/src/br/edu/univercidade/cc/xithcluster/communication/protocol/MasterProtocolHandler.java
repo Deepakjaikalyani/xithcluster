@@ -14,7 +14,7 @@ import org.xsocket.connection.INonBlockingConnection;
 import br.edu.univercidade.cc.xithcluster.Configuration;
 import br.edu.univercidade.cc.xithcluster.communication.MasterNetworkManager;
 
-public class MasterProtocolHandler implements IConnectHandler, IDataHandler, IDisconnectHandler {
+public final class MasterProtocolHandler implements IConnectHandler, IDataHandler, IDisconnectHandler {
 
 	private Logger log = Logger.getLogger(MasterNetworkManager.class);
 	
@@ -22,24 +22,6 @@ public class MasterProtocolHandler implements IConnectHandler, IDataHandler, IDi
 	
 	public MasterProtocolHandler(MasterNetworkManager networkManager) {
 		this.masterNetworkManager = networkManager;
-	}
-	
-	private RecordType readRecordType(INonBlockingConnection connection) throws IOException {
-		final RecordType[] recordTypes = RecordType.values();
-		RecordType recordType;
-		
-		recordType = null;
-		
-		connection.markReadPosition();
-		try {
-			recordType = recordTypes[connection.readInt()];
-			
-			connection.removeReadMark();
-		} catch (BufferUnderflowException e) {
-			connection.resetToReadMark();
-		}
-		
-		return recordType;
 	}
 	
 	private boolean isRendererConnection(INonBlockingConnection arg0) {
@@ -75,7 +57,7 @@ public class MasterProtocolHandler implements IConnectHandler, IDataHandler, IDi
 	public boolean onData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
 		RecordType recordType;
 		
-		recordType = readRecordType(arg0);
+		recordType = ProtocolHelper.readRecordType(arg0);
 		
 		if (recordType == null) {
 			return true;
