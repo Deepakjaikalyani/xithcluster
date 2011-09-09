@@ -14,7 +14,7 @@ import org.xith3d.loop.opscheduler.OperationScheduler;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Light;
 import org.xith3d.scenegraph.View;
-import br.edu.univercidade.cc.xithcluster.comm.MasterNetworkManager;
+import br.edu.univercidade.cc.xithcluster.communication.MasterNetworkManager;
 
 public class DistributedRenderLoop extends InputAdapterRenderLoop implements SceneManager {
 	
@@ -89,7 +89,7 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 	protected void loopIteration(long gameTime, long frameTime, UpdatingThread.TimingMode timingMode) {
 		int framesToSkip;
 		
-		if (!networkManager.hasStartedSession()) {
+		if (networkManager.hasChanged()) {
 			if (networkManager.startNewSession()) {
 				return;
 			}
