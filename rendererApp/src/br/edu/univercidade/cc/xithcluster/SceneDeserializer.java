@@ -6,9 +6,9 @@ import java.util.Observable;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Light;
 import org.xith3d.scenegraph.View;
-import br.edu.univercidade.cc.xithcluster.serial.pack.GeometriesPackager;
-import br.edu.univercidade.cc.xithcluster.serial.pack.LightSourcesPackager;
-import br.edu.univercidade.cc.xithcluster.serial.pack.PointOfViewPackager;
+import br.edu.univercidade.cc.xithcluster.serialization.packagers.GeometriesPackager;
+import br.edu.univercidade.cc.xithcluster.serialization.packagers.LightSourcesPackager;
+import br.edu.univercidade.cc.xithcluster.serialization.packagers.PointOfViewPackager;
 
 public class SceneDeserializer extends Observable implements Runnable {
 	

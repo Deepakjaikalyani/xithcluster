@@ -18,8 +18,9 @@ import br.edu.univercidade.cc.xithcluster.PendingUpdate;
 import br.edu.univercidade.cc.xithcluster.RendererConfiguration;
 import br.edu.univercidade.cc.xithcluster.SceneDeserializer;
 import br.edu.univercidade.cc.xithcluster.SceneManager;
-import br.edu.univercidade.cc.xithcluster.net.xSocketHelper;
-import br.edu.univercidade.cc.xithcluster.serial.pack.UpdatesPackager;
+import br.edu.univercidade.cc.xithcluster.communication.protocol.ProtocolHelper;
+import br.edu.univercidade.cc.xithcluster.communication.protocol.RecordType;
+import br.edu.univercidade.cc.xithcluster.serialization.packagers.UpdatesPackager;
 
 public final class RendererNetworkManager implements IDataHandler, Observer {
 	
@@ -31,7 +32,7 @@ public final class RendererNetworkManager implements IDataHandler, Observer {
 	
 	private INonBlockingConnection masterConnection;
 	
-	//private IBlockingConnection composerConnection;
+	//private INonBlockingConnection composerConnection;
 	
 	private UpdatesPackager updatesPackager = new UpdatesPackager();
 	
@@ -43,8 +44,6 @@ public final class RendererNetworkManager implements IDataHandler, Observer {
 	
 	private SceneManager sceneManager;
 	
-	private final Object startFrameLock = new Object();
-	
 	public RendererNetworkManager(SceneManager sceneManager) {
 		this.sceneManager = sceneManager;
 		
@@ -55,7 +54,10 @@ public final class RendererNetworkManager implements IDataHandler, Observer {
 	public void initialize() {
 		try {
 			masterConnection = new NonBlockingConnection(RendererConfiguration.masterHostname, RendererConfiguration.masterPort, this);
-			//composerConnection = new BlockingConnection(RendererConfiguration.composerHostname, RendererConfiguration.composerPort);
+			masterConnection.setAutoflush(false);
+			
+			//composerConnection = new NonBlockingConnection(RendererConfiguration.composerHostname, RendererConfiguration.composerPort);
+			//composerConnection.setAutoflush(false);
 		} catch (IOException e) {
 			// TODO:
 			throw new RuntimeException("Error trying to connecting to the cluster", e);
@@ -77,50 +79,99 @@ public final class RendererNetworkManager implements IDataHandler, Observer {
 	
 	private void updateScene(List<PendingUpdate> pendingUpdates) {
 		// TODO:
-		synchronized (startFrameLock) {
-		}
 	}
 	
-	public boolean startFrame() {
+	public synchronized boolean startFrame() {
 		boolean param0;
 		
-		synchronized (startFrameLock) {
-			param0 = startFrame;
-			startFrame = false;
-		}
+		param0 = startFrame;
+		startFrame = false;
 		
 		return param0;
 	}
 	
 	public void notifySessionStarted() {
 		try {
-			xSocketHelper.write(masterConnection, RendererMessages.SESSION_STARTED);
+			ProtocolHelper.writeRecord(masterConnection, RecordType.SESSION_STARTED);
 		} catch (IOException e) {
-			// TODO:
-			e.printStackTrace();
+			log.error("Error notifying master node that session started successfully", e);
 		}
 	}
 
 	public void notifyFrameFinished() {
 		try {
-			xSocketHelper.write(masterConnection, RendererMessages.FRAME_FINISHED);
+			ProtocolHelper.writeRecord(masterConnection, RecordType.FRAME_FINISHED);
 		} catch (IOException e) {
-			// TODO:
-			e.printStackTrace();
+			log.error("Error notifying master node that thet current frame was finished", e);
 		}
 	}
 
 	@Override
 	public boolean onData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
-		String message;
+		RecordType recordType;
+		
+		recordType = ProtocolHelper.readRecordType(arg0);
+		
+		if (recordType == null) {
+			return true;
+		}
+		
+		switch (recordType) {
+		case START_SESSION:
+			return onStartSession(arg0);
+		case START_FRAME:
+			return onStartFrame();
+		case UPDATE:
+			return onUpdate(arg0);
+		default:
+			log.error("Invalid/Unknown record");
+			
+			return false;
+		}
+	}
+
+	private synchronized boolean onUpdate(INonBlockingConnection arg0) throws IOException {
+		Object[] fields;
+		
+		fields = ProtocolHelper.readRecordFields(arg0, byte[].class);
+		
+		if (fields != null) {
+			if (sessionStarted) {
+				updateScene(updatesPackager.deserialize((byte[]) fields[0]));
+				
+				return true;
+			} else {
+				log.error("Cannot update scene before starting a session");
+				
+				return false;
+			}
+		} else {
+			return true;
+		}
+	}
+
+	private synchronized boolean onStartFrame() {
+		if (sessionStarted) {
+			startFrame = true;
+			
+			return true;
+		} else {
+			log.error("Cannot render frame before starting a session");
+			
+			return false;
+		}
+	}
+
+	private synchronized boolean onStartSession(INonBlockingConnection arg0) throws IOException {
+		Object[] fields;
 		int id;
 		byte[] pointOfViewData;
 		byte[] lightSourcesData;
 		byte[] geometriesData;
 		
-		message = xSocketHelper.readString(arg0);
+		fields = ProtocolHelper.readRecordFields(arg0, Integer.class, byte[].class, byte[].class, byte[].class);
 		
-		if (ClusterMessages.SESSION_STARTED.equals(message)) {
+		if (fields != null) {
 			sessionStarted = false;
 			
 			log.debug("***************");
@@ -131,10 +182,10 @@ public final class RendererNetworkManager implements IDataHandler, Observer {
 				interruptParallelSceneDeserialization();
 			}
 			
-			id = xSocketHelper.readInt(arg0);
-			pointOfViewData = xSocketHelper.readBytes(arg0);
-			lightSourcesData = xSocketHelper.readBytes(arg0);
-			geometriesData = xSocketHelper.readBytes(arg0);
+			id = (Integer) fields[0];
+			pointOfViewData = (byte[]) fields[1];
+			lightSourcesData = (byte[]) fields[2];
+			geometriesData = (byte[]) fields[3];
 			
 			log.trace("Received id: " + id);
 			log.trace("POV data size: " + pointOfViewData.length + " bytes");
@@ -148,35 +199,9 @@ public final class RendererNetworkManager implements IDataHandler, Observer {
 			startParallelSceneDeserialization(pointOfViewData, lightSourcesData, geometriesData);
 			
 			log.info("Session started successfully");
-			
-			return true;
-		} else if (ClusterMessages.START_FRAME.equals(message)) {
-			if (sessionStarted) {
-				synchronized (startFrameLock) {
-					startFrame = true;
-				}
-				
-				return true;
-			} else {
-				log.error("Cannot render frame before starting a session");
-				
-				return false;
-			}
-		} else if (ClusterMessages.UPDATE.equals(message)) {
-			if (sessionStarted) {
-				updateScene(updatesPackager.deserialize(xSocketHelper.readBytes(arg0)));
-				
-				return true;
-			} else {
-				log.error("Cannot update scene before starting a session");
-				
-				return false;
-			}
-		} else {
-			log.error("Unknown message received: " + message);
-			
-			return false;
 		}
+		
+		return true;
 	}
 
 	private void notifySceneIdChange() {

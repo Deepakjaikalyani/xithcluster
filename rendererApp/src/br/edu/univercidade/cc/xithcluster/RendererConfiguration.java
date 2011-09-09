@@ -12,7 +12,7 @@ public final class RendererConfiguration {
 
 	private static final Integer DEFAULT_MASTER_PORT = 10000;
 
-	private static final Integer DEFAULT_COMPOSER_PORT = 30000;
+	private static final Integer DEFAULT_COMPOSER_PORT = 20000;
 	
 	public static String masterHostname;
 	
