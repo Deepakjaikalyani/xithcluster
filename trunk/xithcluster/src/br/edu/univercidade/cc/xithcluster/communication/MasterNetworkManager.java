@@ -69,8 +69,7 @@ public final class MasterNetworkManager {
 		this.sceneManager = sceneManager;
 		this.updateManager = updateManager;
 		this.distributionStrategy = distributionStrategy;
-		
-		masterProtocolHandler = new MasterProtocolHandler(this);
+		this.masterProtocolHandler = new MasterProtocolHandler(this);
 	}
 	
 	public void initialize() throws UnknownHostException, IOException {

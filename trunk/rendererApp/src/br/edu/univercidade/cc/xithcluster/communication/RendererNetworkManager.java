@@ -1,8 +1,6 @@
 package br.edu.univercidade.cc.xithcluster.communication;
 
 import java.io.IOException;
-import java.nio.BufferUnderflowException;
-import java.nio.channels.ClosedChannelException;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
@@ -10,8 +8,6 @@ import org.apache.log4j.Logger;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Light;
 import org.xith3d.scenegraph.View;
-import org.xsocket.MaxReadSizeExceededException;
-import org.xsocket.connection.IDataHandler;
 import org.xsocket.connection.INonBlockingConnection;
 import org.xsocket.connection.NonBlockingConnection;
 import br.edu.univercidade.cc.xithcluster.PendingUpdate;
@@ -20,19 +16,20 @@ import br.edu.univercidade.cc.xithcluster.SceneDeserializer;
 import br.edu.univercidade.cc.xithcluster.SceneManager;
 import br.edu.univercidade.cc.xithcluster.communication.protocol.ProtocolHelper;
 import br.edu.univercidade.cc.xithcluster.communication.protocol.RecordType;
+import br.edu.univercidade.cc.xithcluster.communication.protocol.RendererProtocolHandler;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.UpdatesPackager;
 
-public final class RendererNetworkManager implements IDataHandler, Observer {
+public final class RendererNetworkManager implements Observer {
 	
 	private Logger log = Logger.getLogger(RendererNetworkManager.class);
 	
 	private int id = -1;
 	
-	private SceneDeserializer sceneDeserializer;
+	private SceneDeserializer sceneDeserializer = new SceneDeserializer();
 	
 	private INonBlockingConnection masterConnection;
 	
-	//private INonBlockingConnection composerConnection;
+	// private INonBlockingConnection composerConnection;
 	
 	private UpdatesPackager updatesPackager = new UpdatesPackager();
 	
@@ -44,20 +41,23 @@ public final class RendererNetworkManager implements IDataHandler, Observer {
 	
 	private SceneManager sceneManager;
 	
+	private RendererProtocolHandler rendererProtocolHandler;
+	
 	public RendererNetworkManager(SceneManager sceneManager) {
 		this.sceneManager = sceneManager;
-		
-		sceneDeserializer = new SceneDeserializer();
-		sceneDeserializer.addObserver(this);
+		this.sceneDeserializer.addObserver(this);
+		this.rendererProtocolHandler = new RendererProtocolHandler(this);
 	}
 	
 	public void initialize() {
 		try {
-			masterConnection = new NonBlockingConnection(RendererConfiguration.masterHostname, RendererConfiguration.masterPort, this);
+			masterConnection = new NonBlockingConnection(RendererConfiguration.masterHostname, RendererConfiguration.masterPort, rendererProtocolHandler);
 			masterConnection.setAutoflush(false);
 			
-			//composerConnection = new NonBlockingConnection(RendererConfiguration.composerHostname, RendererConfiguration.composerPort);
-			//composerConnection.setAutoflush(false);
+			// composerConnection = new
+			// NonBlockingConnection(RendererConfiguration.composerHostname,
+			// RendererConfiguration.composerPort);
+			// composerConnection.setAutoflush(false);
 		} catch (IOException e) {
 			// TODO:
 			throw new RuntimeException("Error trying to connecting to the cluster", e);
@@ -92,65 +92,33 @@ public final class RendererNetworkManager implements IDataHandler, Observer {
 	
 	public void notifySessionStarted() {
 		try {
-			ProtocolHelper.writeRecord(masterConnection, RecordType.SESSION_STARTED);
+			rendererProtocolHandler.sendSessionStartedMessage(masterConnection); 
 		} catch (IOException e) {
 			log.error("Error notifying master node that session started successfully", e);
 		}
 	}
-
+	
 	public void notifyFrameFinished() {
 		try {
-			ProtocolHelper.writeRecord(masterConnection, RecordType.FRAME_FINISHED);
+			rendererProtocolHandler.sendFrameFinishedMessage(masterConnection);
 		} catch (IOException e) {
 			log.error("Error notifying master node that thet current frame was finished", e);
 		}
 	}
-
-	@Override
-	public boolean onData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
-		RecordType recordType;
-		
-		recordType = ProtocolHelper.readRecordType(arg0);
-		
-		if (recordType == null) {
+	
+	public synchronized boolean onUpdate(byte[] updatesData) throws IOException {
+		if (sessionStarted) {
+			updateScene(updatesPackager.deserialize(updatesData));
+			
 			return true;
-		}
-		
-		switch (recordType) {
-		case START_SESSION:
-			return onStartSession(arg0);
-		case START_FRAME:
-			return onStartFrame();
-		case UPDATE:
-			return onUpdate(arg0);
-		default:
-			log.error("Invalid/Unknown record");
+		} else {
+			log.error("Cannot update scene before starting a session");
 			
 			return false;
 		}
 	}
-
-	private synchronized boolean onUpdate(INonBlockingConnection arg0) throws IOException {
-		Object[] fields;
-		
-		fields = ProtocolHelper.readRecordFields(arg0, byte[].class);
-		
-		if (fields != null) {
-			if (sessionStarted) {
-				updateScene(updatesPackager.deserialize((byte[]) fields[0]));
-				
-				return true;
-			} else {
-				log.error("Cannot update scene before starting a session");
-				
-				return false;
-			}
-		} else {
-			return true;
-		}
-	}
-
-	private synchronized boolean onStartFrame() {
+	
+	public synchronized boolean onStartFrame() {
 		if (sessionStarted) {
 			startFrame = true;
 			
@@ -161,60 +129,43 @@ public final class RendererNetworkManager implements IDataHandler, Observer {
 			return false;
 		}
 	}
-
-	private synchronized boolean onStartSession(INonBlockingConnection arg0) throws IOException {
-		Object[] fields;
-		int id;
-		byte[] pointOfViewData;
-		byte[] lightSourcesData;
-		byte[] geometriesData;
+	
+	public synchronized void onStartSession(int id, byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) throws IOException {
+		sessionStarted = false;
 		
-		fields = ProtocolHelper.readRecordFields(arg0, Integer.class, byte[].class, byte[].class, byte[].class);
+		log.debug("***************");
+		log.debug("Session started");
+		log.debug("***************");
 		
-		if (fields != null) {
-			sessionStarted = false;
-			
-			log.debug("***************");
-			log.debug("Session started");
-			log.debug("***************");
-			
-			if (isParallelSceneDeserializationHappening()) {
-				interruptParallelSceneDeserialization();
-			}
-			
-			id = (Integer) fields[0];
-			pointOfViewData = (byte[]) fields[1];
-			lightSourcesData = (byte[]) fields[2];
-			geometriesData = (byte[]) fields[3];
-			
-			log.trace("Received id: " + id);
-			log.trace("POV data size: " + pointOfViewData.length + " bytes");
-			log.trace("Light sources data size: " + lightSourcesData.length + " bytes");
-			log.trace("Geometries data size: " + geometriesData.length + " bytes");
-			
-			setId(id);
-			
-			notifySceneIdChange();
-			
-			startParallelSceneDeserialization(pointOfViewData, lightSourcesData, geometriesData);
-			
-			log.info("Session started successfully");
+		if (isParallelSceneDeserializationHappening()) {
+			interruptParallelSceneDeserialization();
 		}
 		
-		return true;
+		log.trace("Received id: " + id);
+		log.trace("POV data size: " + pointOfViewData.length + " bytes");
+		log.trace("Light sources data size: " + lightSourcesData.length + " bytes");
+		log.trace("Geometries data size: " + geometriesData.length + " bytes");
+		
+		setId(id);
+		
+		notifySceneIdChange();
+		
+		startParallelSceneDeserialization(pointOfViewData, lightSourcesData, geometriesData);
+		
+		log.info("Session started successfully");
 	}
-
+	
 	private void notifySceneIdChange() {
 		sceneManager.setId(id);
 	}
-
+	
 	private void startParallelSceneDeserialization(byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) {
 		sceneDeserializer.setPackagesData(pointOfViewData, lightSourcesData, geometriesData);
 		
 		sceneDeserializationThread = new Thread(sceneDeserializer);
 		sceneDeserializationThread.start();
 	}
-
+	
 	private void interruptParallelSceneDeserialization() {
 		sceneDeserializationThread.interrupt();
 		
@@ -225,18 +176,20 @@ public final class RendererNetworkManager implements IDataHandler, Observer {
 			}
 		}
 	}
-
+	
 	private boolean isParallelSceneDeserializationHappening() {
 		return sceneDeserializationThread != null;
 	}
-
+	
 	@Override
 	public void update(Observable o, Object arg) {
 		SceneDeserializer.DeserializationResult result;
 		
 		if (o == sceneDeserializer) {
-			/* Scene rebuilding is an operation that should never cause "abends" 
-			 * so we should never prevent the cluster session to be started because of it. 
+			/*
+			 * Scene rebuilding is an operation that should never cause "abends"
+			 * so we should never prevent the cluster session to be started
+			 * because of it.
 			 */
 			notifySessionStarted();
 			
