@@ -16,7 +16,7 @@ import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Light;
 import org.xith3d.scenegraph.View;
 import org.xith3d.utility.events.WindowClosingRenderLoopEnder;
-import br.edu.univercidade.cc.xithcluster.comm.RendererNetworkManager;
+import br.edu.univercidade.cc.xithcluster.communication.RendererNetworkManager;
 
 public class Main extends InputAdapterRenderLoop implements SceneManager {
 	
