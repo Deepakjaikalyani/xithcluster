@@ -32,12 +32,16 @@ public final class MasterProtocolHandler implements IConnectHandler, IDataHandle
 		return arg0.getLocalPort() == Configuration.composerListeningPort;
 	}
 	
-	public void sendStartSessionMessage(INonBlockingConnection rendererConnection, byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) throws IOException, ClosedChannelException, SocketTimeoutException {
+	public void sendStartSessionMessage(INonBlockingConnection rendererConnection, int rendererIndex, byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) throws IOException, ClosedChannelException, SocketTimeoutException {
 		rendererConnection.write(RecordType.START_SESSION.ordinal());
 		rendererConnection.flush();
-		
+
+		rendererConnection.write(rendererIndex);
+		rendererConnection.write(pointOfViewData.length);
 		rendererConnection.write(pointOfViewData);
+		rendererConnection.write(lightSourcesData.length);
 		rendererConnection.write(lightSourcesData);
+		rendererConnection.write(geometriesData.length);
 		rendererConnection.write(geometriesData);
 		rendererConnection.flush();
 	}
