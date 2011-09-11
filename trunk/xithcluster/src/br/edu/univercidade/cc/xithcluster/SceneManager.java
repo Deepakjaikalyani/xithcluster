@@ -20,7 +20,7 @@ public interface SceneManager {
 	
 	Object getSceneLock();
 
-	void updateModifications();
+	void updateScene();
 
 	List<Light> getLightSources();
 

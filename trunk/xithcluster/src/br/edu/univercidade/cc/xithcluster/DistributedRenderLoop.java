@@ -174,7 +174,7 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 	}
 
 	@Override
-	public void updateModifications() {
+	public void updateScene() {
 	}
 
 	@Override

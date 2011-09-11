@@ -9,6 +9,7 @@ import org.xsocket.connection.INonBlockingConnection;
 
 public abstract class ContentHandler implements IDataHandler {
 	
+	protected static final String STRING_DELIMITER = "\n\r";
 	private IDataHandler previousHandler;
 	
 	public ContentHandler(IDataHandler previousHandler) {

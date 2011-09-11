@@ -35,13 +35,27 @@ public final class MasterNetworkManager {
 	
 	private List<INonBlockingConnection> renderersConnections = Collections.synchronizedList(new ArrayList<INonBlockingConnection>());
 	
-	private UpdatesPackager updatesPackager = new UpdatesPackager();
+	private final UpdatesPackager updatesPackager = new UpdatesPackager();
 	
-	private PointOfViewPackager pointOfViewPackager = new PointOfViewPackager();
+	private final PointOfViewPackager pointOfViewPackager = new PointOfViewPackager();
 	
-	private LightSourcesPackager lightSourcesPackager = new LightSourcesPackager();
+	private final LightSourcesPackager lightSourcesPackager = new LightSourcesPackager();
 	
-	private GeometriesPackager geometriesPackager = new GeometriesPackager();
+	private final GeometriesPackager geometriesPackager = new GeometriesPackager();
+	
+	private final SceneManager sceneManager;
+	
+	private final UpdateManager updateManager;
+	
+	private DistributionStrategy distributionStrategy;
+	
+	private final MasterProtocolHandler masterProtocolHandler;
+	
+	private IServer composerServer;
+	
+	private IServer renderersServer;
+	
+	private INonBlockingConnection composerConnection;
 	
 	private boolean changed = false;
 	
@@ -50,20 +64,6 @@ public final class MasterNetworkManager {
 	private final BitSet framesFinishedMask = new BitSet();
 	
 	private final BitSet sessionStartedMask = new BitSet();
-	
-	private SceneManager sceneManager;
-	
-	private UpdateManager updateManager;
-	
-	private DistributionStrategy distributionStrategy;
-	
-	private MasterProtocolHandler masterProtocolHandler;
-	
-	private IServer composerServer;
-	
-	private IServer renderersServer;
-	
-	private INonBlockingConnection composerConnection;
 	
 	public MasterNetworkManager(SceneManager sceneManager, UpdateManager updateManager, DistributionStrategy distributionStrategy) {
 		this.sceneManager = sceneManager;
@@ -275,16 +275,7 @@ public final class MasterNetworkManager {
 	}
 
 	private boolean isThereAtLeastOneRendererAndOneComposer() {
-		if (renderersConnections.isEmpty()) {
-			return false;
-		}
-		
-		// TODO: Composer
-		/*if (composerConnection == null) {
-			return false;
-		}*/
-		
-		return true;
+		return !renderersConnections.isEmpty() && composerConnection != null;
 	}
 
 	private boolean isThereAlreadyAConnectedComposer() {

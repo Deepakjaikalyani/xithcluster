@@ -50,8 +50,8 @@ public final class RendererProtocolHandler implements IDataHandler {
 		}
 	}
 
-	public void onStartSessionCompleted(INonBlockingConnection connection, int id, byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) throws IOException {
-		rendererNetworkManager.onStartSession(id, pointOfViewData, lightSourcesData, geometriesData);
+	public void onStartSessionCompleted(INonBlockingConnection connection, int id, String composerHostname, int composerPort, byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) throws IOException {
+		rendererNetworkManager.onStartSession(id, composerHostname, composerPort, pointOfViewData, lightSourcesData, geometriesData);
 	}
 
 	public void onUpdateCompleted(INonBlockingConnection connection, byte[] updatesData) throws IOException {
@@ -66,6 +66,14 @@ public final class RendererProtocolHandler implements IDataHandler {
 	public void sendFrameFinishedMessage(INonBlockingConnection masterConnection) throws BufferOverflowException, IOException {
 		masterConnection.write(RecordType.FRAME_FINISHED.ordinal());
 		masterConnection.flush();
+	}
+
+	public void sendColorAlphaAndDepthBuffer(INonBlockingConnection composerConnection, byte[] colorAndAlphaBuffer, byte[] depthBuffer) throws BufferOverflowException, IOException {
+		composerConnection.write(colorAndAlphaBuffer.length);
+		composerConnection.write(colorAndAlphaBuffer);
+		composerConnection.write(depthBuffer.length);
+		composerConnection.write(depthBuffer);
+		composerConnection.flush();
 	}
 
 }
