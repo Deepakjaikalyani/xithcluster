@@ -17,7 +17,7 @@ import org.xith3d.scenegraph.View;
 import org.xsocket.connection.INonBlockingConnection;
 import org.xsocket.connection.IServer;
 import org.xsocket.connection.Server;
-import br.edu.univercidade.cc.xithcluster.Configuration;
+import br.edu.univercidade.cc.xithcluster.XithClusterConfiguration;
 import br.edu.univercidade.cc.xithcluster.DistributionStrategy;
 import br.edu.univercidade.cc.xithcluster.PendingUpdate;
 import br.edu.univercidade.cc.xithcluster.PendingUpdate.Type;
@@ -73,8 +73,8 @@ public final class MasterNetworkManager {
 	}
 	
 	public void initialize() throws UnknownHostException, IOException {
-		renderersServer = new Server(Configuration.listeningInterface, Configuration.renderersListeningPort, masterProtocolHandler);
-		composerServer = new Server(Configuration.listeningInterface, Configuration.composerListeningPort, masterProtocolHandler);
+		renderersServer = new Server(XithClusterConfiguration.listeningAddress, XithClusterConfiguration.renderersConnectionPort, masterProtocolHandler);
+		composerServer = new Server(XithClusterConfiguration.listeningAddress, XithClusterConfiguration.composerConnectionPort, masterProtocolHandler);
 		
 		renderersServer.start();
 		composerServer.start();

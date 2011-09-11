@@ -6,13 +6,13 @@ import java.util.Properties;
 
 public final class RendererConfiguration {
 
-	private static final String DEFAULT_MASTER_HOSTNAME = "localhost";
+	private static final String DEFAULT_MASTER_LISTENING_ADDRESS = "localhost";
 
-	private static final Integer DEFAULT_MASTER_PORT = 10000;
+	private static final Integer DEFAULT_MASTER_LISTENING_PORT = 10000;
 
-	public static String masterHostname;
+	public static String masterListeningAddress;
 	
-	public static Integer masterPort;
+	public static Integer masterListeningPort;
 	
 	static {
 		Properties properties;
@@ -20,20 +20,20 @@ public final class RendererConfiguration {
 		
 		properties = new Properties();
 		
-		in = Configuration.class.getResourceAsStream("/rendererApp.properties");
+		in = RendererConfiguration.class.getResourceAsStream("/rendererApp.properties");
 		
 		if (in != null) {
 			try {
 				properties.load(in);
-				masterHostname = properties.getProperty("master.hostname", DEFAULT_MASTER_HOSTNAME);
-				masterPort = Integer.parseInt(properties.getProperty("master.port", DEFAULT_MASTER_PORT.toString()));
+				masterListeningAddress = properties.getProperty("master.listening.address", DEFAULT_MASTER_LISTENING_ADDRESS);
+				masterListeningPort = Integer.parseInt(properties.getProperty("master.listening.port", DEFAULT_MASTER_LISTENING_PORT.toString()));
 			} catch (IOException e) {
 				// TODO:
 				throw new RuntimeException("Error loading configuration file");
 			}
 		} else {
-			masterHostname = DEFAULT_MASTER_HOSTNAME;
-			masterPort = DEFAULT_MASTER_PORT;
+			masterListeningAddress = DEFAULT_MASTER_LISTENING_ADDRESS;
+			masterListeningPort = DEFAULT_MASTER_LISTENING_PORT;
 		}
 	}
 	
