@@ -17,22 +17,22 @@ import org.xith3d.scenegraph.Transform3D;
 import org.xith3d.scenegraph.TransformGroup;
 import br.edu.univercidade.cc.xithcluster.primitives.Rectangle;
 
-public class Main extends DistributedRenderLoop {
+public class SampleApp extends DistributedRenderLoop {
 	
 	private ResourceLocator resourceLocator;
 	
-	public Main() {
+	public SampleApp() {
 		super(120f);
 		
 		new Xith3DEnvironment(0f, 0f, 5f, 0f, 0f, 0f, 0f, 1f, 0f, this);
 		
-		// TODO:
+		// FIXME:
 		resourceLocator = ResourceLocator.create("resources/");
 		try {
 			resourceLocator.createAndAddTSL("textures");
 		} catch (MalformedURLException e) {
 			// TODO:
-			e.printStackTrace();
+			throw new AssertionError("Should never happen!");
 		}
 		
 		getXith3DEnvironment().addPerspectiveBranch(createTestScene());
@@ -111,6 +111,6 @@ public class Main extends DistributedRenderLoop {
 	}
 	
 	public static void main(String[] args) {
-		new Main().begin();
+		new SampleApp().begin();
 	}
 }

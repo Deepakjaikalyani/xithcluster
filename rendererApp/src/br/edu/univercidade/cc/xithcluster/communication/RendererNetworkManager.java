@@ -7,6 +7,7 @@ import java.util.Observer;
 import org.apache.log4j.Logger;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Light;
+import org.xith3d.scenegraph.Texture2D;
 import org.xith3d.scenegraph.View;
 import org.xsocket.connection.INonBlockingConnection;
 import org.xsocket.connection.NonBlockingConnection;
@@ -14,10 +15,9 @@ import br.edu.univercidade.cc.xithcluster.PendingUpdate;
 import br.edu.univercidade.cc.xithcluster.RendererConfiguration;
 import br.edu.univercidade.cc.xithcluster.SceneDeserializer;
 import br.edu.univercidade.cc.xithcluster.SceneManager;
-import br.edu.univercidade.cc.xithcluster.communication.protocol.ProtocolHelper;
-import br.edu.univercidade.cc.xithcluster.communication.protocol.RecordType;
 import br.edu.univercidade.cc.xithcluster.communication.protocol.RendererProtocolHandler;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.UpdatesPackager;
+import br.edu.univercidade.cc.xithcluster.util.BufferUtils;
 
 public final class RendererNetworkManager implements Observer {
 	
@@ -29,7 +29,7 @@ public final class RendererNetworkManager implements Observer {
 	
 	private INonBlockingConnection masterConnection;
 	
-	// private INonBlockingConnection composerConnection;
+	private INonBlockingConnection composerConnection;
 	
 	private UpdatesPackager updatesPackager = new UpdatesPackager();
 	
@@ -53,11 +53,6 @@ public final class RendererNetworkManager implements Observer {
 		try {
 			masterConnection = new NonBlockingConnection(RendererConfiguration.masterHostname, RendererConfiguration.masterPort, rendererProtocolHandler);
 			masterConnection.setAutoflush(false);
-			
-			// composerConnection = new
-			// NonBlockingConnection(RendererConfiguration.composerHostname,
-			// RendererConfiguration.composerPort);
-			// composerConnection.setAutoflush(false);
 		} catch (IOException e) {
 			// TODO:
 			throw new RuntimeException("Error trying to connecting to the cluster", e);
@@ -73,7 +68,7 @@ public final class RendererNetworkManager implements Observer {
 			sceneManager.setRoot(geometries);
 			sceneManager.setPointOfView(view.getPosition(), view.getFacingDirection(), view.getUpDirection());
 			sceneManager.addLightSources(lightSources);
-			sceneManager.updateModifications();
+			sceneManager.updateScene();
 		}
 	}
 	
@@ -130,12 +125,16 @@ public final class RendererNetworkManager implements Observer {
 		}
 	}
 	
-	public synchronized void onStartSession(int id, byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) throws IOException {
+	public synchronized void onStartSession(int id, String composerHostname, int composerPort, byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) throws IOException {
+		
 		sessionStarted = false;
 		
 		log.debug("***************");
 		log.debug("Session started");
 		log.debug("***************");
+		
+		composerConnection = new NonBlockingConnection(composerHostname, composerPort);
+		composerConnection.setAutoflush(false);
 		
 		if (isParallelSceneDeserializationHappening()) {
 			interruptParallelSceneDeserialization();
@@ -199,5 +198,22 @@ public final class RendererNetworkManager implements Observer {
 			
 			rebuildScene(result.getView(), result.getLightSources(), result.getGeometries());
 		}
+	}
+
+	public void sendColorAlphaAndDepthBuffer(Texture2D colorAndAlphaTexture, Texture2D depthTexture) {
+		byte[] colorAndAlphaBuffer;
+		byte[] depthBuffer;
+		
+		colorAndAlphaBuffer = BufferUtils.safeBufferRead(colorAndAlphaTexture.getImage(0).getDataBuffer());
+		depthBuffer = BufferUtils.safeBufferRead(depthTexture.getImage(0).getDataBuffer());
+		
+		// TODO: Do re-attempts!
+		try {
+			rendererProtocolHandler.sendColorAlphaAndDepthBuffer(composerConnection, colorAndAlphaBuffer, depthBuffer);
+		} catch (IOException e) {
+			log.error("Error sending image buffers to composer", e);
+		}
+		
+		notifyFrameFinished();
 	}
 }
