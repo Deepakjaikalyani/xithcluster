@@ -4,33 +4,26 @@ import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
 import org.xsocket.MaxReadSizeExceededException;
-import org.xsocket.connection.IDataHandler;
 import org.xsocket.connection.INonBlockingConnection;
 
-public final class UpdateContentHandler implements IDataHandler {
+public final class UpdateContentHandler extends ContentHandler {
 	
-	private RendererProtocolHandler rendererProtocolHandler;
+	private byte[] updatesData;
 	
 	public UpdateContentHandler(RendererProtocolHandler rendererProtocolHandler) {
-		this.rendererProtocolHandler = rendererProtocolHandler;
+		super(rendererProtocolHandler);
 	}
 	
 	@Override
-	public boolean onData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
-		byte[] updatesData;
-		
-		arg0.markReadPosition();
-		try {
-			updatesData = arg0.readBytesByLength(arg0.readInt());
-			
-			arg0.removeReadMark();
-			
-			rendererProtocolHandler.onUpdateCompleted(arg0, updatesData);
-		} catch (BufferUnderflowException e) {
-			arg0.resetToReadMark();
-		}
+	protected boolean onHandleContent(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
+		updatesData = arg0.readBytesByLength(arg0.readInt());
 		
 		return true;
+	}
+
+	@Override
+	protected void onContentReady(INonBlockingConnection arg0) throws IOException {
+		((RendererProtocolHandler) getPreviousHandler()).onUpdateCompleted(arg0, updatesData);
 	}
 	
 }

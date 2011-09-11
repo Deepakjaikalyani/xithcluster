@@ -51,12 +51,10 @@ public final class RendererProtocolHandler implements IDataHandler {
 	}
 
 	public void onStartSessionCompleted(INonBlockingConnection connection, int id, byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) throws IOException {
-		connection.setHandler(this);
 		rendererNetworkManager.onStartSession(id, pointOfViewData, lightSourcesData, geometriesData);
 	}
 
 	public void onUpdateCompleted(INonBlockingConnection connection, byte[] updatesData) throws IOException {
-		connection.setHandler(this);
 		rendererNetworkManager.onUpdate(updatesData);
 	}
 

@@ -192,11 +192,7 @@ public final class MasterNetworkManager {
 		byte[] geometriesData;
 		int rendererIndex;
 		
-		if (sessionStarting) {
-			return true;
-		}
-		
-		if (!isThereAtLeastOneRendererAndOneComposer()) {
+		if (sessionStarting || !changed || !isThereAtLeastOneRendererAndOneComposer()) {
 			return true;
 		}
 		
@@ -246,7 +242,7 @@ public final class MasterNetworkManager {
 				log.trace("Geometries data size: " + geometriesData.length + " bytes");
 				
 				try {
-					masterProtocolHandler.sendStartSessionMessage(rendererConnection, pointOfViewData, lightSourcesData, geometriesData);
+					masterProtocolHandler.sendStartSessionMessage(rendererConnection, getRendererIndex(rendererConnection), pointOfViewData, lightSourcesData, geometriesData);
 				} catch (IOException e) {
 					log.error("Error sending distributed scene", e);
 					
@@ -264,6 +260,8 @@ public final class MasterNetworkManager {
 				return false;
 			}
 		}
+		
+		changed = false;
 		
 		return true;
 	}
