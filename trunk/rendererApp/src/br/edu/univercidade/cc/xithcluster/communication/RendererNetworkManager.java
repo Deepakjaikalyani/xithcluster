@@ -51,7 +51,7 @@ public final class RendererNetworkManager implements Observer {
 	
 	public void initialize() {
 		try {
-			masterConnection = new NonBlockingConnection(RendererConfiguration.masterHostname, RendererConfiguration.masterPort, rendererProtocolHandler);
+			masterConnection = new NonBlockingConnection(RendererConfiguration.masterListeningAddress, RendererConfiguration.masterListeningPort, rendererProtocolHandler);
 			masterConnection.setAutoflush(false);
 		} catch (IOException e) {
 			// TODO:

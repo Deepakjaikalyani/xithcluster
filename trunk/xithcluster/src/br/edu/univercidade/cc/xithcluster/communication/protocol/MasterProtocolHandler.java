@@ -11,7 +11,7 @@ import org.xsocket.connection.IConnectHandler;
 import org.xsocket.connection.IDataHandler;
 import org.xsocket.connection.IDisconnectHandler;
 import org.xsocket.connection.INonBlockingConnection;
-import br.edu.univercidade.cc.xithcluster.Configuration;
+import br.edu.univercidade.cc.xithcluster.XithClusterConfiguration;
 import br.edu.univercidade.cc.xithcluster.communication.MasterNetworkManager;
 
 public final class MasterProtocolHandler implements IConnectHandler, IDataHandler, IDisconnectHandler {
@@ -25,11 +25,11 @@ public final class MasterProtocolHandler implements IConnectHandler, IDataHandle
 	}
 	
 	private boolean isRendererConnection(INonBlockingConnection arg0) {
-		return arg0.getLocalPort() == Configuration.renderersListeningPort;
+		return arg0.getLocalPort() == XithClusterConfiguration.renderersConnectionPort;
 	}
 	
 	private boolean isComposerConnection(INonBlockingConnection arg0) {
-		return arg0.getLocalPort() == Configuration.composerListeningPort;
+		return arg0.getLocalPort() == XithClusterConfiguration.composerConnectionPort;
 	}
 	
 	public void sendStartSessionMessage(INonBlockingConnection rendererConnection, int rendererIndex, byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) throws IOException, ClosedChannelException, SocketTimeoutException {
