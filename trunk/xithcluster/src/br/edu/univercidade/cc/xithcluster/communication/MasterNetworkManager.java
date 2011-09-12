@@ -242,7 +242,13 @@ public final class MasterNetworkManager {
 				log.trace("Geometries data size: " + geometriesData.length + " bytes");
 				
 				try {
-					masterProtocolHandler.sendStartSessionMessage(rendererConnection, getRendererIndex(rendererConnection), pointOfViewData, lightSourcesData, geometriesData);
+					masterProtocolHandler.sendStartSessionMessage(rendererConnection, 
+							getRendererIndex(rendererConnection),
+							composerConnection.getRemoteAddress().getHostAddress(),
+							XithClusterConfiguration.composerConnectionPort,
+							pointOfViewData, 
+							lightSourcesData, 
+							geometriesData);
 				} catch (IOException e) {
 					log.error("Error sending distributed scene", e);
 					
@@ -273,6 +279,10 @@ public final class MasterNetworkManager {
 		
 		return rendererId.intValue();
 	}
+	
+	private void setRendererIndex(INonBlockingConnection arg0) {
+		arg0.setAttachment(renderersConnections.size());
+	}
 
 	private boolean isThereAtLeastOneRendererAndOneComposer() {
 		return !renderersConnections.isEmpty() && composerConnection != null;
@@ -280,10 +290,6 @@ public final class MasterNetworkManager {
 
 	private boolean isThereAlreadyAConnectedComposer() {
 		return composerConnection != null;
-	}
-
-	private void setRendererIndex(INonBlockingConnection arg0) {
-		arg0.setAttachment(renderersConnections.size());
 	}
 
 	public synchronized boolean onRendererConnected(INonBlockingConnection arg0) {

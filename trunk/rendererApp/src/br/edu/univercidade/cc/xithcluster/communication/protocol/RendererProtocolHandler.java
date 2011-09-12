@@ -12,9 +12,9 @@ import br.edu.univercidade.cc.xithcluster.communication.RendererNetworkManager;
 
 public final class RendererProtocolHandler implements IDataHandler {
 
-	private Logger log = Logger.getLogger(RendererNetworkManager.class);
+	private final Logger log = Logger.getLogger(RendererProtocolHandler.class);
 	
-	private RendererNetworkManager rendererNetworkManager;
+	private final RendererNetworkManager rendererNetworkManager;
 	
 	public RendererProtocolHandler(RendererNetworkManager rendererNetworkManager) {
 		this.rendererNetworkManager = rendererNetworkManager;
@@ -32,7 +32,7 @@ public final class RendererProtocolHandler implements IDataHandler {
 		
 		switch (recordType) {
 		case START_SESSION:
-			arg0.setHandler(new StartSessionContentHandler(this));
+			arg0.setHandler(new StartSessionDataHandler(this));
 			
 			return true;
 		case START_FRAME:
@@ -40,7 +40,7 @@ public final class RendererProtocolHandler implements IDataHandler {
 			
 			return true;
 		case UPDATE:
-			arg0.setHandler(new UpdateContentHandler(this));
+			arg0.setHandler(new UpdateDataHandler(this));
 			
 			return true;
 		default:
@@ -50,11 +50,11 @@ public final class RendererProtocolHandler implements IDataHandler {
 		}
 	}
 
-	public void onStartSessionCompleted(INonBlockingConnection connection, int id, String composerHostname, int composerPort, byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) throws IOException {
+	void onStartSessionCompleted(int id, String composerHostname, int composerPort, byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) throws IOException {
 		rendererNetworkManager.onStartSession(id, composerHostname, composerPort, pointOfViewData, lightSourcesData, geometriesData);
 	}
 
-	public void onUpdateCompleted(INonBlockingConnection connection, byte[] updatesData) throws IOException {
+	void onUpdateCompleted(byte[] updatesData) throws IOException {
 		rendererNetworkManager.onUpdate(updatesData);
 	}
 
