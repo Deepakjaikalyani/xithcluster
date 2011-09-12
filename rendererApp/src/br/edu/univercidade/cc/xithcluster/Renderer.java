@@ -192,7 +192,6 @@ public class Renderer extends InputAdapterRenderLoop implements SceneManager {
 	 * 		MAIN 
 	 * ===============
 	 */
-
 	public static void main(String[] args) throws InputSystemException {
 		new Renderer(FRAMES_PER_SECOND).begin();
 	}

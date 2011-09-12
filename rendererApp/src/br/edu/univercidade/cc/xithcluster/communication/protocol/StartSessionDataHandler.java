@@ -6,7 +6,7 @@ import java.nio.channels.ClosedChannelException;
 import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.INonBlockingConnection;
 
-public final class StartSessionContentHandler extends ContentHandler {
+public final class StartSessionDataHandler extends ChainedSafeDataHandler<RendererProtocolHandler> {
 	
 	private int id;
 	
@@ -20,12 +20,12 @@ public final class StartSessionContentHandler extends ContentHandler {
 	
 	private byte[] geometriesData;
 	
-	public StartSessionContentHandler(RendererProtocolHandler rendererProtocolHandler) {
+	public StartSessionDataHandler(RendererProtocolHandler rendererProtocolHandler) {
 		super(rendererProtocolHandler);
 	}
 	
 	@Override
-	protected boolean onHandleContent(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
+	protected boolean onHandleData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
 		id = arg0.readInt();
 		composerHostname = arg0.readStringByDelimiter(STRING_DELIMITER);
 		composerPort = arg0.readInt();
@@ -37,8 +37,8 @@ public final class StartSessionContentHandler extends ContentHandler {
 	}
 
 	@Override
-	protected void onContentReady(INonBlockingConnection arg0) throws IOException {
-		((RendererProtocolHandler) getPreviousHandler()).onStartSessionCompleted(arg0, id, composerHostname, composerPort, pointOfViewData, lightSourcesData, geometriesData);
+	protected void onDataReady(INonBlockingConnection arg0) throws IOException {
+		getNextDataHandler().onStartSessionCompleted(id, composerHostname, composerPort, pointOfViewData, lightSourcesData, geometriesData);
 	}
 	
 }

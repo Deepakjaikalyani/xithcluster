@@ -16,6 +16,8 @@ import br.edu.univercidade.cc.xithcluster.communication.MasterNetworkManager;
 
 public final class MasterProtocolHandler implements IConnectHandler, IDataHandler, IDisconnectHandler {
 
+	private static final String STRING_DELIMITER = "\r\n";
+
 	private Logger log = Logger.getLogger(MasterNetworkManager.class);
 	
 	private MasterNetworkManager masterNetworkManager;
@@ -32,11 +34,13 @@ public final class MasterProtocolHandler implements IConnectHandler, IDataHandle
 		return arg0.getLocalPort() == XithClusterConfiguration.composerConnectionPort;
 	}
 	
-	public void sendStartSessionMessage(INonBlockingConnection rendererConnection, int rendererIndex, byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) throws IOException, ClosedChannelException, SocketTimeoutException {
+	public void sendStartSessionMessage(INonBlockingConnection rendererConnection, int rendererIndex, String composerListeningAddress, int composerListeningPort, byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) throws IOException, ClosedChannelException, SocketTimeoutException {
 		rendererConnection.write(RecordType.START_SESSION.ordinal());
 		rendererConnection.flush();
 
 		rendererConnection.write(rendererIndex);
+		rendererConnection.write(composerListeningAddress + STRING_DELIMITER);
+		rendererConnection.write(composerListeningPort);
 		rendererConnection.write(pointOfViewData.length);
 		rendererConnection.write(pointOfViewData);
 		rendererConnection.write(lightSourcesData.length);
@@ -47,16 +51,18 @@ public final class MasterProtocolHandler implements IConnectHandler, IDataHandle
 	}
 	
 	@Override
-	public boolean onDisconnect(INonBlockingConnection arg0) throws IOException {
+	public boolean onConnect(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, MaxReadSizeExceededException {
 		if (isRendererConnection(arg0)) {
-			return masterNetworkManager.onRendererDisconnect(arg0);
+			return masterNetworkManager.onRendererConnected(arg0);
 		} else if (isComposerConnection(arg0)) {
-			return masterNetworkManager.onComposerDisconnect();
+			return masterNetworkManager.onComposerConnected(arg0);
 		} else {
-			throw new AssertionError("Should never happen!");
+			log.error("Unknown connection refused");
+			
+			return false;
 		}
 	}
-
+	
 	@Override
 	public boolean onData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
 		RecordType recordType;
@@ -80,15 +86,13 @@ public final class MasterProtocolHandler implements IConnectHandler, IDataHandle
 	}
 
 	@Override
-	public boolean onConnect(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, MaxReadSizeExceededException {
+	public boolean onDisconnect(INonBlockingConnection arg0) throws IOException {
 		if (isRendererConnection(arg0)) {
-			return masterNetworkManager.onRendererConnected(arg0);
+			return masterNetworkManager.onRendererDisconnect(arg0);
 		} else if (isComposerConnection(arg0)) {
-			return masterNetworkManager.onComposerConnected(arg0);
+			return masterNetworkManager.onComposerDisconnect();
 		} else {
-			log.error("Unknown connection refused");
-			
-			return false;
+			throw new AssertionError("Should never happen!");
 		}
 	}
 

@@ -7,22 +7,17 @@ import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.IDataHandler;
 import org.xsocket.connection.INonBlockingConnection;
 
-public abstract class ContentHandler implements IDataHandler {
+public abstract class SafeDataHandler implements IDataHandler {
 	
 	protected static final String STRING_DELIMITER = "\n\r";
-	private IDataHandler previousHandler;
 	
-	public ContentHandler(IDataHandler previousHandler) {
-		this.previousHandler = previousHandler;
+	public SafeDataHandler() {
+		super();
 	}
 	
-	public IDataHandler getPreviousHandler() {
-		return previousHandler;
-	}
-
-	protected abstract boolean onHandleContent(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException;
+	protected abstract boolean onHandleData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException;
 	
-	protected abstract void onContentReady(INonBlockingConnection arg0) throws IOException;
+	protected abstract void onDataReady(INonBlockingConnection arg0) throws IOException;
 	
 	@Override
 	public boolean onData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
@@ -30,19 +25,22 @@ public abstract class ContentHandler implements IDataHandler {
 		
 		arg0.markReadPosition();
 		try {
-			handleResult = onHandleContent(arg0);
+			handleResult = onHandleData(arg0);
 		} catch (BufferUnderflowException e) {
 			arg0.resetToReadMark();
 			return true;
 		}
 		
-		onContentReady(arg0);
+		onDataReady(arg0);
 		
 		arg0.removeReadMark();
 		
-		arg0.setHandler(previousHandler);
+		afterDataHandling(arg0);
 		
 		return handleResult;
+	}
+
+	protected void afterDataHandling(INonBlockingConnection arg0) throws IOException {
 	}
 	
 }

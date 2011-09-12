@@ -6,24 +6,24 @@ import java.nio.channels.ClosedChannelException;
 import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.INonBlockingConnection;
 
-public final class UpdateContentHandler extends ContentHandler {
+public final class UpdateDataHandler extends ChainedSafeDataHandler<RendererProtocolHandler> {
 	
 	private byte[] updatesData;
 	
-	public UpdateContentHandler(RendererProtocolHandler rendererProtocolHandler) {
+	public UpdateDataHandler(RendererProtocolHandler rendererProtocolHandler) {
 		super(rendererProtocolHandler);
 	}
 	
 	@Override
-	protected boolean onHandleContent(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
+	protected boolean onHandleData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
 		updatesData = arg0.readBytesByLength(arg0.readInt());
 		
 		return true;
 	}
 
 	@Override
-	protected void onContentReady(INonBlockingConnection arg0) throws IOException {
-		((RendererProtocolHandler) getPreviousHandler()).onUpdateCompleted(arg0, updatesData);
+	protected void onDataReady(INonBlockingConnection arg0) throws IOException {
+		getNextDataHandler().onUpdateCompleted(updatesData);
 	}
 	
 }
