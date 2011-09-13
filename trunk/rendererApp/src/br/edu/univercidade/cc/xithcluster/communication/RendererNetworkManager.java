@@ -133,16 +133,19 @@ public final class RendererNetworkManager implements Observer {
 	throws IOException {
 		sessionStarted = false;
 		
-		log.debug("***************");
-		log.debug("Session started");
-		log.debug("***************");
+		log.debug("****************");
+		log.debug("Session starting");
+		log.debug("****************");
 		
+		log.trace("Connecting to composer");
 		composerConnection = new NonBlockingConnection(composerHostname, composerPort);
 		composerConnection.setAutoflush(false);
 		
+		log.trace("Sending composition order: " + RendererConfiguration.compositionOrder);
 		notifyCompositionOrder();
 		
 		if (isParallelSceneDeserializationHappening()) {
+			log.trace("Interrupting parallel scene deserialization");
 			interruptParallelSceneDeserialization();
 		}
 		

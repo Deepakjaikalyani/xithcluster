@@ -90,15 +90,15 @@ public final class ComposerNetworkManager {
 		
 		return depthBuffers;
 	}
-
+	
 	public void onStartFrame() {
 		newImageMask.clear();
 	}
 
 	public void onStartSession(int screenWidth, int screenHeight, double targetFPS) {
-		log.debug("***************");
-		log.debug("Session started");
-		log.debug("***************");
+		log.debug("****************");
+		log.debug("Session starting");
+		log.debug("****************");
 		
 		log.trace("Screen width: " + screenWidth);
 		log.trace("Screen height: " + screenHeight);
@@ -107,6 +107,8 @@ public final class ComposerNetworkManager {
 		composer.setScreenSize(screenWidth, screenHeight);
 		
 		// TODO: set target FPS!
+		
+		log.info("Session started successfully");
 	}
 
 	public void onNewImage(INonBlockingConnection arg0, CompressionMethod compressionMethod, byte[] colorAndAlphaBuffer, byte[] depthBuffer) {
@@ -164,6 +166,8 @@ public final class ComposerNetworkManager {
 
 	public synchronized void onSetCompositionOrder(INonBlockingConnection arg0, int compositionOrder) {
 		if (arg0.getAttachment() == null) {
+			log.info("Renderer " + getRendererIndex(arg0) + " has composition order " + compositionOrder);
+			
 			arg0.setAttachment(new RendererHandler(compositionOrder));
 		} else {
 			log.info("Trying to set the composition order repeatedly for the same renderer: " + getRendererIndex(arg0));

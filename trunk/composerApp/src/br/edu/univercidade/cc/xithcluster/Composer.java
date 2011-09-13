@@ -95,7 +95,9 @@ public class Composer implements Runnable, WindowListener {
 			lastTime = currentTime;
 			currentTime = System.currentTimeMillis();
 			elapsedTime = currentTime - lastTime;
-			framesPerSecond = 1000.0 / elapsedTime;
+			if (elapsedTime != 0) {
+				framesPerSecond = 1000.0 / elapsedTime;
+			}
 			
 			loopIteration(framesPerSecond);
 			
