@@ -83,7 +83,7 @@ public class Display extends JFrame {
 		buffer = canvas.getBufferStrategy();
 	}
 	
-	private void createBackBuffer(int width, int height) {
+	private synchronized void createBackBuffer(int width, int height) {
 		backBuffer = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().createCompatibleImage(width, height);
 	}
 	
@@ -105,7 +105,7 @@ public class Display extends JFrame {
 		}
 	}
 	
-	public void blit() {
+	public synchronized void blit() {
 		Graphics graphics = null;
 		
 		try {
