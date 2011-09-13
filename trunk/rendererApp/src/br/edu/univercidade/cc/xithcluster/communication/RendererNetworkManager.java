@@ -12,9 +12,9 @@ import org.xith3d.scenegraph.View;
 import org.xsocket.connection.INonBlockingConnection;
 import org.xsocket.connection.NonBlockingConnection;
 import br.edu.univercidade.cc.xithcluster.PendingUpdate;
+import br.edu.univercidade.cc.xithcluster.Renderer;
 import br.edu.univercidade.cc.xithcluster.RendererConfiguration;
 import br.edu.univercidade.cc.xithcluster.SceneDeserializer;
-import br.edu.univercidade.cc.xithcluster.SceneManager;
 import br.edu.univercidade.cc.xithcluster.communication.protocol.RendererProtocolHandler;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.UpdatesPackager;
 import br.edu.univercidade.cc.xithcluster.util.BufferUtils;
@@ -39,24 +39,19 @@ public final class RendererNetworkManager implements Observer {
 	
 	private boolean startFrame = false;
 	
-	private SceneManager sceneManager;
+	private Renderer renderer;
 	
 	private RendererProtocolHandler rendererProtocolHandler;
 	
-	public RendererNetworkManager(SceneManager sceneManager) {
-		this.sceneManager = sceneManager;
+	public RendererNetworkManager(Renderer renderer) {
+		this.renderer = renderer;
 		this.sceneDeserializer.addObserver(this);
 		this.rendererProtocolHandler = new RendererProtocolHandler(this);
 	}
 	
-	public void initialize() {
-		try {
-			masterConnection = new NonBlockingConnection(RendererConfiguration.masterListeningAddress, RendererConfiguration.masterListeningPort, rendererProtocolHandler);
-			masterConnection.setAutoflush(false);
-		} catch (IOException e) {
-			// TODO:
-			throw new RuntimeException("Error trying to connecting to the cluster", e);
-		}
+	public void initialize() throws IOException {
+		masterConnection = new NonBlockingConnection(RendererConfiguration.masterListeningAddress, RendererConfiguration.masterListeningPort, rendererProtocolHandler);
+		masterConnection.setAutoflush(false);
 	}
 	
 	private void setId(int id) {
@@ -64,11 +59,8 @@ public final class RendererNetworkManager implements Observer {
 	}
 	
 	private void rebuildScene(View view, List<Light> lightSources, BranchGroup geometries) {
-		synchronized (sceneManager.getSceneLock()) {
-			sceneManager.setRoot(geometries);
-			sceneManager.setPointOfView(view.getPosition(), view.getFacingDirection(), view.getUpDirection());
-			sceneManager.addLightSources(lightSources);
-			sceneManager.updateScene();
+		synchronized (renderer.getSceneLock()) {
+			renderer.updateScene(view, lightSources, geometries);
 		}
 	}
 	
@@ -155,7 +147,7 @@ public final class RendererNetworkManager implements Observer {
 	}
 	
 	private void notifySceneIdChange() {
-		sceneManager.setId(id);
+		renderer.setId(id);
 	}
 	
 	private void startParallelSceneDeserialization(byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) {

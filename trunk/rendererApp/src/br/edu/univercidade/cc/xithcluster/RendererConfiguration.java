@@ -8,7 +8,7 @@ public final class RendererConfiguration {
 
 	private static final String DEFAULT_MASTER_LISTENING_ADDRESS = "localhost";
 
-	private static final Integer DEFAULT_MASTER_LISTENING_PORT = 10000;
+	private static final Integer DEFAULT_MASTER_LISTENING_PORT = 11111;
 
 	public static String masterListeningAddress;
 	

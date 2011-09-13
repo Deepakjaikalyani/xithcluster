@@ -10,11 +10,11 @@ public final class ComposerConfiguration {
 	
 	private static final String DEFAULT_MASTER_LISTENING_ADDRESS = "localhost";
 
-	private static final Integer DEFAULT_MASTER_LISTENING_PORT = 20000;
+	private static final Integer DEFAULT_MASTER_LISTENING_PORT = 22222;
 	
 	private static final String DEFAULT_RENDERERS_CONNECTION_ADDRESS = "localhost";
 
-	private static final Integer DEFAULT_RENDERERS_CONNECTION_PORT = 30000;
+	private static final Integer DEFAULT_RENDERERS_CONNECTION_PORT = 33333;
 
 	private static final Boolean DEFAULT_DISPLAY_FPS_COUNTER = true;
 	
