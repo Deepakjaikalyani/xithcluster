@@ -96,8 +96,12 @@ public final class MasterProtocolHandler implements IConnectHandler, IDataHandle
 		}
 	}
 
-	public void sendStartSessionMessage(INonBlockingConnection composerConnection) throws BufferOverflowException, IOException {
+	public void sendStartSessionMessage(INonBlockingConnection composerConnection, int screenWidth, int screenHeight) throws BufferOverflowException, IOException {
 		composerConnection.write(RecordType.START_SESSION.ordinal());
+		composerConnection.flush();
+		
+		composerConnection.write(screenWidth);
+		composerConnection.write(screenHeight);
 		composerConnection.flush();
 	}
 

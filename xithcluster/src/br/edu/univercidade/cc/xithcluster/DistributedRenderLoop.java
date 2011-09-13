@@ -4,9 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.List;
+
 import javax.xml.parsers.FactoryConfigurationError;
+
 import org.apache.log4j.xml.DOMConfigurator;
-import org.openmali.vecmath2.Tuple3f;
 import org.xith3d.base.Xith3DEnvironment;
 import org.xith3d.loop.InputAdapterRenderLoop;
 import org.xith3d.loop.UpdatingThread;
@@ -14,9 +15,10 @@ import org.xith3d.loop.opscheduler.OperationScheduler;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Light;
 import org.xith3d.scenegraph.View;
+
 import br.edu.univercidade.cc.xithcluster.communication.MasterNetworkManager;
 
-public class DistributedRenderLoop extends InputAdapterRenderLoop implements SceneManager {
+public class DistributedRenderLoop extends InputAdapterRenderLoop {
 	
 	private static final String LOG4J_CONFIGURATION_FILE = "xithcluster-log4j.xml";
 
@@ -89,7 +91,7 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 	protected void loopIteration(long gameTime, long frameTime, UpdatingThread.TimingMode timingMode) {
 		int framesToSkip;
 		
-		if (networkManager.hasChanged()) {
+		if (networkManager.isSessionStarted()) {
 			if (networkManager.startNewSession()) {
 				return;
 			}
@@ -141,44 +143,20 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 		}
 	}
 
-	@Override
 	public Object getSceneLock() {
 		return sceneLock;
 	}
 	
-	@Override
 	public BranchGroup getRoot() {
 		return getXith3DEnvironment().getBranchGroup();
 	}
 	
-	@Override
-	public void setRoot(BranchGroup arg0) {
-	}
-
-	@Override
 	public View getPointOfView() {
 		return getXith3DEnvironment().getView();
 	}
 	
-	@Override
-	public void setPointOfView(Tuple3f eyePosition, Tuple3f viewFocus, Tuple3f vecUp) {
-	}
-
-	@Override
 	public List<Light> getLightSources() {
 		return LightSourceFinder.getLightSources(getRoot());
-	}
-	
-	@Override
-	public void addLightSources(List<Light> arg0) {
-	}
-
-	@Override
-	public void updateScene() {
-	}
-
-	@Override
-	public void setId(int id) {
 	}
 	
 }

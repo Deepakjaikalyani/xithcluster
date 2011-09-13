@@ -9,7 +9,7 @@ import org.xsocket.connection.INonBlockingConnection;
 
 public abstract class SafeDataHandler implements IDataHandler {
 	
-	protected static final String STRING_DELIMITER = "\n\r";
+	protected static final String STRING_DELIMITER = "\r\n";
 	
 	public SafeDataHandler() {
 		super();
