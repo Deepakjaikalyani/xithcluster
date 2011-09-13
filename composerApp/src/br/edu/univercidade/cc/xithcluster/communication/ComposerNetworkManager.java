@@ -13,7 +13,6 @@ import org.xsocket.connection.NonBlockingConnection;
 import org.xsocket.connection.Server;
 import br.edu.univercidade.cc.xithcluster.Composer;
 import br.edu.univercidade.cc.xithcluster.ComposerConfiguration;
-import br.edu.univercidade.cc.xithcluster.XithClusterConfiguration;
 import br.edu.univercidade.cc.xithcluster.communication.protocol.ComposerProtocolHandler;
 
 public final class ComposerNetworkManager {
@@ -57,7 +56,7 @@ public final class ComposerNetworkManager {
 		masterConnection = new NonBlockingConnection(ComposerConfiguration.masterListeningAddress, ComposerConfiguration.masterListeningPort, composerProtocolHandler);
 		masterConnection.setAutoflush(false);
 		
-		renderersServer = new Server(XithClusterConfiguration.listeningAddress, XithClusterConfiguration.renderersConnectionPort, composerProtocolHandler);
+		renderersServer = new Server(ComposerConfiguration.renderersConnectionAddress, ComposerConfiguration.renderersConnectionPort, composerProtocolHandler);
 		renderersServer.start();
 	}
 

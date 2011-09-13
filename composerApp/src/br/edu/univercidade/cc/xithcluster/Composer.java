@@ -1,5 +1,6 @@
 package br.edu.univercidade.cc.xithcluster;
 
+import java.awt.Dimension;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
@@ -17,11 +18,16 @@ public class Composer implements Runnable, WindowListener {
 
 	private final ComposerNetworkManager networkManager;
 	
+	private final long secondsPerFrame;
+	
 	private CompositionStrategy compositionStrategy;
 	
 	private Display display;
 	
 	public Composer() {
+		// TODO:
+		secondsPerFrame = 1000L / 60L;
+		
 		networkManager = new ComposerNetworkManager(this);
 	}
 
@@ -54,7 +60,7 @@ public class Composer implements Runnable, WindowListener {
 	
 	public void setScreenSize(int screenWidth, int screenHeight) {
 		// TODO: Check!
-		display.setSize(screenWidth, screenHeight);
+		display.setPreferredSize(new Dimension(screenWidth, screenHeight));
 	}
 
 	@Override
@@ -62,8 +68,7 @@ public class Composer implements Runnable, WindowListener {
 		long elapsedTime;
 	    long currentTime;
 	    long lastTime; 
-	    long framesPerSecond;
-	    long elapsedFrames;
+	    double framesPerSecond;
 		
 		initializeLog4j();
 		
@@ -80,31 +85,30 @@ public class Composer implements Runnable, WindowListener {
 		}
 		
 		display = new Display();
-		display.addWindowListener(Composer.this);
 		display.initialize();
+		display.addWindowListener(Composer.this);
 		
 		framesPerSecond = 0L;
-		elapsedFrames = 0L;
 		elapsedTime = 0L;
 	    currentTime = System.currentTimeMillis();
 		while (true) {
 			lastTime = currentTime;
 			currentTime = System.currentTimeMillis();
-			elapsedTime += currentTime - lastTime;
-			if (elapsedTime > 1000L) {
-			  elapsedTime -= 1000L;
-			  framesPerSecond = elapsedFrames;
-			  elapsedFrames = 0L;
-			} 
-			elapsedFrames++;
+			elapsedTime = currentTime - lastTime;
+			framesPerSecond = 1000.0 / elapsedTime;
 			
 			loopIteration(framesPerSecond);
 			
-			Thread.yield();
+			if (elapsedTime < secondsPerFrame) {
+				try {
+					Thread.sleep(secondsPerFrame - elapsedTime);
+				} catch (InterruptedException e) {
+				}
+			}
 		}
 	}
 
-	private void loopIteration(long framesPerSecond) {
+	private void loopIteration(double framesPerSecond) {
 		if (display == null)
 			return;
 		
@@ -124,13 +128,15 @@ public class Composer implements Runnable, WindowListener {
 
 	@Override
 	public void windowClosing(WindowEvent e) {
+		display.setVisible(false);
+		
+		// TODO: Do soft-disconnect
+		
+		System.exit(-1);
 	}
 
 	@Override
 	public void windowClosed(WindowEvent e) {
-		display.dispose();
-		
-		// TODO: disconnect all
 	}
 
 	@Override
