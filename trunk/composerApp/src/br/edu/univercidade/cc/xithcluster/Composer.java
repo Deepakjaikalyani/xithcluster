@@ -116,7 +116,7 @@ public class Composer implements Runnable, WindowListener {
 	
 		if (networkManager.hasAllSubImages()) {
 			// Buffer swapping
-			display.setImageData(compositionStrategy.compose(networkManager.getColorAndAlphaBuffer(), networkManager.getDepthBuffer()));
+			display.setImageData(compositionStrategy.compose(networkManager.getColorAndAlphaBuffers(), networkManager.getDepthBuffers()));
 		}
 		
 		display.blit();

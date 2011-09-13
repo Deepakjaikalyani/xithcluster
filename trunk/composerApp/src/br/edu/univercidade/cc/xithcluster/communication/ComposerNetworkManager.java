@@ -13,6 +13,7 @@ import org.xsocket.connection.NonBlockingConnection;
 import org.xsocket.connection.Server;
 import br.edu.univercidade.cc.xithcluster.Composer;
 import br.edu.univercidade.cc.xithcluster.ComposerConfiguration;
+import br.edu.univercidade.cc.xithcluster.CompressionMethod;
 import br.edu.univercidade.cc.xithcluster.communication.protocol.ComposerProtocolHandler;
 
 public final class ComposerNetworkManager {
@@ -28,10 +29,6 @@ public final class ComposerNetworkManager {
 	private INonBlockingConnection masterConnection;
 	
 	private IServer renderersServer;
-	
-	private byte[] colorAndAlphaBuffer;
-	
-	private byte[] depthBuffer;
 	
 	private final BitSet newImageMask = new BitSet();
 	
@@ -64,27 +61,73 @@ public final class ComposerNetworkManager {
 		return false;
 	}
 
-	public synchronized byte[] getColorAndAlphaBuffer() {
-		return colorAndAlphaBuffer;
+	public synchronized byte[][] getColorAndAlphaBuffers() {
+		byte[][] colorAndAlphaBuffers;
+		INonBlockingConnection rendererConnection;
+		
+		colorAndAlphaBuffers = new byte[renderersConnections.size()][];
+		synchronized (renderersConnections) {
+			for (int i = 0; i < renderersConnections.size(); i++) {
+				rendererConnection = renderersConnections.get(i);
+				colorAndAlphaBuffers[i] = ((RendererHandler) rendererConnection.getAttachment()).getColorAndAlphaBuffer();
+			}
+		}
+		
+		return colorAndAlphaBuffers;
 	}
 
-	public synchronized byte[] getDepthBuffer() {
-		return depthBuffer;
+	public synchronized byte[][] getDepthBuffers() {
+		byte[][] depthBuffers;
+		INonBlockingConnection rendererConnection;
+		
+		depthBuffers = new byte[renderersConnections.size()][];
+		synchronized (renderersConnections) {
+			for (int i = 0; i < renderersConnections.size(); i++) {
+				rendererConnection = renderersConnections.get(i);
+				depthBuffers[i] = ((RendererHandler) rendererConnection.getAttachment()).getDepthBuffer();
+			}
+		}
+		
+		return depthBuffers;
 	}
 
 	public void onStartFrame() {
 		newImageMask.clear();
 	}
 
-	public void onStartSession(int screenWidth, int screenHeight) {
+	public void onStartSession(int screenWidth, int screenHeight, double targetFPS) {
+		log.debug("***************");
+		log.debug("Session started");
+		log.debug("***************");
+		
+		log.trace("Screen width: " + screenWidth);
+		log.trace("Screen height: " + screenHeight);
+		log.trace("Target FPS: " + targetFPS);
+		
 		composer.setScreenSize(screenWidth, screenHeight);
+		
+		// TODO: set target FPS!
 	}
 
-	public void onNewImage(INonBlockingConnection arg0, byte[] colorAndAlphaBuffer, byte[] depthBuffer) {
-		newImageMask.set(getRendererIndex(arg0));
+	public void onNewImage(INonBlockingConnection arg0, CompressionMethod compressionMethod, byte[] colorAndAlphaBuffer, byte[] depthBuffer) {
+		RendererHandler handler;
 		
-		this.colorAndAlphaBuffer = colorAndAlphaBuffer;
-		this.depthBuffer = depthBuffer;
+		handler = (RendererHandler) arg0.getAttachment();
+		
+		if (handler != null) {
+			switch (compressionMethod) {
+			case PNG:
+				// TODO: Inflate!
+				break;
+			}
+			
+			handler.setColorAndAlphaBuffer(colorAndAlphaBuffer);
+			handler.setDepthBuffer(depthBuffer);
+			
+			newImageMask.set(getRendererIndex(arg0));
+		} else {
+			log.error("Trying to set a new image on a renderer that hasn't informed his composition order");
+		}
 	}
 
 	public synchronized boolean onRendererConnected(INonBlockingConnection arg0) {
@@ -117,6 +160,14 @@ public final class ComposerNetworkManager {
 		log.info("Renderer disconnected");
 		
 		return true;
+	}
+
+	public synchronized void onSetCompositionOrder(INonBlockingConnection arg0, int compositionOrder) {
+		if (arg0.getAttachment() == null) {
+			arg0.setAttachment(new RendererHandler(compositionOrder));
+		} else {
+			log.info("Trying to set the composition order repeatedly for the same renderer: " + getRendererIndex(arg0));
+		}
 	}
 	
 }

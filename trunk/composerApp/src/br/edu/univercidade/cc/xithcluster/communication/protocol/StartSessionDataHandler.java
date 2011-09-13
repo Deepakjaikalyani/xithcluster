@@ -12,6 +12,8 @@ public final class StartSessionDataHandler extends ChainedSafeDataHandler<Compos
 	
 	private int screenHeight;
 	
+	private double targetFPS;
+	
 	public StartSessionDataHandler(ComposerProtocolHandler composerProtocolHandler) {
 		super(composerProtocolHandler);
 	}
@@ -20,13 +22,14 @@ public final class StartSessionDataHandler extends ChainedSafeDataHandler<Compos
 	protected boolean onHandleData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
 		screenWidth = arg0.readInt();
 		screenHeight = arg0.readInt();
+		targetFPS = arg0.readDouble();
 		
 		return true;
 	}
 
 	@Override
 	protected void onDataReady(INonBlockingConnection arg0) throws IOException {
-		getNextDataHandler().onStartSessionCompleted(arg0, screenWidth, screenHeight);
+		getNextDataHandler().onStartSessionCompleted(screenWidth, screenHeight, targetFPS);
 	}
 	
 }

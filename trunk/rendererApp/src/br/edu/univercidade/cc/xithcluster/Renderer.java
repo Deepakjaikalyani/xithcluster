@@ -28,8 +28,8 @@ import br.edu.univercidade.cc.xithcluster.util.ViewHelper;
 
 public class Renderer extends InputAdapterRenderLoop {
 	
-	private static final float FRAMES_PER_SECOND = 120f;
-
+	private static final float FRAMES_PER_SECOND = 60.0f;
+	
 	private static final String LOG4J_CONFIGURATION_FILE = "log4j.xml";
 	
 	private static final String APP_TITLE = "Renderer";
@@ -51,7 +51,7 @@ public class Renderer extends InputAdapterRenderLoop {
 	public Renderer(float maxFPS) {
 		super(maxFPS);
 	}
-
+	
 	@Override
 	public void begin(RunMode runMode, TimingMode timingMode) {
 		Canvas3D canvas;
@@ -76,9 +76,9 @@ public class Renderer extends InputAdapterRenderLoop {
 		
 		createColorAndAlphaTexture();
 		createDepthTexture();
-		 
+		
 		setupTextureRenderTargets();
-
+		
 		canvas.addWindowClosingListener(new WindowClosingRenderLoopEnder(this));
 		
 		try {
@@ -89,7 +89,7 @@ public class Renderer extends InputAdapterRenderLoop {
 		
 		super.begin(runMode, timingMode);
 	}
-
+	
 	private void setupTextureRenderTargets() {
 		RenderPassConfig renderPassConfig;
 		
@@ -98,14 +98,14 @@ public class Renderer extends InputAdapterRenderLoop {
 		getXith3DEnvironment().getRenderer().addRenderTarget(new TextureRenderTarget(root, colorAndAlphaTexture, Colorf.BLACK), renderPassConfig);
 		getXith3DEnvironment().getRenderer().addRenderTarget(new TextureRenderTarget(root, depthTexture, Colorf.BLACK), renderPassConfig);
 	}
-
+	
 	private void createDepthTexture() {
-		depthTexture = TextureCreator.createTexture(TextureFormat.DEPTH, DEFAULT_WIDTH, DEFAULT_HEIGHT); 
+		depthTexture = TextureCreator.createTexture(TextureFormat.DEPTH, DEFAULT_WIDTH, DEFAULT_HEIGHT);
 		depthTexture.enableAutoFreeLocalData();
 	}
-
+	
 	private void createColorAndAlphaTexture() {
-		colorAndAlphaTexture = TextureCreator.createTexture(TextureFormat.RGBA, DEFAULT_WIDTH, DEFAULT_HEIGHT, Colorf.BLACK); 
+		colorAndAlphaTexture = TextureCreator.createTexture(TextureFormat.RGBA, DEFAULT_WIDTH, DEFAULT_HEIGHT, Colorf.BLACK);
 		colorAndAlphaTexture.enableAutoFreeLocalData();
 	}
 	
@@ -116,7 +116,7 @@ public class Renderer extends InputAdapterRenderLoop {
 			System.err.println("Log4j not initialized: \"xithcluster-log4j.xml\" could not be found");
 		}
 	}
-
+	
 	@Override
 	protected void loopIteration(long gameTime, long frameTime, TimingMode timingMode) {
 		super.prepareNextFrame(gameTime, frameTime, timingMode);
@@ -145,7 +145,8 @@ public class Renderer extends InputAdapterRenderLoop {
 	
 	public void setId(int id) {
 		// FIXME:
-		//getXith3DEnvironment().getCanvas().setTitle(APP_TITLE + "[id=" + id + "]");
+		// getXith3DEnvironment().getCanvas().setTitle(APP_TITLE + "[id=" + id +
+		// "]");
 	}
 	
 	public void updateScene(View view, List<Light> lightSources, BranchGroup root) {
@@ -166,14 +167,12 @@ public class Renderer extends InputAdapterRenderLoop {
 		
 		this.root = root;
 	}
-
+	
 	/*
-	 * =============== 
-	 * 		MAIN 
-	 * ===============
+	 * =============== MAIN ===============
 	 */
 	public static void main(String[] args) throws InputSystemException {
 		new Renderer(FRAMES_PER_SECOND).begin();
 	}
-
+	
 }

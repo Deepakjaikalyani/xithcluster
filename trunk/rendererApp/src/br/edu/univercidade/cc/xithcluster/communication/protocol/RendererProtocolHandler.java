@@ -8,6 +8,7 @@ import org.apache.log4j.Logger;
 import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.IDataHandler;
 import org.xsocket.connection.INonBlockingConnection;
+import br.edu.univercidade.cc.xithcluster.CompressionMethod;
 import br.edu.univercidade.cc.xithcluster.communication.RendererNetworkManager;
 
 public final class RendererProtocolHandler implements IDataHandler {
@@ -50,8 +51,8 @@ public final class RendererProtocolHandler implements IDataHandler {
 		}
 	}
 
-	void onStartSessionCompleted(int id, String composerHostname, int composerPort, byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) throws IOException {
-		rendererNetworkManager.onStartSession(id, composerHostname, composerPort, pointOfViewData, lightSourcesData, geometriesData);
+	void onStartSessionCompleted(int id, int screenWidth, int screenHeight, double targetFPS, String composerHostname, int composerPort, byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) throws IOException {
+		rendererNetworkManager.onStartSession(id, screenWidth, screenHeight, targetFPS, composerHostname, composerPort, pointOfViewData, lightSourcesData, geometriesData);
 	}
 
 	void onUpdateCompleted(byte[] updatesData) throws IOException {
@@ -68,11 +69,23 @@ public final class RendererProtocolHandler implements IDataHandler {
 		masterConnection.flush();
 	}
 
-	public void sendColorAlphaAndDepthBuffer(INonBlockingConnection composerConnection, byte[] colorAndAlphaBuffer, byte[] depthBuffer) throws BufferOverflowException, IOException {
+	public void sendNewImageMessage(INonBlockingConnection composerConnection, CompressionMethod compressionMethod, byte[] colorAndAlphaBuffer, byte[] depthBuffer) throws BufferOverflowException, IOException {
+		composerConnection.write(RecordType.NEW_IMAGE.ordinal());
+		composerConnection.flush();
+		
+		composerConnection.write(compressionMethod.ordinal());
 		composerConnection.write(colorAndAlphaBuffer.length);
 		composerConnection.write(colorAndAlphaBuffer);
 		composerConnection.write(depthBuffer.length);
 		composerConnection.write(depthBuffer);
+		composerConnection.flush();
+	}
+
+	public void sendSetCompositionOrderMessage(INonBlockingConnection composerConnection, int compositionOrder) throws BufferOverflowException, IOException {
+		composerConnection.write(RecordType.SET_COMPOSITION_ORDER.ordinal());
+		composerConnection.flush();
+		
+		composerConnection.write(compositionOrder);
 		composerConnection.flush();
 	}
 
