@@ -91,25 +91,23 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop {
 	protected void loopIteration(long gameTime, long frameTime, UpdatingThread.TimingMode timingMode) {
 		int framesToSkip;
 		
-		if (networkManager.isSessionStarted()) {
-			if (networkManager.startNewSession()) {
-				return;
-			}
-		}
-		
-		framesToSkip = networkManager.getSkipNextFrames();
-		if (framesToSkip > 0) {
-			// TODO: dT = dT + (frameTime * framesToSkip)
+		if (!networkManager.isSessionStarted()) {
+			networkManager.startNewSession();
 		} else {
-			networkManager.notifyFrameStart();
-		}
-		
-		// TODO: doSimulations(dT)
-		// TODO: Check if this lock is needed!
-		synchronized (sceneLock) {
-			prepareNextFrame(gameTime, frameTime, timingMode);
+			framesToSkip = networkManager.getSkipNextFrames();
+			if (framesToSkip > 0) {
+				// TODO: dT = dT + (frameTime * framesToSkip)
+			} else {
+				networkManager.notifyFrameStart();
+			}
 			
-			networkManager.sendPendingUpdates();
+			// TODO: doSimulations(dT)
+			// TODO: Check if this lock is needed!
+			synchronized (sceneLock) {
+				prepareNextFrame(gameTime, frameTime, timingMode);
+				
+				networkManager.sendPendingUpdates();
+			}
 		}
 	}
 	

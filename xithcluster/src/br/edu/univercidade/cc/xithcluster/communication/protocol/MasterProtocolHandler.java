@@ -34,11 +34,25 @@ public final class MasterProtocolHandler implements IConnectHandler, IDataHandle
 		return arg0.getLocalPort() == XithClusterConfiguration.composerConnectionPort;
 	}
 	
-	public void sendStartSessionMessage(INonBlockingConnection rendererConnection, int rendererIndex, String composerListeningAddress, int composerListeningPort, byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) throws IOException, ClosedChannelException, SocketTimeoutException {
+	public void sendStartSessionMessage(
+			INonBlockingConnection rendererConnection, 
+			int rendererIndex, 
+			int screenWidth, 
+			int screenHeight,
+			double targetFPS,
+			String composerListeningAddress, 
+			int composerListeningPort, 
+			byte[] pointOfViewData, 
+			byte[] lightSourcesData, 
+			byte[] geometriesData) 
+	throws BufferOverflowException, ClosedChannelException, SocketTimeoutException, IOException {
 		rendererConnection.write(RecordType.START_SESSION.ordinal());
 		rendererConnection.flush();
 
 		rendererConnection.write(rendererIndex);
+		rendererConnection.write(screenWidth);
+		rendererConnection.write(screenHeight);
+		rendererConnection.write(targetFPS);
 		rendererConnection.write(composerListeningAddress + STRING_DELIMITER);
 		rendererConnection.write(composerListeningPort);
 		rendererConnection.write(pointOfViewData.length);
@@ -48,6 +62,21 @@ public final class MasterProtocolHandler implements IConnectHandler, IDataHandle
 		rendererConnection.write(geometriesData.length);
 		rendererConnection.write(geometriesData);
 		rendererConnection.flush();
+	}
+	
+	public void sendStartSessionMessage(
+			INonBlockingConnection composerConnection, 
+			int screenWidth, 
+			int screenHeight,
+			double targetFPS) 
+	throws BufferOverflowException, ClosedChannelException, SocketTimeoutException, IOException {
+		composerConnection.write(RecordType.START_SESSION.ordinal());
+		composerConnection.flush();
+		
+		composerConnection.write(screenWidth);
+		composerConnection.write(screenHeight);
+		composerConnection.write(targetFPS);
+		composerConnection.flush();
 	}
 	
 	@Override
@@ -94,15 +123,6 @@ public final class MasterProtocolHandler implements IConnectHandler, IDataHandle
 		} else {
 			throw new AssertionError("Should never happen!");
 		}
-	}
-
-	public void sendStartSessionMessage(INonBlockingConnection composerConnection, int screenWidth, int screenHeight) throws BufferOverflowException, IOException {
-		composerConnection.write(RecordType.START_SESSION.ordinal());
-		composerConnection.flush();
-		
-		composerConnection.write(screenWidth);
-		composerConnection.write(screenHeight);
-		composerConnection.flush();
 	}
 
 	public void sendUpdateMessage(INonBlockingConnection rendererConnection, byte[] updateData) throws BufferOverflowException, IOException {

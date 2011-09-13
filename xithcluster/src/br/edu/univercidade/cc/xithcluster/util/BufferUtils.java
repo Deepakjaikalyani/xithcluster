@@ -33,10 +33,16 @@ public final class BufferUtils {
 	}
 	
 	public static ByteBuffer createByteBuffer(byte[] values) {
-		ByteBuffer buff = createByteBuffer(values.length);
-		buff.flip();
+		ByteBuffer buffer;
 		
-		return buff;
+		if (values == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		buffer = createByteBuffer(values.length);
+		buffer.flip();
+		
+		return buffer;
 	}
 	
 	public static ShortBuffer createShortBuffer(int size) {
@@ -44,11 +50,17 @@ public final class BufferUtils {
 	}
 	
 	public static ShortBuffer createShortBuffer(short[] values) {
-		ShortBuffer buff = createShortBuffer(values.length);
-		buff.put(values);
-		buff.flip();
+		ShortBuffer buffer;
 		
-		return buff;
+		if (values == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		buffer = createShortBuffer(values.length);
+		buffer.put(values);
+		buffer.flip();
+		
+		return buffer;
 	}
 	
 	public static CharBuffer createCharBuffer(int size) {
@@ -56,11 +68,17 @@ public final class BufferUtils {
 	}
 	
 	public static CharBuffer createCharBuffer(char[] values) {
-		CharBuffer buff = createCharBuffer(values.length);
-		buff.put(values);
-		buff.flip();
+		CharBuffer buffer;
 		
-		return buff;
+		if (values == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		buffer = createCharBuffer(values.length);
+		buffer.put(values);
+		buffer.flip();
+		
+		return buffer;
 	}
 	
 	public static IntBuffer createIntBuffer(int size) {
@@ -68,11 +86,17 @@ public final class BufferUtils {
 	}
 	
 	public static IntBuffer createIntBuffer(int[] values) {
-		IntBuffer buff = createIntBuffer(values.length);
-		buff.put(values);
-		buff.flip();
+		IntBuffer buffer;
 		
-		return buff;
+		if (values == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		buffer = createIntBuffer(values.length);
+		buffer.put(values);
+		buffer.flip();
+		
+		return buffer;
 	}
 	
 	public static LongBuffer createLongBuffer(int size) {
@@ -80,11 +104,17 @@ public final class BufferUtils {
 	}
 	
 	public static LongBuffer createLongBuffer(long[] values) {
-		LongBuffer buff = createLongBuffer(values.length);
-		buff.put(values);
-		buff.flip();
+		LongBuffer buffer;
 		
-		return buff;
+		if (values == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		buffer = createLongBuffer(values.length);
+		buffer.put(values);
+		buffer.flip();
+		
+		return buffer;
 	}
 	
 	public static FloatBuffer createFloatBuffer(int size) {
@@ -92,11 +122,17 @@ public final class BufferUtils {
 	}
 	
 	public static FloatBuffer createFloatBuffer(float[] values) {
-		FloatBuffer buff = createFloatBuffer(values.length);
-		buff.put(values);
-		buff.flip();
+		FloatBuffer buffer;
 		
-		return buff;
+		if (values == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		buffer = createFloatBuffer(values.length);
+		buffer.put(values);
+		buffer.flip();
+		
+		return buffer;
 	}
 	
 	public static DoubleBuffer createDoubleBuffer(int size) {
@@ -104,15 +140,25 @@ public final class BufferUtils {
 	}
 	
 	public static DoubleBuffer createDoubleBuffer(double[] values) {
-		DoubleBuffer buff = createDoubleBuffer(values.length);
-		buff.put(values);
-		buff.flip();
+		DoubleBuffer buffer;
 		
-		return buff;
+		if (values == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		buffer = createDoubleBuffer(values.length);
+		buffer.put(values);
+		buffer.flip();
+		
+		return buffer;
 	}
 	
 	public static float[] safeBufferRead(FloatBuffer arg0) {
 		float[] buffer;
+		
+		if (arg0 == null) {
+			throw new IllegalArgumentException();
+		}
 		
 		if (arg0.isDirect()) {
 			buffer = new float[arg0.limit()];
@@ -128,6 +174,10 @@ public final class BufferUtils {
 	public static int[] safeBufferRead(IntBuffer arg0) {
 		int[] buffer;
 		
+		if (arg0 == null) {
+			throw new IllegalArgumentException();
+		}
+		
 		if (arg0.isDirect()) {
 			buffer = new int[arg0.limit()];
 			arg0.rewind();
@@ -141,6 +191,10 @@ public final class BufferUtils {
 	
 	public static byte[] safeBufferRead(ByteBuffer arg0) {
 		byte[] buffer;
+		
+		if (arg0 == null) {
+			throw new IllegalArgumentException();
+		}
 		
 		if (arg0.isDirect()) {
 			buffer = new byte[arg0.limit()];

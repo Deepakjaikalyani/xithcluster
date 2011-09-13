@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.log4j.Logger;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Light;
@@ -18,7 +17,6 @@ import org.xith3d.scenegraph.View;
 import org.xsocket.connection.INonBlockingConnection;
 import org.xsocket.connection.IServer;
 import org.xsocket.connection.Server;
-
 import br.edu.univercidade.cc.xithcluster.DistributedRenderLoop;
 import br.edu.univercidade.cc.xithcluster.DistributionStrategy;
 import br.edu.univercidade.cc.xithcluster.PendingUpdate;
@@ -89,15 +87,14 @@ public final class MasterNetworkManager {
 	public synchronized int getSkipNextFrames() {
 		int framesToSkip = 0;
 		
-		if (composerConnection != null) {
-			try {
-				masterProtocolHandler.sendGetFramesToSkipMessage(composerConnection);
-				// TODO: Implement async read!
-			} catch (IOException e) {
-				log.error("Error getting frames to skip", e);
-			}
-		}
-		
+		// TODO:
+		/*
+		 * if (composerConnection != null) { try {
+		 * masterProtocolHandler.sendGetFramesToSkipMessage(composerConnection);
+		 * // TODO: Implement async read! } catch (IOException e) {
+		 * log.error("Error getting frames to skip", e); } }
+		 */
+
 		return framesToSkip;
 	}
 	
@@ -181,7 +178,7 @@ public final class MasterNetworkManager {
 		return true;
 	}
 	
-	public synchronized boolean startNewSession() {
+	public synchronized void startNewSession() {
 		View pointOfView;
 		List<Light> lightSources;
 		List<BranchGroup> geometries;
@@ -195,7 +192,7 @@ public final class MasterNetworkManager {
 		int rendererIndex;
 		
 		if (sessionStarted || sessionStarting || !isThereAtLeastOneRendererAndOneComposer()) {
-			return true;
+			return;
 		}
 		
 		sessionStarting = true;
@@ -235,8 +232,8 @@ public final class MasterNetworkManager {
 					geometriesData = geometriesPackager.serialize(rootOfARenderer);
 				} catch (IOException e) {
 					log.error("Error serializing the scene", e);
-					
-					return false;
+					sessionStarted = false;
+					return;
 				}
 				
 				log.trace("POV data size: " + pointOfViewData.length + " bytes");
@@ -244,34 +241,38 @@ public final class MasterNetworkManager {
 				log.trace("Geometries data size: " + geometriesData.length + " bytes");
 				
 				try {
-					masterProtocolHandler.sendStartSessionMessage(rendererConnection, 
+					masterProtocolHandler.sendStartSessionMessage(
+							rendererConnection, 
 							getRendererIndex(rendererConnection),
-							composerConnection.getRemoteAddress().getHostAddress(),
-							XithClusterConfiguration.composerConnectionPort,
+							XithClusterConfiguration.screenWidth, 
+							XithClusterConfiguration.screenHeight,
+							XithClusterConfiguration.targetFPS,
+							composerConnection.getRemoteAddress().getHostAddress(), 
+							XithClusterConfiguration.composerConnectionPort, 
 							pointOfViewData, 
 							lightSourcesData, 
 							geometriesData);
 				} catch (IOException e) {
 					log.error("Error sending distributed scene", e);
-					
-					return false;
+					sessionStarted = false;
+					return;
 				}
 			}
 		}
 		
 		if (composerConnection != null) {
 			try {
-				masterProtocolHandler.sendStartSessionMessage(composerConnection, 
+				masterProtocolHandler.sendStartSessionMessage(
+						composerConnection, 
 						XithClusterConfiguration.screenWidth, 
-						XithClusterConfiguration.screenHeight);
+						XithClusterConfiguration.screenHeight,
+						XithClusterConfiguration.targetFPS);
 			} catch (IOException e) {
 				log.error("Error notifying composer", e);
-				
-				return false;
+				sessionStarted = false;
+				return;
 			}
 		}
-		
-		return true;
 	}
 	
 	public synchronized void closeCurrentSession() {
@@ -281,7 +282,7 @@ public final class MasterNetworkManager {
 			sessionStartedMask.clear();
 		}
 	}
-
+	
 	private int getRendererIndex(INonBlockingConnection rendererConnection) {
 		Integer rendererId;
 		
@@ -293,15 +294,15 @@ public final class MasterNetworkManager {
 	private void setRendererIndex(INonBlockingConnection arg0) {
 		arg0.setAttachment(renderersConnections.size());
 	}
-
+	
 	private boolean isThereAtLeastOneRendererAndOneComposer() {
 		return !renderersConnections.isEmpty() && composerConnection != null;
 	}
-
+	
 	private boolean isThereAlreadyAConnectedComposer() {
 		return composerConnection != null;
 	}
-
+	
 	public synchronized boolean onRendererConnected(INonBlockingConnection arg0) {
 		INonBlockingConnection rendererConnection;
 		
@@ -355,7 +356,7 @@ public final class MasterNetworkManager {
 		
 		return true;
 	}
-
+	
 	public synchronized boolean onFrameFinished(INonBlockingConnection arg0) {
 		framesFinishedMask.set(getRendererIndex(arg0));
 		
@@ -371,7 +372,7 @@ public final class MasterNetworkManager {
 		
 		return true;
 	}
-
+	
 	public synchronized boolean onRendererDisconnect(INonBlockingConnection arg0) {
 		framesFinishedMask.clear(getRendererIndex(arg0));
 		sessionStartedMask.clear(getRendererIndex(arg0));

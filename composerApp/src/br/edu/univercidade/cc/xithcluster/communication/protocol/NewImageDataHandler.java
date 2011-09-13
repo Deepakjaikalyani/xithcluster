@@ -5,8 +5,11 @@ import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
 import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.INonBlockingConnection;
+import br.edu.univercidade.cc.xithcluster.CompressionMethod;
 
 public final class NewImageDataHandler extends ChainedSafeDataHandler<ComposerProtocolHandler> {
+	
+	private CompressionMethod compressionMethod;
 	
 	private byte[] colorAndAlphaBuffer;
 	
@@ -18,6 +21,7 @@ public final class NewImageDataHandler extends ChainedSafeDataHandler<ComposerPr
 
 	@Override
 	protected boolean onHandleData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
+		compressionMethod = CompressionMethod.values()[arg0.readInt()];
 		colorAndAlphaBuffer = arg0.readBytesByLength(arg0.readInt());
 		depthBuffer = arg0.readBytesByLength(arg0.readInt());
 		
@@ -26,7 +30,7 @@ public final class NewImageDataHandler extends ChainedSafeDataHandler<ComposerPr
 
 	@Override
 	protected void onDataReady(INonBlockingConnection arg0) throws IOException {
-		getNextDataHandler().onNewImageCompleted(arg0, colorAndAlphaBuffer, depthBuffer);
+		getNextDataHandler().onNewImageCompleted(arg0, compressionMethod, colorAndAlphaBuffer, depthBuffer);
 	}
 	
 }
