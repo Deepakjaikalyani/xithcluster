@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.log4j.Logger;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Light;
@@ -17,12 +18,13 @@ import org.xith3d.scenegraph.View;
 import org.xsocket.connection.INonBlockingConnection;
 import org.xsocket.connection.IServer;
 import org.xsocket.connection.Server;
-import br.edu.univercidade.cc.xithcluster.XithClusterConfiguration;
+
+import br.edu.univercidade.cc.xithcluster.DistributedRenderLoop;
 import br.edu.univercidade.cc.xithcluster.DistributionStrategy;
 import br.edu.univercidade.cc.xithcluster.PendingUpdate;
 import br.edu.univercidade.cc.xithcluster.PendingUpdate.Type;
-import br.edu.univercidade.cc.xithcluster.SceneManager;
 import br.edu.univercidade.cc.xithcluster.UpdateManager;
+import br.edu.univercidade.cc.xithcluster.XithClusterConfiguration;
 import br.edu.univercidade.cc.xithcluster.communication.protocol.MasterProtocolHandler;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.GeometriesPackager;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.LightSourcesPackager;
@@ -43,7 +45,7 @@ public final class MasterNetworkManager {
 	
 	private final GeometriesPackager geometriesPackager = new GeometriesPackager();
 	
-	private final SceneManager sceneManager;
+	private final DistributedRenderLoop distributedRenderLoop;
 	
 	private final UpdateManager updateManager;
 	
@@ -57,7 +59,7 @@ public final class MasterNetworkManager {
 	
 	private INonBlockingConnection composerConnection;
 	
-	private boolean changed = false;
+	private boolean sessionStarted = false;
 	
 	private boolean sessionStarting = false;
 	
@@ -65,8 +67,8 @@ public final class MasterNetworkManager {
 	
 	private final BitSet sessionStartedMask = new BitSet();
 	
-	public MasterNetworkManager(SceneManager sceneManager, UpdateManager updateManager, DistributionStrategy distributionStrategy) {
-		this.sceneManager = sceneManager;
+	public MasterNetworkManager(DistributedRenderLoop distributedRenderLoop, UpdateManager updateManager, DistributionStrategy distributionStrategy) {
+		this.distributedRenderLoop = distributedRenderLoop;
 		this.updateManager = updateManager;
 		this.distributionStrategy = distributionStrategy;
 		this.masterProtocolHandler = new MasterProtocolHandler(this);
@@ -80,8 +82,8 @@ public final class MasterNetworkManager {
 		composerServer.start();
 	}
 	
-	public boolean hasChanged() {
-		return changed;
+	public boolean isSessionStarted() {
+		return sessionStarted;
 	}
 	
 	public synchronized int getSkipNextFrames() {
@@ -192,16 +194,16 @@ public final class MasterNetworkManager {
 		byte[] geometriesData;
 		int rendererIndex;
 		
-		if (sessionStarting || !changed || !isThereAtLeastOneRendererAndOneComposer()) {
+		if (sessionStarted || sessionStarting || !isThereAtLeastOneRendererAndOneComposer()) {
 			return true;
 		}
 		
 		sessionStarting = true;
 		
-		synchronized (sceneManager.getSceneLock()) {
-			root = sceneManager.getRoot();
-			pointOfView = sceneManager.getPointOfView();
-			lightSources = sceneManager.getLightSources();
+		synchronized (distributedRenderLoop.getSceneLock()) {
+			root = distributedRenderLoop.getRoot();
+			pointOfView = distributedRenderLoop.getPointOfView();
+			lightSources = distributedRenderLoop.getLightSources();
 		}
 		
 		log.info("Starting a new session");
@@ -259,7 +261,9 @@ public final class MasterNetworkManager {
 		
 		if (composerConnection != null) {
 			try {
-				masterProtocolHandler.sendStartSessionMessage(composerConnection);
+				masterProtocolHandler.sendStartSessionMessage(composerConnection, 
+						XithClusterConfiguration.screenWidth, 
+						XithClusterConfiguration.screenHeight);
 			} catch (IOException e) {
 				log.error("Error notifying composer", e);
 				
@@ -267,9 +271,15 @@ public final class MasterNetworkManager {
 			}
 		}
 		
-		changed = false;
-		
 		return true;
+	}
+	
+	public synchronized void closeCurrentSession() {
+		sessionStarted = false;
+		
+		synchronized (sessionStartedMask) {
+			sessionStartedMask.clear();
+		}
 	}
 
 	private int getRendererIndex(INonBlockingConnection rendererConnection) {
@@ -306,7 +316,7 @@ public final class MasterNetworkManager {
 		
 		log.info("New renderer connected");
 		
-		changed = true;
+		closeCurrentSession();
 		
 		return true;
 	}
@@ -319,7 +329,7 @@ public final class MasterNetworkManager {
 			
 			log.info("Composer connected");
 			
-			changed = true;
+			closeCurrentSession();
 			
 			return true;
 		} else {
@@ -336,6 +346,7 @@ public final class MasterNetworkManager {
 			sessionStartedMask.clear();
 			
 			sessionStarting = false;
+			sessionStarted = true;
 			
 			log.info("Session started successfully");
 			
@@ -356,7 +367,7 @@ public final class MasterNetworkManager {
 		
 		log.info("Composer disconnected");
 		
-		changed = true;
+		closeCurrentSession();
 		
 		return true;
 	}
@@ -374,9 +385,9 @@ public final class MasterNetworkManager {
 		
 		log.info("Renderer disconnected");
 		
-		changed = true;
+		closeCurrentSession();
 		
 		return true;
 	}
-
+	
 }
