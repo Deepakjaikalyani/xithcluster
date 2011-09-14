@@ -23,23 +23,20 @@ public final class LinearCompositionStrategy implements CompositionStrategy {
 			
 			l = i * 4;
 			
-			imageData[i] = toInt(colorAndAlphaBuffer[k][l + 1], colorAndAlphaBuffer[k][l + 2], colorAndAlphaBuffer[k][l + 3]);
+			imageData[i] = toInt((byte) 0, colorAndAlphaBuffer[k][l + 1], colorAndAlphaBuffer[k][l + 2], colorAndAlphaBuffer[k][l + 3]);
 		}
 		
 		return imageData;
 	}
 	
-	public static final int toInt(byte... b) 
-	{
-	    int i = 0;
-	    
-	    i |= b[0] & 0xFF;
-	    i <<= 8;
-	    i |= b[1] & 0xFF;
-	    i <<= 8;
-	    i |= b[2] & 0xFF;
-	    
-	    return i;
+	public static int toInt(byte... bytes) {
+		int result = 0;
+		
+		for (int i = 0; i < 4; i++) {
+			result = (result << 8) - Byte.MIN_VALUE + (int) bytes[i];
+		}
+		
+		return result;
 	}
 	
 }

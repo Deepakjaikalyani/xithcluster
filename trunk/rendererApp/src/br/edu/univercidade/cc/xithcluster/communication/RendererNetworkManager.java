@@ -21,8 +21,6 @@ public final class RendererNetworkManager implements Observer {
 	
 	private Logger log = Logger.getLogger(RendererNetworkManager.class);
 	
-	private int id = -1;
-	
 	private SceneDeserializer sceneDeserializer = new SceneDeserializer();
 	
 	private INonBlockingConnection masterConnection;
@@ -42,7 +40,7 @@ public final class RendererNetworkManager implements Observer {
 	private RendererProtocolHandler rendererProtocolHandler;
 
 	private int currentFrameIndex = -1;
-	
+
 	public RendererNetworkManager(Renderer renderer) {
 		this.renderer = renderer;
 		this.sceneDeserializer.addObserver(this);
@@ -52,10 +50,6 @@ public final class RendererNetworkManager implements Observer {
 	public void initialize() throws IOException {
 		masterConnection = new NonBlockingConnection(RendererConfiguration.masterListeningAddress, RendererConfiguration.masterListeningPort, rendererProtocolHandler);
 		masterConnection.setAutoflush(false);
-	}
-	
-	private void setId(int id) {
-		this.id = id;
 	}
 	
 	private void rebuildScene(View view, List<Light> lightSources, BranchGroup geometries) {
@@ -150,9 +144,8 @@ public final class RendererNetworkManager implements Observer {
 			interruptParallelSceneDeserialization();
 		}
 		
-		setId(id);
-		
-		notifySceneIdChange();
+		renderer.setId(id);
+		renderer.setScreenSize(screenWidth, screenHeight);
 		
 		startParallelSceneDeserialization(pointOfViewData, lightSourcesData, geometriesData);
 		
@@ -167,10 +160,6 @@ public final class RendererNetworkManager implements Observer {
 		}
 	}
 
-	private void notifySceneIdChange() {
-		renderer.setId(id);
-	}
-	
 	private void startParallelSceneDeserialization(byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) {
 		sceneDeserializer.setPackagesData(pointOfViewData, lightSourcesData, geometriesData);
 		
