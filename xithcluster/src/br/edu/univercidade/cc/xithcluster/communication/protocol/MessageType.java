@@ -1,6 +1,6 @@
 package br.edu.univercidade.cc.xithcluster.communication.protocol;
 
-public enum RecordType {
+public enum MessageType {
 	
 	UNKNOWN,
 	START_SESSION,
@@ -8,7 +8,7 @@ public enum RecordType {
 	START_FRAME,
 	UPDATE,
 	NEW_IMAGE,
-	FRAME_FINISHED,
+	FINISHED_FRAME,
 	SESSION_STARTED, 
 	SET_COMPOSITION_ORDER;
 	

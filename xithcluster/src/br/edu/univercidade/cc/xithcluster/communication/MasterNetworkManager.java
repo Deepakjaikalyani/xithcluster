@@ -61,9 +61,13 @@ public final class MasterNetworkManager {
 	
 	private boolean sessionStarting = false;
 	
-	private final BitSet framesFinishedMask = new BitSet();
+	private boolean composerSessionStarted = false; 
 	
-	private final BitSet sessionStartedMask = new BitSet();
+	private final BitSet renderersSessionStartedMask = new BitSet();
+	
+	private boolean finishedFrame = false;
+	
+	private int currentFrameIndex = 0;
 	
 	public MasterNetworkManager(DistributedRenderLoop distributedRenderLoop, UpdateManager updateManager, DistributionStrategy distributionStrategy) {
 		this.distributedRenderLoop = distributedRenderLoop;
@@ -98,27 +102,38 @@ public final class MasterNetworkManager {
 		return framesToSkip;
 	}
 	
-	public synchronized void notifyFrameStart() {
-		if (framesFinishedMask.cardinality() == renderersConnections.size()) {
-			internalNotifyFrameStart();
+	public synchronized void notifyFrameStart(int frameIndex) {
+		if (sessionStarted && finishedFrame) {
+			internalNotifyFrameStart(frameIndex);
 		}
 	}
 	
-	private void internalNotifyFrameStart() {
+	private void internalNotifyFrameStart(int frameIndex) {
 		Iterator<INonBlockingConnection> i;
 		
-		synchronized (renderersConnections) {
+		// FIXME: Infinity attempts!!!
+		do {
 			try {
-				i = renderersConnections.iterator();
-				while (i.hasNext()) {
-					masterProtocolHandler.sendStartFrameMessage(i.next());
+				masterProtocolHandler.sendStartFrameMessage(composerConnection, frameIndex);
+				
+				synchronized (renderersConnections) {
+					i = renderersConnections.iterator();
+					while (i.hasNext()) {
+						masterProtocolHandler.sendStartFrameMessage(i.next(), frameIndex);
+					}
 				}
-			} catch (IOException e) {
-				log.error("Error notifying frame start", e);
+				
+				break;
+			} catch (IOException e1) {
+				try {
+					Thread.sleep(100L);
+				} catch (InterruptedException e2) {
+				}
 			}
-		}
+		} while (true);
 		
-		framesFinishedMask.clear();
+		currentFrameIndex = frameIndex;
+		finishedFrame = false;
 	}
 	
 	public synchronized boolean sendPendingUpdates() {
@@ -247,8 +262,6 @@ public final class MasterNetworkManager {
 							XithClusterConfiguration.screenWidth, 
 							XithClusterConfiguration.screenHeight,
 							XithClusterConfiguration.targetFPS,
-							composerConnection.getRemoteAddress().getHostAddress(), 
-							XithClusterConfiguration.composerConnectionPort, 
 							pointOfViewData, 
 							lightSourcesData, 
 							geometriesData);
@@ -276,10 +289,12 @@ public final class MasterNetworkManager {
 	}
 	
 	public synchronized void closeCurrentSession() {
+		sessionStarting = false;
 		sessionStarted = false;
 		
-		synchronized (sessionStartedMask) {
-			sessionStartedMask.clear();
+		composerSessionStarted = false;
+		synchronized (renderersSessionStartedMask) {
+			renderersSessionStartedMask.clear();
 		}
 	}
 	
@@ -303,7 +318,19 @@ public final class MasterNetworkManager {
 		return composerConnection != null;
 	}
 	
-	public synchronized boolean onRendererConnected(INonBlockingConnection arg0) {
+	public boolean onConnected(INonBlockingConnection arg0) {
+		if (isRendererConnection(arg0)) {
+			return onRendererConnected(arg0);
+		} else if (isComposerConnection(arg0)) {
+			return onComposerConnected(arg0);
+		} else {
+			log.error("Unknown connection refused");
+			
+			return false;
+		}
+	}
+	
+	private synchronized boolean onRendererConnected(INonBlockingConnection arg0) {
 		INonBlockingConnection rendererConnection;
 		
 		rendererConnection = arg0;
@@ -322,7 +349,7 @@ public final class MasterNetworkManager {
 		return true;
 	}
 	
-	public synchronized boolean onComposerConnected(INonBlockingConnection arg0) {
+	private synchronized boolean onComposerConnected(INonBlockingConnection arg0) {
 		if (!isThereAlreadyAConnectedComposer()) {
 			composerConnection = arg0;
 			
@@ -340,30 +367,67 @@ public final class MasterNetworkManager {
 		}
 	}
 	
-	public synchronized boolean onSessionStarted(INonBlockingConnection arg0) {
-		sessionStartedMask.set(getRendererIndex(arg0));
-		
-		if (sessionStartedMask.cardinality() == renderersConnections.size()) {
-			sessionStartedMask.clear();
+	private boolean isRendererConnection(INonBlockingConnection arg0) {
+		return arg0.getLocalPort() == XithClusterConfiguration.renderersConnectionPort;
+	}
+	
+	private boolean isComposerConnection(INonBlockingConnection arg0) {
+		return arg0.getLocalPort() == XithClusterConfiguration.composerConnectionPort;
+	}
+	
+	public synchronized boolean onSessionStarted(INonBlockingConnection arg0) throws IOException {
+		if (isRendererConnection(arg0)) {
+			renderersSessionStartedMask.set(getRendererIndex(arg0));
 			
+			evaluateSessionStart();
+			
+			return true;
+		} else if (isComposerConnection(arg0)) {
+			composerSessionStarted = true;
+			
+			evaluateSessionStart();
+			
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	private void evaluateSessionStart() throws IOException {
+		if (!sessionStarting || sessionStarted) {
+			return;
+		}
+		
+		if (composerSessionStarted && renderersSessionStartedMask.cardinality() == renderersConnections.size()) {
 			sessionStarting = false;
 			sessionStarted = true;
 			
 			log.info("Session started successfully");
 			
-			internalNotifyFrameStart();
+			internalNotifyFrameStart(currentFrameIndex);
 		}
+	}
+	
+	public synchronized boolean onFinishedFrame(int frameIndex) {
+		finishedFrame = (currentFrameIndex == frameIndex);
 		
 		return true;
 	}
 	
-	public synchronized boolean onFrameFinished(INonBlockingConnection arg0) {
-		framesFinishedMask.set(getRendererIndex(arg0));
-		
-		return true;
+	public boolean onDisconnected(INonBlockingConnection arg0) {
+		if (isRendererConnection(arg0)) {
+			return onRendererDisconnect(arg0);
+		} else if (isComposerConnection(arg0)) {
+			return onComposerDisconnect();
+		} else {
+			throw new AssertionError("Should never happen!");
+		}
 	}
+
 	
-	public synchronized boolean onComposerDisconnect() {
+	private synchronized boolean onComposerDisconnect() {
+		finishedFrame = false;
+		
 		composerConnection = null;
 		
 		log.info("Composer disconnected");
@@ -373,13 +437,17 @@ public final class MasterNetworkManager {
 		return true;
 	}
 	
-	public synchronized boolean onRendererDisconnect(INonBlockingConnection arg0) {
-		framesFinishedMask.clear(getRendererIndex(arg0));
-		sessionStartedMask.clear(getRendererIndex(arg0));
+	private synchronized boolean onRendererDisconnect(INonBlockingConnection arg0) {
+		int rendererIndex;
 		
-		renderersConnections.remove(arg0);
+		rendererIndex = getRendererIndex(arg0);
+		
+		finishedFrame = true;
+		renderersSessionStartedMask.clear(rendererIndex);
+		
+		renderersConnections.remove(rendererIndex);
 		synchronized (renderersConnections) {
-			for (int j = getRendererIndex(arg0); j < renderersConnections.size(); j++) {
+			for (int j = rendererIndex; j < renderersConnections.size(); j++) {
 				renderersConnections.get(j).setAttachment(j);
 			}
 		}
@@ -390,5 +458,5 @@ public final class MasterNetworkManager {
 		
 		return true;
 	}
-	
+
 }

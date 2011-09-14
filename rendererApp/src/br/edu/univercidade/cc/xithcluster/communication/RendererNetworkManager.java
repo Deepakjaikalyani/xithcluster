@@ -4,23 +4,18 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
-
 import org.apache.log4j.Logger;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Light;
-import org.xith3d.scenegraph.Texture2D;
-import org.xith3d.scenegraph.TextureImage;
 import org.xith3d.scenegraph.View;
 import org.xsocket.connection.INonBlockingConnection;
 import org.xsocket.connection.NonBlockingConnection;
-
 import br.edu.univercidade.cc.xithcluster.PendingUpdate;
 import br.edu.univercidade.cc.xithcluster.Renderer;
 import br.edu.univercidade.cc.xithcluster.RendererConfiguration;
 import br.edu.univercidade.cc.xithcluster.SceneDeserializer;
 import br.edu.univercidade.cc.xithcluster.communication.protocol.RendererProtocolHandler;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.UpdatesPackager;
-import br.edu.univercidade.cc.xithcluster.util.BufferUtils;
 
 public final class RendererNetworkManager implements Observer {
 	
@@ -45,6 +40,8 @@ public final class RendererNetworkManager implements Observer {
 	private Renderer renderer;
 	
 	private RendererProtocolHandler rendererProtocolHandler;
+
+	private int currentFrameIndex = -1;
 	
 	public RendererNetworkManager(Renderer renderer) {
 		this.renderer = renderer;
@@ -88,14 +85,6 @@ public final class RendererNetworkManager implements Observer {
 		}
 	}
 	
-	public void notifyFrameFinished() {
-		try {
-			rendererProtocolHandler.sendFrameFinishedMessage(masterConnection);
-		} catch (IOException e) {
-			log.error("Error notifying master node that thet current frame was finished", e);
-		}
-	}
-	
 	public synchronized boolean onUpdate(byte[] updatesData) throws IOException {
 		if (sessionStarted) {
 			updateScene(updatesPackager.deserialize(updatesData));
@@ -108,9 +97,10 @@ public final class RendererNetworkManager implements Observer {
 		}
 	}
 	
-	public synchronized boolean onStartFrame() {
+	public synchronized boolean onStartFrame(int frameIndex) {
 		if (sessionStarted) {
 			startFrame = true;
+			currentFrameIndex  = frameIndex;
 			
 			return true;
 		} else {
@@ -125,8 +115,6 @@ public final class RendererNetworkManager implements Observer {
 			int screenWidth, 
 			int screenHeight, 
 			double targetFPS, 
-			String composerHostname, 
-			int composerPort, 
 			byte[] pointOfViewData, 
 			byte[] lightSourcesData, 
 			byte[] geometriesData) 
@@ -137,9 +125,22 @@ public final class RendererNetworkManager implements Observer {
 		log.debug("Session starting");
 		log.debug("****************");
 		
+		log.trace("Received id: " + id);
+		log.trace("Screen width: " + screenWidth);
+		log.trace("Screen height: " + screenHeight);
+		log.trace("Target FPS: " + targetFPS);
+		log.trace("POV data size: " + pointOfViewData.length + " bytes");
+		log.trace("Light sources data size: " + lightSourcesData.length + " bytes");
+		log.trace("Geometries data size: " + geometriesData.length + " bytes");
+		
 		log.trace("Connecting to composer");
-		composerConnection = new NonBlockingConnection(composerHostname, composerPort);
-		composerConnection.setAutoflush(false);
+		try {
+			composerConnection = new NonBlockingConnection(RendererConfiguration.composerListeningAddress, RendererConfiguration.composerListeningPort);
+			composerConnection.setAutoflush(false);
+		} catch (IOException e) {
+			// TODO:
+			throw new RuntimeException("Error connecting to composer", e);
+		}
 		
 		log.trace("Sending composition order: " + RendererConfiguration.compositionOrder);
 		notifyCompositionOrder();
@@ -148,14 +149,6 @@ public final class RendererNetworkManager implements Observer {
 			log.trace("Interrupting parallel scene deserialization");
 			interruptParallelSceneDeserialization();
 		}
-		
-		log.trace("Received id: " + id);
-		log.trace("Screen width: " + screenWidth);
-		log.trace("Screen height: " + screenHeight);
-		log.trace("Target FPS: " + targetFPS);
-		log.trace("POV data size: " + pointOfViewData.length + " bytes");
-		log.trace("Light sources data size: " + lightSourcesData.length + " bytes");
-		log.trace("Geometries data size: " + geometriesData.length + " bytes");
 		
 		setId(id);
 		
@@ -220,31 +213,18 @@ public final class RendererNetworkManager implements Observer {
 		}
 	}
 
-	public void sendColorAlphaAndDepthBuffer(Texture2D colorAndAlphaTexture, Texture2D depthTexture) {
-		TextureImage textureImage1, textureImage2;
-		byte[] colorAndAlphaBuffer;
-		byte[] depthBuffer;
-		
-		textureImage1 = colorAndAlphaTexture.getImage(0);
-		textureImage2 = depthTexture.getImage(0);
-		if (textureImage1.getDataBuffer() != null && textureImage2.getDataBuffer() != null) {
-			colorAndAlphaBuffer = BufferUtils.safeBufferRead(textureImage1.getDataBuffer());
-			depthBuffer = BufferUtils.safeBufferRead(depthTexture.getImage(0).getDataBuffer());
-			
-			switch (RendererConfiguration.compressionMethod) {
-			case PNG:
-				// TODO: Deflate!
-				break;
-			}
-			
-			// TODO: Do re-attempts!
-			try {
-				rendererProtocolHandler.sendNewImageMessage(composerConnection, RendererConfiguration.compressionMethod, colorAndAlphaBuffer, depthBuffer);
-			} catch (IOException e) {
-				log.error("Error sending image buffers to composer", e);
-			}
+	public void sendColorAlphaAndDepthBuffers(byte[] colorAndAlphaBuffer, byte[] depthBuffer) {
+		switch (RendererConfiguration.compressionMethod) {
+		case PNG:
+			// TODO: Deflate!
+			break;
 		}
 		
-		notifyFrameFinished();
+		// TODO: Do re-attempts!
+		try {
+			rendererProtocolHandler.sendNewImageMessage(composerConnection, currentFrameIndex, RendererConfiguration.compressionMethod, colorAndAlphaBuffer, depthBuffer);
+		} catch (IOException e) {
+			log.error("Error sending image buffers to composer", e);
+		}
 	}
 }

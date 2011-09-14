@@ -18,7 +18,7 @@ public final class ComposerConfiguration {
 
 	private static final Boolean DEFAULT_DISPLAY_FPS_COUNTER = true;
 	
-	private static final String DEFAULT_COMPOSITION_STRATEGY_CLASSNAME = "br.edu.univercidade.cc.xithcluster.SimpleCompositionStrategy";
+	private static final String DEFAULT_COMPOSITION_STRATEGY_CLASSNAME = LinearCompositionStrategy.class.getName();
 	
 	public static final String windowTitle;	
 
