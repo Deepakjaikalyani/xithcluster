@@ -29,7 +29,7 @@ public class Display extends JFrame {
 	
 	private double framesPerSecond;
 	
-	public void initialize() {
+	public void initializeAndShow() {
 		decorate();
 		setVisible(true);
 		setupBufferStrategy();
@@ -91,18 +91,8 @@ public class Display extends JFrame {
 		this.framesPerSecond = framesPerSecond;
 	}
 	
-	public void setImageData(byte[] imageData) {
-		int width;
-		int x;
-		int y;
-		
-		width = getWidth();
-		// TODO: Is there a way to optimize it?
-		for (int i = 0; i < imageData.length; i++) {
-			x = i % width;
-			y = i / width;
-			backBuffer.setRGB(x, y, (int) imageData[i]);
-		}
+	public void setImageData(int[] imageData) {
+		backBuffer.setRGB(0, 0, getWidth(), getHeight(), imageData, 0, 0);
 	}
 	
 	public synchronized void blit() {

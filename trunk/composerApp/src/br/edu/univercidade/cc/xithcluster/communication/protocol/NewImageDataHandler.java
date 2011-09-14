@@ -9,6 +9,8 @@ import br.edu.univercidade.cc.xithcluster.CompressionMethod;
 
 public final class NewImageDataHandler extends ChainedSafeDataHandler<ComposerProtocolHandler> {
 	
+	private int frameIndex;
+	
 	private CompressionMethod compressionMethod;
 	
 	private byte[] colorAndAlphaBuffer;
@@ -21,6 +23,7 @@ public final class NewImageDataHandler extends ChainedSafeDataHandler<ComposerPr
 
 	@Override
 	protected boolean onHandleData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
+		frameIndex = arg0.readInt();
 		compressionMethod = CompressionMethod.values()[arg0.readInt()];
 		colorAndAlphaBuffer = arg0.readBytesByLength(arg0.readInt());
 		depthBuffer = arg0.readBytesByLength(arg0.readInt());
@@ -30,7 +33,7 @@ public final class NewImageDataHandler extends ChainedSafeDataHandler<ComposerPr
 
 	@Override
 	protected void onDataReady(INonBlockingConnection arg0) throws IOException {
-		getNextDataHandler().onNewImageCompleted(arg0, compressionMethod, colorAndAlphaBuffer, depthBuffer);
+		getNextDataHandler().onNewImageCompleted(arg0, frameIndex, compressionMethod, colorAndAlphaBuffer, depthBuffer);
 	}
 	
 }

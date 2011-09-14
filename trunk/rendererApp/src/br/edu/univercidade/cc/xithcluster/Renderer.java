@@ -2,6 +2,7 @@ package br.edu.univercidade.cc.xithcluster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.jagatoo.input.InputSystem;
@@ -13,17 +14,18 @@ import org.openmali.vecmath2.Colorf;
 import org.xith3d.base.Xith3DEnvironment;
 import org.xith3d.loaders.texture.TextureCreator;
 import org.xith3d.loop.InputAdapterRenderLoop;
-import org.xith3d.render.BaseRenderPassConfig;
 import org.xith3d.render.Canvas3D;
 import org.xith3d.render.Canvas3DFactory;
-import org.xith3d.render.RenderPassConfig;
+import org.xith3d.render.RenderPass;
 import org.xith3d.render.TextureRenderTarget;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Light;
+import org.xith3d.scenegraph.Node;
 import org.xith3d.scenegraph.Texture2D;
 import org.xith3d.scenegraph.View;
 import org.xith3d.utility.events.WindowClosingRenderLoopEnder;
 import br.edu.univercidade.cc.xithcluster.communication.RendererNetworkManager;
+import br.edu.univercidade.cc.xithcluster.util.BufferUtils;
 import br.edu.univercidade.cc.xithcluster.util.ViewHelper;
 
 public class Renderer extends InputAdapterRenderLoop {
@@ -55,13 +57,36 @@ public class Renderer extends InputAdapterRenderLoop {
 	@Override
 	public void begin(RunMode runMode, TimingMode timingMode) {
 		Canvas3D canvas;
+		org.xith3d.render.Renderer renderer;
+		Colorf backgroundColor;
+		RenderPass renderPass;
 		
 		initializeLog4j();
 		
 		new Xith3DEnvironment(this);
 		
+		root = new BranchGroup();
+		renderPass = getXith3DEnvironment().addPerspectiveBranch(root);
+		
+		backgroundColor = new Colorf(0f, 0f, 0f, 0.1f);
+		
+		colorAndAlphaTexture = TextureCreator.createTexture(TextureFormat.RGBA, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+		depthTexture = TextureCreator.createTexture(TextureFormat.DEPTH, DEFAULT_WIDTH, DEFAULT_HEIGHT);
+		
+		renderer = getXith3DEnvironment().getRenderer();
+		
+		renderer.addRenderTarget(new TextureRenderTarget(root, colorAndAlphaTexture, backgroundColor, true), renderPass.getConfig());
+		renderer.addRenderTarget(new TextureRenderTarget(root, depthTexture), renderPass.getConfig());
+		
 		canvas = Canvas3DFactory.createWindowed(DEFAULT_WIDTH, DEFAULT_HEIGHT, APP_TITLE);
+		canvas.addWindowClosingListener(new WindowClosingRenderLoopEnder(this));
 		getXith3DEnvironment().addCanvas(canvas);
+		
+		try {
+			InputSystem.getInstance().registerNewKeyboardAndMouse(canvas.getPeer());
+		} catch (InputSystemException e) {
+			throw new RuntimeException("Error registering new keyboard and mouse", e);
+		}
 		
 		networkManager = new RendererNetworkManager(this);
 		try {
@@ -71,42 +96,7 @@ public class Renderer extends InputAdapterRenderLoop {
 			throw new RuntimeException("Error starting network manager", e);
 		}
 		
-		root = new BranchGroup();
-		getXith3DEnvironment().addPerspectiveBranch(root);
-		
-		createColorAndAlphaTexture();
-		createDepthTexture();
-		
-		setupTextureRenderTargets();
-		
-		canvas.addWindowClosingListener(new WindowClosingRenderLoopEnder(this));
-		
-		try {
-			InputSystem.getInstance().registerNewKeyboardAndMouse(canvas.getPeer());
-		} catch (InputSystemException e) {
-			throw new RuntimeException("Error registering new keyboard and mouse", e);
-		}
-		
 		super.begin(runMode, timingMode);
-	}
-	
-	private void setupTextureRenderTargets() {
-		RenderPassConfig renderPassConfig;
-		
-		renderPassConfig = new BaseRenderPassConfig();
-		
-		getXith3DEnvironment().getRenderer().addRenderTarget(new TextureRenderTarget(root, colorAndAlphaTexture, Colorf.BLACK), renderPassConfig);
-		getXith3DEnvironment().getRenderer().addRenderTarget(new TextureRenderTarget(root, depthTexture, Colorf.BLACK), renderPassConfig);
-	}
-	
-	private void createDepthTexture() {
-		depthTexture = TextureCreator.createTexture(TextureFormat.DEPTH, DEFAULT_WIDTH, DEFAULT_HEIGHT);
-		depthTexture.enableAutoFreeLocalData();
-	}
-	
-	private void createColorAndAlphaTexture() {
-		colorAndAlphaTexture = TextureCreator.createTexture(TextureFormat.RGBA, DEFAULT_WIDTH, DEFAULT_HEIGHT, Colorf.BLACK);
-		colorAndAlphaTexture.enableAutoFreeLocalData();
 	}
 	
 	private void initializeLog4j() {
@@ -125,9 +115,13 @@ public class Renderer extends InputAdapterRenderLoop {
 			synchronized (sceneLock) {
 				super.renderNextFrame(gameTime, frameTime, timingMode);
 				
-				networkManager.sendColorAlphaAndDepthBuffer(colorAndAlphaTexture, depthTexture);
+				networkManager.sendColorAlphaAndDepthBuffers(readBytesFromTexture(colorAndAlphaTexture), readBytesFromTexture(depthTexture));
 			}
 		}
+	}
+	
+	private byte[] readBytesFromTexture(Texture2D texture) {
+		return BufferUtils.safeBufferRead(texture.getTextureCanvas().getImage().getDataBuffer());
 	}
 	
 	@Override
@@ -149,23 +143,28 @@ public class Renderer extends InputAdapterRenderLoop {
 		// "]");
 	}
 	
-	public void updateScene(View view, List<Light> lightSources, BranchGroup root) {
-		if (this.root != null) {
-			getXith3DEnvironment().removeBranchGraph(this.root);
-		}
+	public void updateScene(View view, List<Light> lightSources, BranchGroup newRoot) {
+		List<Node> children;
 		
 		for (Light lightSource : lightSources) {
-			root.addChild(lightSource);
+			newRoot.addChild(lightSource);
 		}
-		
-		getXith3DEnvironment().addPerspectiveBranch(root);
 		
 		// TODO: Check this!
 		ViewHelper.copy(view, getXith3DEnvironment().getView());
 		
-		setupTextureRenderTargets();
+		root.removeAllChildren();
 		
-		this.root = root;
+		children = new ArrayList<Node>();
+		for (int i = 0; i < newRoot.numChildren(); i++) {
+			children.add(newRoot.getChild(i));
+		}
+		
+		newRoot.removeAllChildren();
+		
+		for (Node child : children) {
+			root.addChild(child);
+		}
 	}
 	
 	/*

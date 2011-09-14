@@ -6,7 +6,6 @@ import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
-import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 import br.edu.univercidade.cc.xithcluster.communication.ComposerNetworkManager;
 
@@ -14,8 +13,6 @@ public class Composer implements Runnable, WindowListener {
 	
 	private static final String LOG4J_CONFIGURATION_FILE = "log4j.xml";
 	
-	private final Logger log = Logger.getLogger(Composer.class);
-
 	private final ComposerNetworkManager networkManager;
 	
 	private final long secondsPerFrame;
@@ -23,6 +20,10 @@ public class Composer implements Runnable, WindowListener {
 	private CompositionStrategy compositionStrategy;
 	
 	private Display display;
+
+	private int screenWidth;
+
+	private int screenHeight;
 	
 	public Composer() {
 		// TODO:
@@ -49,16 +50,19 @@ public class Composer implements Runnable, WindowListener {
 			try {
 				return compositionStrategyClass.newInstance();
 			} catch (Exception e) {
-				log.error("Error creating composition strategy", e);
-				
-				return null;
+				// TODO:
+				throw new RuntimeException("Error creating composition strategy", e);
 			}
 		} catch (ClassNotFoundException e) {
-			return null;
+			// TODO:
+			throw new RuntimeException("Error creating composition strategy", e);
 		}
 	}
 	
 	public void setScreenSize(int screenWidth, int screenHeight) {
+		this.screenWidth = screenWidth;
+		this.screenHeight = screenHeight;
+		
 		// TODO: Check!
 		display.setPreferredSize(new Dimension(screenWidth, screenHeight));
 	}
@@ -74,6 +78,10 @@ public class Composer implements Runnable, WindowListener {
 		
 		compositionStrategy = createCompositionStrategy(ComposerConfiguration.compositionStrategyClassName);
 		
+		display = new Display();
+		display.addWindowListener(Composer.this);
+		display.initializeAndShow();
+		
 		try {
 			networkManager.initialize();
 		} catch (UnknownHostException e) {
@@ -83,10 +91,6 @@ public class Composer implements Runnable, WindowListener {
 			// TODO:
 			throw new RuntimeException("Error starting network manager", e);
 		}
-		
-		display = new Display();
-		display.initialize();
-		display.addWindowListener(Composer.this);
 		
 		framesPerSecond = 0L;
 		elapsedTime = 0L;
@@ -118,7 +122,7 @@ public class Composer implements Runnable, WindowListener {
 	
 		if (networkManager.hasAllSubImages()) {
 			// Buffer swapping
-			display.setImageData(compositionStrategy.compose(networkManager.getColorAndAlphaBuffers(), networkManager.getDepthBuffers()));
+			display.setImageData(compositionStrategy.compose(screenWidth, screenHeight, networkManager.getNumberOfSubImages(), networkManager.getColorAndAlphaBuffers(), networkManager.getDepthBuffers()));
 		}
 		
 		display.blit();

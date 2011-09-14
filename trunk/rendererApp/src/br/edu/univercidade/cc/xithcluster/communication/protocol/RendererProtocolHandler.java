@@ -23,21 +23,21 @@ public final class RendererProtocolHandler implements IDataHandler {
 
 	@Override
 	public boolean onData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
-		RecordType recordType;
+		MessageType messageType;
 		
-		recordType = ProtocolHelper.readRecordType(arg0);
+		messageType = ProtocolHelper.readMessageType(arg0);
 		
-		if (recordType == null) {
+		if (messageType == null) {
 			return true;
 		}
 		
-		switch (recordType) {
+		switch (messageType) {
 		case START_SESSION:
 			arg0.setHandler(new StartSessionDataHandler(this));
 			
 			return true;
 		case START_FRAME:
-			rendererNetworkManager.onStartFrame();
+			arg0.setHandler(new StartFrameDataHandler(this));
 			
 			return true;
 		case UPDATE:
@@ -51,28 +51,33 @@ public final class RendererProtocolHandler implements IDataHandler {
 		}
 	}
 
-	void onStartSessionCompleted(int id, int screenWidth, int screenHeight, double targetFPS, String composerHostname, int composerPort, byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) throws IOException {
-		rendererNetworkManager.onStartSession(id, screenWidth, screenHeight, targetFPS, composerHostname, composerPort, pointOfViewData, lightSourcesData, geometriesData);
+	void onStartSessionCompleted(int id, int screenWidth, int screenHeight, double targetFPS, byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) throws IOException {
+		rendererNetworkManager.onStartSession(id, screenWidth, screenHeight, targetFPS, pointOfViewData, lightSourcesData, geometriesData);
 	}
 
 	void onUpdateCompleted(byte[] updatesData) throws IOException {
 		rendererNetworkManager.onUpdate(updatesData);
 	}
+	
+	void onStartFrameCompleted(int frameIndex) {
+		rendererNetworkManager.onStartFrame(frameIndex);
+	}
 
 	public void sendSessionStartedMessage(INonBlockingConnection masterConnection) throws BufferOverflowException, IOException {
-		masterConnection.write(RecordType.SESSION_STARTED.ordinal());
+		masterConnection.write(MessageType.SESSION_STARTED.ordinal());
 		masterConnection.flush();
 	}
 
 	public void sendFrameFinishedMessage(INonBlockingConnection masterConnection) throws BufferOverflowException, IOException {
-		masterConnection.write(RecordType.FRAME_FINISHED.ordinal());
+		masterConnection.write(MessageType.FINISHED_FRAME.ordinal());
 		masterConnection.flush();
 	}
 
-	public void sendNewImageMessage(INonBlockingConnection composerConnection, CompressionMethod compressionMethod, byte[] colorAndAlphaBuffer, byte[] depthBuffer) throws BufferOverflowException, IOException {
-		composerConnection.write(RecordType.NEW_IMAGE.ordinal());
+	public void sendNewImageMessage(INonBlockingConnection composerConnection, int frameIndex, CompressionMethod compressionMethod, byte[] colorAndAlphaBuffer, byte[] depthBuffer) throws BufferOverflowException, IOException {
+		composerConnection.write(MessageType.NEW_IMAGE.ordinal());
 		composerConnection.flush();
 		
+		composerConnection.write(frameIndex);
 		composerConnection.write(compressionMethod.ordinal());
 		composerConnection.write(colorAndAlphaBuffer.length);
 		composerConnection.write(colorAndAlphaBuffer);
@@ -82,7 +87,7 @@ public final class RendererProtocolHandler implements IDataHandler {
 	}
 
 	public void sendSetCompositionOrderMessage(INonBlockingConnection composerConnection, int compositionOrder) throws BufferOverflowException, IOException {
-		composerConnection.write(RecordType.SET_COMPOSITION_ORDER.ordinal());
+		composerConnection.write(MessageType.SET_COMPOSITION_ORDER.ordinal());
 		composerConnection.flush();
 		
 		composerConnection.write(compositionOrder);

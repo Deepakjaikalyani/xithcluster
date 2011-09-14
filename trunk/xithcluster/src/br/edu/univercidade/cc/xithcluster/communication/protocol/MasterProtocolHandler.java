@@ -11,12 +11,9 @@ import org.xsocket.connection.IConnectHandler;
 import org.xsocket.connection.IDataHandler;
 import org.xsocket.connection.IDisconnectHandler;
 import org.xsocket.connection.INonBlockingConnection;
-import br.edu.univercidade.cc.xithcluster.XithClusterConfiguration;
 import br.edu.univercidade.cc.xithcluster.communication.MasterNetworkManager;
 
 public final class MasterProtocolHandler implements IConnectHandler, IDataHandler, IDisconnectHandler {
-
-	private static final String STRING_DELIMITER = "\r\n";
 
 	private Logger log = Logger.getLogger(MasterNetworkManager.class);
 	
@@ -26,35 +23,23 @@ public final class MasterProtocolHandler implements IConnectHandler, IDataHandle
 		this.masterNetworkManager = networkManager;
 	}
 	
-	private boolean isRendererConnection(INonBlockingConnection arg0) {
-		return arg0.getLocalPort() == XithClusterConfiguration.renderersConnectionPort;
-	}
-	
-	private boolean isComposerConnection(INonBlockingConnection arg0) {
-		return arg0.getLocalPort() == XithClusterConfiguration.composerConnectionPort;
-	}
-	
 	public void sendStartSessionMessage(
 			INonBlockingConnection rendererConnection, 
 			int rendererIndex, 
 			int screenWidth, 
 			int screenHeight,
 			double targetFPS,
-			String composerListeningAddress, 
-			int composerListeningPort, 
 			byte[] pointOfViewData, 
 			byte[] lightSourcesData, 
 			byte[] geometriesData) 
 	throws BufferOverflowException, ClosedChannelException, SocketTimeoutException, IOException {
-		rendererConnection.write(RecordType.START_SESSION.ordinal());
+		rendererConnection.write(MessageType.START_SESSION.ordinal());
 		rendererConnection.flush();
 
 		rendererConnection.write(rendererIndex);
 		rendererConnection.write(screenWidth);
 		rendererConnection.write(screenHeight);
 		rendererConnection.write(targetFPS);
-		rendererConnection.write(composerListeningAddress + STRING_DELIMITER);
-		rendererConnection.write(composerListeningPort);
 		rendererConnection.write(pointOfViewData.length);
 		rendererConnection.write(pointOfViewData);
 		rendererConnection.write(lightSourcesData.length);
@@ -70,7 +55,7 @@ public final class MasterProtocolHandler implements IConnectHandler, IDataHandle
 			int screenHeight,
 			double targetFPS) 
 	throws BufferOverflowException, ClosedChannelException, SocketTimeoutException, IOException {
-		composerConnection.write(RecordType.START_SESSION.ordinal());
+		composerConnection.write(MessageType.START_SESSION.ordinal());
 		composerConnection.flush();
 		
 		composerConnection.write(screenWidth);
@@ -81,32 +66,26 @@ public final class MasterProtocolHandler implements IConnectHandler, IDataHandle
 	
 	@Override
 	public boolean onConnect(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, MaxReadSizeExceededException {
-		if (isRendererConnection(arg0)) {
-			return masterNetworkManager.onRendererConnected(arg0);
-		} else if (isComposerConnection(arg0)) {
-			return masterNetworkManager.onComposerConnected(arg0);
-		} else {
-			log.error("Unknown connection refused");
-			
-			return false;
-		}
+		return masterNetworkManager.onConnected(arg0);
 	}
 	
 	@Override
 	public boolean onData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
-		RecordType recordType;
+		MessageType messageType;
 		
-		recordType = ProtocolHelper.readRecordType(arg0);
+		messageType = ProtocolHelper.readMessageType(arg0);
 		
-		if (recordType == null) {
+		if (messageType == null) {
 			return true;
 		}
 		
-		switch (recordType) {
+		switch (messageType) {
 		case SESSION_STARTED:
 			return masterNetworkManager.onSessionStarted(arg0);
-		case FRAME_FINISHED:
-			return masterNetworkManager.onFrameFinished(arg0);
+		case FINISHED_FRAME:
+			arg0.setHandler(new FinishedFrameDataHandler(this));
+			
+			return true;
 		default:
 			log.error("Invalid/Unknown record");
 			
@@ -116,17 +95,15 @@ public final class MasterProtocolHandler implements IConnectHandler, IDataHandle
 
 	@Override
 	public boolean onDisconnect(INonBlockingConnection arg0) throws IOException {
-		if (isRendererConnection(arg0)) {
-			return masterNetworkManager.onRendererDisconnect(arg0);
-		} else if (isComposerConnection(arg0)) {
-			return masterNetworkManager.onComposerDisconnect();
-		} else {
-			throw new AssertionError("Should never happen!");
-		}
+		return masterNetworkManager.onDisconnected(arg0);
+	}
+	
+	void onFinishedFrameCompleted(int frameIndex) {
+		masterNetworkManager.onFinishedFrame(frameIndex);
 	}
 
 	public void sendUpdateMessage(INonBlockingConnection rendererConnection, byte[] updateData) throws BufferOverflowException, IOException {
-		rendererConnection.write(RecordType.UPDATE.ordinal());
+		rendererConnection.write(MessageType.UPDATE.ordinal());
 		rendererConnection.flush();
 		
 		rendererConnection.write(updateData);
@@ -134,13 +111,16 @@ public final class MasterProtocolHandler implements IConnectHandler, IDataHandle
 	}
 
 	public void sendGetFramesToSkipMessage(INonBlockingConnection composerConnection) throws BufferOverflowException, IOException {
-		composerConnection.write(RecordType.GET_FRAMES_TO_SKIP.ordinal());
+		composerConnection.write(MessageType.GET_FRAMES_TO_SKIP.ordinal());
 		composerConnection.flush();
 	}
 
-	public void sendStartFrameMessage(INonBlockingConnection rendererConnection) throws BufferOverflowException, IOException {
-		rendererConnection.write(RecordType.START_FRAME.ordinal());
-		rendererConnection.flush();
+	public void sendStartFrameMessage(INonBlockingConnection connection, int frameIndex) throws BufferOverflowException, IOException {
+		connection.write(MessageType.START_FRAME.ordinal());
+		connection.flush();
+		
+		connection.write(frameIndex);
+		connection.flush();
 	}
-	
+
 }

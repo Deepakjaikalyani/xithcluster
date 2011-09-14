@@ -9,9 +9,9 @@ public final class ProtocolHelper {
 	private ProtocolHelper() {
 	}
 	
-	public static RecordType readRecordType(INonBlockingConnection connection) throws IOException {
-		final RecordType[] recordTypes = RecordType.values();
-		RecordType recordType;
+	public static MessageType readMessageType(INonBlockingConnection connection) throws IOException {
+		final MessageType[] recordTypes = MessageType.values();
+		MessageType recordType;
 		int ordinal;
 		
 		recordType = null;

@@ -1,6 +1,7 @@
 package br.edu.univercidade.cc.xithcluster.communication.protocol;
 
 import java.io.IOException;
+import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
 import org.apache.log4j.Logger;
@@ -24,20 +25,21 @@ public class ComposerProtocolHandler implements IConnectHandler, IDataHandler, I
 	
 	@Override
 	public boolean onConnect(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, MaxReadSizeExceededException {
-		return composerNetworkManager.onRendererConnected(arg0);
+		return composerNetworkManager.onConnected(arg0);
 	}
 	
 	@Override
 	public boolean onData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
-		RecordType recordType;
+		MessageType messageType;
 		
-		recordType = ProtocolHelper.readRecordType(arg0);
+		messageType = ProtocolHelper.readMessageType(arg0);
 		
-		if (recordType == null) {
+		if (messageType == null) {
 			return true;
 		}
 		
-		switch (recordType) {
+		// TODO: Reduce object instatiation by creating an object pool... or redesigning the classes.
+		switch (messageType) {
 		case START_SESSION:
 			arg0.setHandler(new StartSessionDataHandler(this));
 			
@@ -47,7 +49,7 @@ public class ComposerProtocolHandler implements IConnectHandler, IDataHandler, I
 			
 			return true;
 		case START_FRAME:
-			composerNetworkManager.onStartFrame();
+			arg0.setHandler(new StartFrameDataHandler(this));
 			
 			return true;
 		case NEW_IMAGE:
@@ -70,12 +72,29 @@ public class ComposerProtocolHandler implements IConnectHandler, IDataHandler, I
 		composerNetworkManager.onStartSession(screenWidth, screenHeight, targetFPS);
 	}
 	
-	void onNewImageCompleted(INonBlockingConnection arg0, CompressionMethod compressionMethod, byte[] colorAndAlphaBuffer, byte[] depthBuffer) {
-		composerNetworkManager.onNewImage(arg0, compressionMethod, colorAndAlphaBuffer, depthBuffer);
+	void onNewImageCompleted(INonBlockingConnection arg0, int frameIndex, CompressionMethod compressionMethod, byte[] colorAndAlphaBuffer, byte[] depthBuffer) {
+		composerNetworkManager.onNewImage(arg0, frameIndex, compressionMethod, colorAndAlphaBuffer, depthBuffer);
 	}
 
 	void onSetCompositionOrderCompleted(INonBlockingConnection arg0, int compositionOrder) {
 		composerNetworkManager.onSetCompositionOrder(arg0, compositionOrder);
 	}
 	
+	void onStartFrameCompleted(int frameIndex) {
+		composerNetworkManager.onStartFrame(frameIndex);
+	}
+
+	public void sendSessionStartedMessage(INonBlockingConnection masterConnection) throws BufferOverflowException, IOException {
+		masterConnection.write(MessageType.SESSION_STARTED.ordinal());
+		masterConnection.flush();
+	}
+
+	public void sendFinishedFrameMessage(INonBlockingConnection masterConnection, int frameIndex) throws BufferOverflowException, IOException {
+		masterConnection.write(MessageType.FINISHED_FRAME.ordinal());
+		masterConnection.flush();
+		
+		masterConnection.write(frameIndex);
+		masterConnection.flush();
+	}
+
 }

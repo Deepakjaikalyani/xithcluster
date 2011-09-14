@@ -4,9 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.List;
-
 import javax.xml.parsers.FactoryConfigurationError;
-
 import org.apache.log4j.xml.DOMConfigurator;
 import org.xith3d.base.Xith3DEnvironment;
 import org.xith3d.loop.InputAdapterRenderLoop;
@@ -15,18 +13,19 @@ import org.xith3d.loop.opscheduler.OperationScheduler;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Light;
 import org.xith3d.scenegraph.View;
-
 import br.edu.univercidade.cc.xithcluster.communication.MasterNetworkManager;
 
 public class DistributedRenderLoop extends InputAdapterRenderLoop {
 	
 	private static final String LOG4J_CONFIGURATION_FILE = "xithcluster-log4j.xml";
-
+	
 	private UpdateManager updateManager;
 	
 	private MasterNetworkManager networkManager;
 	
 	private DistributionStrategy distributionStrategy;
+	
+	private int currentFrame = -1;
 	
 	private final Object sceneLock = new Object();
 	
@@ -98,7 +97,7 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop {
 			if (framesToSkip > 0) {
 				// TODO: dT = dT + (frameTime * framesToSkip)
 			} else {
-				networkManager.notifyFrameStart();
+				networkManager.notifyFrameStart(++currentFrame % Integer.MAX_VALUE);
 			}
 			
 			// TODO: doSimulations(dT)
@@ -137,7 +136,7 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop {
 			getXith3DEnvironment().render(getGameNanoTime(), getLastNanoFrameTime());
 		} else {
 			// TODO:
-			throw new RuntimeException("You must set a Xith3d environment");
+			throw new RuntimeException("You must setup a Xith3d environment");
 		}
 	}
 

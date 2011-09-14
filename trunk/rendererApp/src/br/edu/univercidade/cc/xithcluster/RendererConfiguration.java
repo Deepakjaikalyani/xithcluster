@@ -14,9 +14,17 @@ public final class RendererConfiguration {
 	
 	private static final CompressionMethod DEFAULT_COMPRESSION_METHOD = CompressionMethod.NONE;
 
+	private static final String DEFAULT_COMPOSER_LISTENING_ADDRESS = "localhost";
+
+	private static final Integer DEFAULT_COMPOSER_LISTENING_PORT = 33333;
+
 	public static String masterListeningAddress;
 	
 	public static int masterListeningPort;
+	
+	public static String composerListeningAddress;
+	
+	public static int composerListeningPort;
 
 	public static int compositionOrder;
 	
@@ -35,6 +43,8 @@ public final class RendererConfiguration {
 				properties.load(in);
 				masterListeningAddress = properties.getProperty("master.listening.address", DEFAULT_MASTER_LISTENING_ADDRESS);
 				masterListeningPort = Integer.parseInt(properties.getProperty("master.listening.port", DEFAULT_MASTER_LISTENING_PORT.toString()));
+				composerListeningAddress = properties.getProperty("composer.listening.address", DEFAULT_COMPOSER_LISTENING_ADDRESS);
+				composerListeningPort = Integer.parseInt(properties.getProperty("composer.listening.port", DEFAULT_COMPOSER_LISTENING_PORT.toString()));
 				compositionOrder = Integer.parseInt(properties.getProperty("composition.order", DEFAULT_COMPOSITION_ORDER.toString()));
 				compressionMethod = CompressionMethod.valueOf(properties.getProperty("compression.method", DEFAULT_COMPRESSION_METHOD.toString()));
 			} catch (IOException e) {
@@ -44,6 +54,8 @@ public final class RendererConfiguration {
 		} else {
 			masterListeningAddress = DEFAULT_MASTER_LISTENING_ADDRESS;
 			masterListeningPort = DEFAULT_MASTER_LISTENING_PORT;
+			composerListeningAddress = DEFAULT_COMPOSER_LISTENING_ADDRESS;
+			composerListeningPort = DEFAULT_COMPOSER_LISTENING_PORT;
 			compositionOrder = DEFAULT_COMPOSITION_ORDER;
 			compressionMethod = DEFAULT_COMPRESSION_METHOD;
 		}

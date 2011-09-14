@@ -16,10 +16,6 @@ public final class StartSessionDataHandler extends ChainedSafeDataHandler<Render
 	
 	private double targetFPS;
 	
-	private String composerHostname;
-	
-	private int composerPort;
-	
 	private byte[] pointOfViewData;
 	
 	private byte[] lightSourcesData;
@@ -36,8 +32,6 @@ public final class StartSessionDataHandler extends ChainedSafeDataHandler<Render
 		screenWidth = arg0.readInt();
 		screenHeight = arg0.readInt();
 		targetFPS = arg0.readDouble();
-		composerHostname = arg0.readStringByDelimiter(STRING_DELIMITER);
-		composerPort = arg0.readInt();
 		pointOfViewData = arg0.readBytesByLength(arg0.readInt());
 		lightSourcesData = arg0.readBytesByLength(arg0.readInt());
 		geometriesData = arg0.readBytesByLength(arg0.readInt());
@@ -47,7 +41,7 @@ public final class StartSessionDataHandler extends ChainedSafeDataHandler<Render
 
 	@Override
 	protected void onDataReady(INonBlockingConnection arg0) throws IOException {
-		getNextDataHandler().onStartSessionCompleted(id, screenWidth, screenHeight, targetFPS, composerHostname, composerPort, pointOfViewData, lightSourcesData, geometriesData);
+		getNextDataHandler().onStartSessionCompleted(id, screenWidth, screenHeight, targetFPS, pointOfViewData, lightSourcesData, geometriesData);
 	}
 	
 }

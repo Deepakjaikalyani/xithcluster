@@ -164,6 +164,7 @@ public final class BufferUtils {
 			buffer = new float[arg0.limit()];
 			arg0.rewind();
 			arg0.get(buffer);
+			arg0.rewind();
 			
 			return buffer;
 		} else {
@@ -182,6 +183,7 @@ public final class BufferUtils {
 			buffer = new int[arg0.limit()];
 			arg0.rewind();
 			arg0.get(buffer);
+			arg0.rewind();
 			
 			return buffer;
 		} else {
@@ -200,6 +202,7 @@ public final class BufferUtils {
 			buffer = new byte[arg0.limit()];
 			arg0.rewind();
 			arg0.get(buffer);
+			arg0.rewind();
 			
 			return buffer;
 		} else {
