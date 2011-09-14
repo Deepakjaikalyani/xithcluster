@@ -63,7 +63,6 @@ public class Composer implements Runnable, WindowListener {
 		this.screenWidth = screenWidth;
 		this.screenHeight = screenHeight;
 		
-		// TODO: Check!
 		display.setPreferredSize(new Dimension(screenWidth, screenHeight));
 	}
 
