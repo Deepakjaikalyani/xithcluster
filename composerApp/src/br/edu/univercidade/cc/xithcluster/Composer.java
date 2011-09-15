@@ -114,8 +114,9 @@ public class Composer implements Runnable, WindowListener {
 	}
 
 	private void loopIteration(double framesPerSecond) {
-		if (display == null)
+		if (display == null) {
 			return;
+		}
 		
 		display.updateFPSCounter(framesPerSecond);
 	

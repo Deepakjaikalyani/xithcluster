@@ -32,7 +32,7 @@ public final class ComposerNetworkManager {
 	
 	private IServer renderersServer;
 
-	private final Map<Integer, RendererHandler> renderersHandlers = new HashMap<Integer, RendererHandler>();
+	private final Map<Integer, RendererHandler> renderersHandlers = Collections.synchronizedMap(new HashMap<Integer, RendererHandler>());
 	
 	private final BitSet newImageMask = new BitSet();
 
@@ -64,11 +64,11 @@ public final class ComposerNetworkManager {
 	}
 
 	public synchronized boolean hasAllSubImages() {
-		return !renderersConnections.isEmpty() && newImageMask.cardinality() == renderersConnections.size();
+		return !renderersHandlers.isEmpty() && newImageMask.cardinality() == renderersHandlers.size();
 	}
 	
 	public synchronized int getNumberOfSubImages() {
-		return renderersConnections.size();
+		return renderersHandlers.size();
 	}
 	
 	private void notifySessionStarted() {
@@ -81,13 +81,13 @@ public final class ComposerNetworkManager {
 
 	public synchronized byte[][] getColorAndAlphaBuffers() {
 		byte[][] colorAndAlphaBuffers;
-		INonBlockingConnection rendererConnection;
+		int i;
 		
-		colorAndAlphaBuffers = new byte[renderersConnections.size()][];
-		synchronized (renderersConnections) {
-			for (int i = 0; i < renderersConnections.size(); i++) {
-				rendererConnection = renderersConnections.get(i);
-				colorAndAlphaBuffers[i] = renderersHandlers.get(getRendererIndex(rendererConnection)).getColorAndAlphaBuffer();
+		colorAndAlphaBuffers = new byte[renderersHandlers.size()][];
+		i = 0;
+		synchronized (renderersHandlers) {
+			for (RendererHandler rendererHandler : renderersHandlers.values()) {
+				colorAndAlphaBuffers[i++] = rendererHandler.getColorAndAlphaBuffer();
 			}
 		}
 		
@@ -96,13 +96,13 @@ public final class ComposerNetworkManager {
 
 	public synchronized byte[][] getDepthBuffers() {
 		byte[][] depthBuffers;
-		INonBlockingConnection rendererConnection;
+		int i;
 		
-		depthBuffers = new byte[renderersConnections.size()][];
-		synchronized (renderersConnections) {
-			for (int i = 0; i < renderersConnections.size(); i++) {
-				rendererConnection = renderersConnections.get(i);
-				depthBuffers[i] = renderersHandlers.get(getRendererIndex(rendererConnection)).getDepthBuffer();
+		depthBuffers = new byte[renderersHandlers.size()][];
+		i = 0;
+		synchronized (renderersHandlers) {
+			for (RendererHandler rendererHandler : renderersHandlers.values()) {
+				depthBuffers[i++] = rendererHandler.getDepthBuffer();
 			}
 		}
 		
@@ -110,8 +110,12 @@ public final class ComposerNetworkManager {
 	}
 	
 	public void onStartFrame(int frameIndex) {
+		if (currentFrameIndex != -1 && currentFrameIndex != frameIndex && !hasAllSubImages()) {
+			log.error("Dropping unfinished frame: " + currentFrameIndex);
+		}
+		
 		newImageMask.clear();
-		currentFrameIndex  = frameIndex;
+		currentFrameIndex = frameIndex;
 	}
 
 	public void onStartSession(int screenWidth, int screenHeight, double targetFPS) {
@@ -233,12 +237,15 @@ public final class ComposerNetworkManager {
 		int rendererIndex;
 		
 		rendererIndex = getRendererIndex(arg0);
-		if (!renderersHandlers.containsKey(rendererIndex)) {
-			renderersHandlers.put(rendererIndex, new RendererHandler(compositionOrder));
-			
-			log.info("Renderer " + rendererIndex + " has composition order " + compositionOrder);
-		} else {
-			log.info("Trying to set the composition order repeatedly for the same renderer: " + rendererIndex);
+		
+		synchronized(renderersHandlers) {
+			if (!renderersHandlers.containsKey(rendererIndex)) {
+				renderersHandlers.put(rendererIndex, new RendererHandler(compositionOrder));
+				
+				log.info("Renderer " + rendererIndex + " has composition order " + compositionOrder);
+			} else {
+				log.info("Trying to set the composition order repeatedly for the same renderer: " + rendererIndex);
+			}
 		}
 	}
 

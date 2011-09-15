@@ -38,9 +38,9 @@ public final class RendererNetworkManager implements Observer {
 	private Renderer renderer;
 	
 	private RendererProtocolHandler rendererProtocolHandler;
-
+	
 	private int currentFrameIndex = -1;
-
+	
 	public RendererNetworkManager(Renderer renderer) {
 		this.renderer = renderer;
 		this.sceneDeserializer.addObserver(this);
@@ -73,7 +73,7 @@ public final class RendererNetworkManager implements Observer {
 	
 	public void notifySessionStarted() {
 		try {
-			rendererProtocolHandler.sendSessionStartedMessage(masterConnection); 
+			rendererProtocolHandler.sendSessionStartedMessage(masterConnection);
 		} catch (IOException e) {
 			log.error("Error notifying master node that session started successfully", e);
 		}
@@ -94,7 +94,7 @@ public final class RendererNetworkManager implements Observer {
 	public synchronized boolean onStartFrame(int frameIndex) {
 		if (sessionStarted) {
 			startFrame = true;
-			currentFrameIndex  = frameIndex;
+			currentFrameIndex = frameIndex;
 			
 			return true;
 		} else {
@@ -104,15 +104,7 @@ public final class RendererNetworkManager implements Observer {
 		}
 	}
 	
-	public synchronized void onStartSession(
-			int id, 
-			int screenWidth, 
-			int screenHeight, 
-			double targetFPS, 
-			byte[] pointOfViewData, 
-			byte[] lightSourcesData, 
-			byte[] geometriesData) 
-	throws IOException {
+	public synchronized void onStartSession(int id, int screenWidth, int screenHeight, double targetFPS, byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) throws IOException {
 		sessionStarted = false;
 		
 		log.debug("****************");
@@ -127,13 +119,15 @@ public final class RendererNetworkManager implements Observer {
 		log.trace("Light sources data size: " + lightSourcesData.length + " bytes");
 		log.trace("Geometries data size: " + geometriesData.length + " bytes");
 		
-		log.trace("Connecting to composer");
-		try {
-			composerConnection = new NonBlockingConnection(RendererConfiguration.composerListeningAddress, RendererConfiguration.composerListeningPort);
-			composerConnection.setAutoflush(false);
-		} catch (IOException e) {
-			// TODO:
-			throw new RuntimeException("Error connecting to composer", e);
+		if (composerConnection == null || !composerConnection.isOpen()) {
+			log.trace("Connecting to composer");
+			try {
+				composerConnection = new NonBlockingConnection(RendererConfiguration.composerListeningAddress, RendererConfiguration.composerListeningPort);
+				composerConnection.setAutoflush(false);
+			} catch (IOException e) {
+				// TODO:
+				throw new RuntimeException("Error connecting to composer", e);
+			}
 		}
 		
 		log.trace("Sending composition order: " + RendererConfiguration.compositionOrder);
@@ -154,12 +148,12 @@ public final class RendererNetworkManager implements Observer {
 	
 	private void notifyCompositionOrder() {
 		try {
-			rendererProtocolHandler.sendSetCompositionOrderMessage(composerConnection, RendererConfiguration.compositionOrder); 
+			rendererProtocolHandler.sendSetCompositionOrderMessage(composerConnection, RendererConfiguration.compositionOrder);
 		} catch (IOException e) {
 			log.error("Error notifying composer node the renderer's composition order", e);
 		}
 	}
-
+	
 	private void startParallelSceneDeserialization(byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) {
 		sceneDeserializer.setPackagesData(pointOfViewData, lightSourcesData, geometriesData);
 		
@@ -201,13 +195,16 @@ public final class RendererNetworkManager implements Observer {
 			rebuildScene(result.getView(), result.getLightSources(), result.getGeometries());
 		}
 	}
-
+	
 	public void sendColorAlphaAndDepthBuffers(byte[] colorAndAlphaBuffer, byte[] depthBuffer) {
 		switch (RendererConfiguration.compressionMethod) {
 		case PNG:
 			// TODO: Deflate!
 			break;
 		}
+		
+		// DEBUG:
+		checkDepthBuffer(depthBuffer);
 		
 		// TODO: Do re-attempts!
 		try {
@@ -216,4 +213,13 @@ public final class RendererNetworkManager implements Observer {
 			log.error("Error sending image buffers to composer", e);
 		}
 	}
+	
+	private void checkDepthBuffer(byte[] depthBuffer) {
+		for (int i = 0; i < depthBuffer.length; i++) {
+			if (depthBuffer[i] != 0) {
+				System.out.println("depth[" + i + "]=" + depthBuffer[i]);
+			}
+		}
+	}
+	
 }

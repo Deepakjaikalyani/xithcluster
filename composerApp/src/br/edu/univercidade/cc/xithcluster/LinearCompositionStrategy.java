@@ -4,39 +4,35 @@ public final class LinearCompositionStrategy implements CompositionStrategy {
 	
 	@Override
 	public int[] compose(int width, int height, int numImages, byte[][] colorAndAlphaBuffer, byte[][] depthBuffer) {
-		int[] imageData;
+		int[] argbBuffer;
 		byte z;
 		int k;
-		int l;
+		int i;
+		int r;
+		int p;
 		
-		imageData = new int[width * height];
-		for (int i = 0; i < imageData.length; i++) {
-			z = Byte.MIN_VALUE;
-			k = -1;
-			
-			for (int j = 0; j < numImages; j++) {
-				if (z < depthBuffer[j][i]) {
-					k = j;
-					z = depthBuffer[j][i];
+		argbBuffer = new int[width * height];
+		i = 0;
+		// TODO: Solve this mirroring other way!
+		for (int y = height - 1; y > 0; y--) {
+			r = y * width;
+			for (int x = 0; x < width; x++) {
+				p = r + x;
+				z = Byte.MIN_VALUE;
+				k = -1;
+				for (int j = 0; j < numImages; j++) {
+					if (z < depthBuffer[j][p]) {
+						k = j;
+						z = depthBuffer[j][p];
+					}
 				}
+				
+				argbBuffer[p] = (255 << colorAndAlphaBuffer[k][i + 3]) | (colorAndAlphaBuffer[k][i] << 16) | (colorAndAlphaBuffer[k][i + 1]) << 8 | (colorAndAlphaBuffer[k][i + 2]);
+				i += 4;
 			}
-			
-			l = i * 4;
-			
-			imageData[i] = toInt((byte) 0, colorAndAlphaBuffer[k][l + 1], colorAndAlphaBuffer[k][l + 2], colorAndAlphaBuffer[k][l + 3]);
 		}
 		
-		return imageData;
-	}
-	
-	public static int toInt(byte... bytes) {
-		int result = 0;
-		
-		for (int i = 0; i < 4; i++) {
-			result = (result << 8) - Byte.MIN_VALUE + (int) bytes[i];
-		}
-		
-		return result;
+		return argbBuffer;
 	}
 	
 }

@@ -1,7 +1,6 @@
 package br.edu.univercidade.cc.xithcluster.communication.protocol;
 
 import java.io.IOException;
-import java.nio.BufferUnderflowException;
 import org.xsocket.connection.INonBlockingConnection;
 
 public final class ProtocolHelper {
@@ -23,7 +22,7 @@ public final class ProtocolHelper {
 			recordType = recordTypes[ordinal];
 		
 			connection.removeReadMark();
-		} catch (BufferUnderflowException e) {
+		} catch (Throwable t) {
 			connection.resetToReadMark();
 		}
 		
