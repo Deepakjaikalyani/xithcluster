@@ -111,29 +111,21 @@ public final class MasterNetworkManager {
 	private void internalNotifyFrameStart(int frameIndex) {
 		Iterator<INonBlockingConnection> i;
 		
-		// FIXME: Infinity attempts!!!
-		do {
-			try {
-				masterProtocolHandler.sendStartFrameMessage(composerConnection, frameIndex);
-				
-				synchronized (renderersConnections) {
-					i = renderersConnections.iterator();
-					while (i.hasNext()) {
-						masterProtocolHandler.sendStartFrameMessage(i.next(), frameIndex);
-					}
-				}
-				
-				break;
-			} catch (IOException e1) {
-				try {
-					Thread.sleep(100L);
-				} catch (InterruptedException e2) {
+		try {
+			masterProtocolHandler.sendStartFrameMessage(composerConnection, frameIndex);
+			
+			synchronized (renderersConnections) {
+				i = renderersConnections.iterator();
+				while (i.hasNext()) {
+					masterProtocolHandler.sendStartFrameMessage(i.next(), frameIndex);
 				}
 			}
-		} while (true);
-		
-		currentFrameIndex = frameIndex;
-		finishedFrame = false;
+			
+			currentFrameIndex = frameIndex;
+			finishedFrame = false;
+		} catch (IOException e) {
+			log.error("Error sending frame start notification: " + frameIndex, e);
+		}
 	}
 	
 	public synchronized boolean sendPendingUpdates() {

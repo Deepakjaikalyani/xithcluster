@@ -67,6 +67,7 @@ public class Renderer extends InputAdapterRenderLoop {
 		setRoot(new BranchGroup());
 		
 		canvas = Canvas3DFactory.createWindowed(screenWidth, screenHeight, APP_TITLE);
+		canvas.setBackgroundColor(Colorf.BLACK);
 		canvas.addWindowClosingListener(new WindowClosingRenderLoopEnder(this));
 		getXith3DEnvironment().addCanvas(canvas);
 		
@@ -97,7 +98,6 @@ public class Renderer extends InputAdapterRenderLoop {
 	
 	private void setRoot(BranchGroup newRoot) {
 		org.xith3d.render.Renderer renderer;
-		Colorf backgroundColor;
 		RenderPass renderPass;
 		
 		if (root != null) {
@@ -105,17 +105,14 @@ public class Renderer extends InputAdapterRenderLoop {
 		}
 		
 		root = newRoot;
-		
 		renderPass = getXith3DEnvironment().addPerspectiveBranch(root);
 		
-		backgroundColor = new Colorf(0f, 0f, 0f, 0.1f);
-		
-		colorAndAlphaTexture = TextureCreator.createTexture(TextureFormat.RGBA, screenWidth, screenHeight, backgroundColor);
+		colorAndAlphaTexture = TextureCreator.createTexture(TextureFormat.RGBA, screenWidth, screenHeight, Colorf.BLACK);
 		depthTexture = TextureCreator.createTexture(TextureFormat.DEPTH, screenWidth, screenHeight);
 		
 		renderer = getXith3DEnvironment().getRenderer();
 		
-		renderer.addRenderTarget(new TextureRenderTarget(root, colorAndAlphaTexture, backgroundColor, true), renderPass.getConfig());
+		renderer.addRenderTarget(new TextureRenderTarget(root, colorAndAlphaTexture, Colorf.BLACK, true), renderPass.getConfig());
 		renderer.addRenderTarget(new TextureRenderTarget(root, depthTexture), renderPass.getConfig());
 	}
 	

@@ -5,9 +5,12 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
-import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.DataBufferInt;
+import java.awt.image.Raster;
+import java.awt.image.WritableRaster;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
@@ -16,12 +19,14 @@ public class Display extends JFrame {
 	private static final long serialVersionUID = 1L;
 	
 	private static final Font defaultFont = new Font("Courier New", Font.PLAIN, 12);
-
+	
 	private static final int DEFAULT_WIDTH = 800;
-
+	
 	private static final int DEFAULT_HEIGHT = 600;
 	
 	private Canvas canvas;
+	
+	private int[] argbDataBuffer;
 	
 	private BufferedImage backBuffer;
 	
@@ -33,7 +38,7 @@ public class Display extends JFrame {
 		decorate();
 		setVisible(true);
 		setupBufferStrategy();
-		createBackBuffer(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+		createDataBuffer(DEFAULT_WIDTH, DEFAULT_HEIGHT);
 	}
 	
 	@Override
@@ -42,28 +47,33 @@ public class Display extends JFrame {
 		
 		adjustSize(d);
 	}
-
+	
 	@Override
 	public void setSize(int width, int height) {
 		super.setSize(width, height);
 		
 		adjustSize(new Dimension(width, height));
 	}
-
+	
 	@Override
 	public void setPreferredSize(Dimension dimension) {
 		super.setPreferredSize(dimension);
 		
 		adjustSize(dimension);
 	}
-
+	
 	private void adjustSize(Dimension dimension) {
+		int width;
+		int height;
+		
 		canvas.setSize(dimension);
 		
-		// FIXME:
-		createBackBuffer((int) dimension.getWidth(), (int) dimension.getHeight());
+		width = (int) dimension.getWidth();
+		height = (int) dimension.getHeight();
+		
+		createDataBuffer(width, height);
 	}
-
+	
 	private void decorate() {
 		setTitle(ComposerConfiguration.windowTitle);
 		super.setSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
@@ -83,16 +93,25 @@ public class Display extends JFrame {
 		buffer = canvas.getBufferStrategy();
 	}
 	
-	private synchronized void createBackBuffer(int width, int height) {
-		backBuffer = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().createCompatibleImage(width, height);
+	private synchronized void createDataBuffer(int width, int height) {
+		WritableRaster raster;
+		DataBufferInt dataBuffer;
+		int bufferSize;
+		
+		bufferSize = width * height;
+		
+		argbDataBuffer = new int[bufferSize];
+		dataBuffer = new DataBufferInt(argbDataBuffer, bufferSize);
+		raster = Raster.createPackedRaster(dataBuffer, width, height, width, new int[] { 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000}, null);
+		backBuffer = new BufferedImage(ColorModel.getRGBdefault(), raster, true, null);
 	}
 	
 	public void updateFPSCounter(double framesPerSecond) {
 		this.framesPerSecond = framesPerSecond;
 	}
 	
-	public void setImageData(int[] imageData) {
-		backBuffer.setRGB(0, 0, getWidth(), getHeight(), imageData, 0, 0);
+	public void setImageData(int[] argbImageData) {
+		System.arraycopy(argbImageData, 0, argbDataBuffer, 0, argbDataBuffer.length);
 	}
 	
 	public synchronized void blit() {
