@@ -2,13 +2,11 @@ package br.edu.univercidade.cc.xithcluster;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.net.MalformedURLException;
 import org.jagatoo.input.devices.components.Key;
 import org.jagatoo.input.events.KeyPressedEvent;
 import org.openmali.vecmath2.Colorf;
 import org.xith3d.base.Xith3DEnvironment;
 import org.xith3d.loaders.texture.TextureLoader;
-import org.xith3d.resources.ResourceLocator;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Group;
 import org.xith3d.scenegraph.StaticTransform;
@@ -19,21 +17,10 @@ import br.edu.univercidade.cc.xithcluster.primitives.Rectangle;
 
 public class SampleApp extends DistributedRenderLoop {
 	
-	private ResourceLocator resourceLocator;
-	
 	public SampleApp() {
 		super(120f);
 		
 		new Xith3DEnvironment(0f, 0f, 5f, 0f, 0f, 0f, 0f, 1f, 0f, this);
-		
-		// FIXME:
-		resourceLocator = ResourceLocator.create("resources/");
-		try {
-			resourceLocator.createAndAddTSL("textures");
-		} catch (MalformedURLException e) {
-			// TODO:
-			throw new AssertionError("Should never happen!");
-		}
 		
 		getXith3DEnvironment().addPerspectiveBranch(createTestScene());
 		
@@ -58,7 +45,7 @@ public class SampleApp extends DistributedRenderLoop {
 		
 		Texture2D texture2D;
 		try {
-			texture2D = TextureLoader.getInstance().loadTexture(new FileInputStream("resources/crate.png"));
+			texture2D = TextureLoader.getInstance().loadTexture(new FileInputStream("resources/textures/crate.png"));
 		} catch (FileNotFoundException e) {
 			throw new RuntimeException("Texture not found");
 		}
@@ -83,9 +70,6 @@ public class SampleApp extends DistributedRenderLoop {
 		Rectangle rectangle5 = new Rectangle(0.5f, 0.5f, Colorf.YELLOW);
 		rectangle5.setName("rectangle5");
 		StaticTransform.translate(rectangle5, 0.5f, -0.5f, 0.0f);
-		
-		//Sphere sphere1 = new Sphere(1.2f, 0.5f, -0.5f, 2.0f, 20, 20, Colorf.CYAN);
-		//transformGroup1.addChild(sphere1);
 		
 		group2.addChild(transformGroup1);
 		
