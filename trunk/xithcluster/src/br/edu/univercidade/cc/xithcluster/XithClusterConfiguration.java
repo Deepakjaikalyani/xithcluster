@@ -16,7 +16,7 @@ public final class XithClusterConfiguration {
 	
 	private static final Integer DEFAULT_SCREEN_HEIGHT = 600;
 	
-	private static final Double DEFAULT_TARGET_FPS = 80.0;
+	private static final Float DEFAULT_TARGET_FPS = 80.0f;
 
 	public static String listeningAddress;
 	
@@ -28,7 +28,7 @@ public final class XithClusterConfiguration {
 	
 	public static int screenHeight;
 	
-	public static double targetFPS;
+	public static float targetFPS;
 	
 	static {
 		Properties properties;
@@ -46,7 +46,7 @@ public final class XithClusterConfiguration {
 				composerConnectionPort = Integer.parseInt(properties.getProperty("composer.connection.port", DEFAULT_COMPOSER_CONNECTION_PORT.toString()));
 				screenWidth = Integer.parseInt(properties.getProperty("screen.width", DEFAULT_SCREEN_WIDTH.toString()));
 				screenHeight = Integer.parseInt(properties.getProperty("screen.height", DEFAULT_SCREEN_HEIGHT.toString()));
-				targetFPS = Double.parseDouble(properties.getProperty("target.fps", DEFAULT_TARGET_FPS.toString()));
+				targetFPS = Float.parseFloat(properties.getProperty("target.fps", DEFAULT_TARGET_FPS.toString()));
 			} catch (IOException e) {
 				// TODO:
 				throw new RuntimeException("Error loading configuration file");
