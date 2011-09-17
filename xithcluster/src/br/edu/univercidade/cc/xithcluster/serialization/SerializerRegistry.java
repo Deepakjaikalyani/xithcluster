@@ -18,7 +18,7 @@ public final class SerializerRegistry {
 	
 	// FIXME:
 	static {
-		register(Cube.class, Shape3DSerializer.class);
+		register(Cube.class, CubeSerializer.class);
 		register(Rectangle.class, Shape3DSerializer.class);
 		register(Sphere.class, Shape3DSerializer.class);
 		register(Switch.class, SwitchSerializer.class);

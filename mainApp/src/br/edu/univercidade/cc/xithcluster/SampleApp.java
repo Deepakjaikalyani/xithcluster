@@ -13,6 +13,7 @@ import org.xith3d.scenegraph.StaticTransform;
 import org.xith3d.scenegraph.Texture2D;
 import org.xith3d.scenegraph.Transform3D;
 import org.xith3d.scenegraph.TransformGroup;
+import br.edu.univercidade.cc.xithcluster.primitives.Cube;
 import br.edu.univercidade.cc.xithcluster.primitives.Rectangle;
 
 public class SampleApp extends DistributedRenderLoop {
@@ -39,6 +40,7 @@ public class SampleApp extends DistributedRenderLoop {
 		
 		transform = new Transform3D(0.3f, 0.3f, 0.5f);
 		transform.rotY(15);
+		transform.rotX(15);
 		
 		TransformGroup transformGroup1 = new TransformGroup(transform);
 		transformGroup1.setName("transformGroup1");
@@ -47,13 +49,14 @@ public class SampleApp extends DistributedRenderLoop {
 		try {
 			texture2D = TextureLoader.getInstance().loadTexture(new FileInputStream("resources/textures/crate.png"));
 		} catch (FileNotFoundException e) {
+			// TODO:
 			throw new RuntimeException("Texture not found");
 		}
 		
-		Rectangle rectangle1 = new Rectangle(0.5f, 0.5f, texture2D);
-		rectangle1.setName("rectangle1");
+		Cube cube = new Cube(0.5f, texture2D);
+		cube.setName("cube1");
 		
-		transformGroup1.addChild(rectangle1);
+		transformGroup1.addChild(cube);
 		
 		Rectangle rectangle2 = new Rectangle(0.5f, 0.5f, Colorf.RED);
 		rectangle2.setName("rectangle2");
