@@ -22,6 +22,7 @@ import org.xith3d.scenegraph.View;
 import org.xith3d.utility.events.WindowClosingRenderLoopEnder;
 import br.edu.univercidade.cc.xithcluster.communication.RendererNetworkManager;
 import br.edu.univercidade.cc.xithcluster.util.BufferUtils;
+import br.edu.univercidade.cc.xithcluster.util.SceneBuilder;
 import br.edu.univercidade.cc.xithcluster.util.ViewHelper;
 
 public class Renderer extends InputAdapterRenderLoop {
@@ -51,6 +52,8 @@ public class Renderer extends InputAdapterRenderLoop {
 	private int screenWidth = DEFAULT_WIDTH;
 
 	private int screenHeight = DEFAULT_HEIGHT;
+
+	private RenderPass renderPass;
 	
 	public Renderer(float maxFPS) {
 		super(maxFPS);
@@ -95,15 +98,19 @@ public class Renderer extends InputAdapterRenderLoop {
 	}
 	
 	private void setRoot(BranchGroup newRoot) {
-		org.xith3d.render.Renderer renderer;
-		RenderPass renderPass;
-		
 		if (root != null) {
-			getXith3DEnvironment().removeBranchGraph(root);
+			SceneBuilder.copyToDestinationAndInvalidateSource(root, newRoot);
+		} else {
+			root = newRoot;
+			
+			renderPass = getXith3DEnvironment().addPerspectiveBranch(root);
+			
+			buildTextureRenderTargets();
 		}
-		
-		root = newRoot;
-		renderPass = getXith3DEnvironment().addPerspectiveBranch(root);
+	}
+
+	private void buildTextureRenderTargets() {
+		org.xith3d.render.Renderer renderer;
 		
 		colorAndAlphaTexture = TextureCreator.createTexture(TextureFormat.RGBA, screenWidth, screenHeight, Colorf.BLACK);
 		depthTexture = TextureCreator.createTexture(TextureFormat.DEPTH, screenWidth, screenHeight);
@@ -117,6 +124,8 @@ public class Renderer extends InputAdapterRenderLoop {
 	public void setScreenSize(int screenWidth, int screenHeight) {
 		this.screenWidth = screenWidth;
 		this.screenHeight = screenHeight;
+		
+		buildTextureRenderTargets();
 		
 		canvas.setSize(screenWidth, screenHeight);
 	}

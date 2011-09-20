@@ -3,8 +3,7 @@ package br.edu.univercidade.cc.xithcluster.serialization;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import org.openmali.vecmath2.Colorf;
-import org.xith3d.scenegraph.Material;
+import org.xith3d.scenegraph.Appearance;
 import br.edu.univercidade.cc.xithcluster.primitives.Sphere;
 
 public class SphereSerializer extends Serializer<Sphere> {
@@ -20,9 +19,7 @@ public class SphereSerializer extends Serializer<Sphere> {
 		out.writeInt(sphere.getFeatures());
 		out.writeBoolean(sphere.isColorAlpha());
 		out.writeInt(sphere.getTexCoordsSize());
-		SerializationHelper.writeColorf(out, sphere.getColor());
-		SerializationHelper.writeMaterial(out, sphere.getMaterial());
-		//SerializationHelper.writeTexture(out, sphere.getTexture());
+		SerializationHelper.writeAppearance(out, sphere.getAppearance());
 	}
 	
 	@Override
@@ -36,8 +33,7 @@ public class SphereSerializer extends Serializer<Sphere> {
 		int features;
 		boolean colorAlpha;
 		int texCoordsSize;
-		Colorf color;
-		Material material;
+		Appearance appearance;
 		
 		centerX = in.readFloat();
 		centerY = in.readFloat();
@@ -48,16 +44,10 @@ public class SphereSerializer extends Serializer<Sphere> {
 		features = in.readInt();
 		colorAlpha = in.readBoolean();
 		texCoordsSize = in.readInt();
-		color = SerializationHelper.readColorf(in);
-		material = SerializationHelper.readMaterial(in);
+		appearance = SerializationHelper.readAppearance(in);
 		
 		Sphere newSphere = new Sphere(centerX, centerY, centerZ, radius, slices, stacks, features, colorAlpha, texCoordsSize);
-		
-		if (color != null) {
-			newSphere.setColor(color);
-		} else if (material != null) {
-			newSphere.setMaterial(material);
-		}
+		newSphere.setAppearance(appearance);
 		
 		return newSphere;
 	}

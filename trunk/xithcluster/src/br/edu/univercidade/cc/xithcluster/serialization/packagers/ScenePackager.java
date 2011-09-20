@@ -61,7 +61,7 @@ public class ScenePackager extends Serializer<BranchGroup> {
 		
 		node = (Node) SerializerRegistry.getSerializer(nodeClass).deserialize(nodeData);
 		
-		log.info(PrintUtils.print(node, level) + " (" + nodeData.length + " bytes)");
+		log.info(PrintUtils.print(node, level)); // + " (" + nodeData.length + " bytes)");
 		
 		if (node instanceof GroupNode) {
 			numChildren = (Integer) node.getUserData(GroupNodeSerializer.NUMBER_OF_CHILDREN_USER_DATA);
