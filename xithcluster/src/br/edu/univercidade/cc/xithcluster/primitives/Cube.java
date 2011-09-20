@@ -1,11 +1,8 @@
 package br.edu.univercidade.cc.xithcluster.primitives;
 
-import org.openmali.vecmath2.Colorf;
 import org.xith3d.scenegraph.Geometry;
-import org.xith3d.scenegraph.Material;
 import org.xith3d.scenegraph.Node;
 import org.xith3d.scenegraph.Shape3D;
-import org.xith3d.scenegraph.Texture;
 
 public class Cube extends org.xith3d.scenegraph.primitives.Cube {
 	
@@ -16,12 +13,6 @@ public class Cube extends org.xith3d.scenegraph.primitives.Cube {
 	private boolean colorAlpha;
 	
 	private int texCoordsSize;
-	
-	private Colorf color;
-	
-	private Material material;
-	
-	private Texture texture;
 	
 	public Cube() {
 		this(1.0f);
@@ -37,25 +28,7 @@ public class Cube extends org.xith3d.scenegraph.primitives.Cube {
 	}
 	
 	public Cube(float size) {
-		this(size, Geometry.COORDINATES | Geometry.NORMALS | Geometry.TEXTURE_COORDINATES, false, 2);
-	}
-	
-	public Cube(float size, Material material) {
 		this(size, Geometry.COORDINATES | Geometry.NORMALS, false, 2);
-		
-		setMaterial(material);
-	}
-	
-	public Cube(float size, Colorf color) {
-		this(size, Geometry.COORDINATES | Geometry.NORMALS, false, 2);
-		
-		setColor(color);
-	}
-	
-	public Cube(float size, Texture texture) {
-		this(size, Geometry.COORDINATES | Geometry.NORMALS | Geometry.TEXTURE_COORDINATES, false, 2);
-		
-		setTexture(texture);
 	}
 	
 	public float getSize() {
@@ -70,61 +43,38 @@ public class Cube extends org.xith3d.scenegraph.primitives.Cube {
 		return colorAlpha;
 	}
 	
-	public Material getMaterial() {
-		return material;
-	}
-	
-	public void setMaterial(Material material) {
-		this.getAppearance(true).setMaterial(material);
-		
-		this.material = material;
-	}
-	
 	public int getTexCoordsSize() {
 		return texCoordsSize;
 	}
 	
-	public Colorf getColor() {
-		return color;
-	}
-	
-	public void setColor(Colorf color) {
-		getAppearance(true).getColoringAttributes(true).setColor(color);
+	@Override
+	protected void copy(Shape3D arg0) {
+		Cube destination;
 		
-		if (color.hasAlpha()) {
-			getAppearance(true).getTransparencyAttributes(true).setTransparency(color.getAlpha());
-		}
+		destination = (Cube) arg0;
 		
-		this.color = color;
-	}
-	
-	public Texture getTexture() {
-		return texture;
-	}
-	
-	public void setTexture(Texture texture) {
-		this.getAppearance(true).setTexture(texture);
+		destination.size = size;
+		destination.features = features;
+		destination.colorAlpha = colorAlpha;
+		destination.texCoordsSize = texCoordsSize;
 		
-		this.texture = texture;
+        destination.setAppearance(getAppearance());
+        destination.setBoundsAutoCompute(false);
+        destination.setBounds(getBounds());
+        destination.boundsDirty = true;
+        destination.updateBounds(false);
+        destination.setPickable(isPickable());
+        destination.setRenderable(isRenderable());
+        destination.setName(getName());
 	}
-	
+
 	@Override
 	protected Shape3D newInstance() {
-		boolean gib = Node.globalIgnoreBounds;
+		boolean globalIgnoreBounds = Node.globalIgnoreBounds;
 		
 		Node.globalIgnoreBounds = isIgnoreBounds();
-		
-		Cube newCube = new Cube(size, features, colorAlpha, texCoordsSize);
-		
-		if (color != null) {
-			newCube.setColor(color);
-		} else if (material != null) {
-			newCube.setMaterial(material);
-		} else if (texture != null) {
-			newCube.setTexture(texture);
-		}
-		
-		Node.globalIgnoreBounds = gib;
+		Cube newCube = new Cube();
+		Node.globalIgnoreBounds = globalIgnoreBounds;
 		
 		return newCube;
 	}

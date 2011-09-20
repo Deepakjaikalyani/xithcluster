@@ -9,6 +9,7 @@ import org.openmali.vecmath2.Vector3f;
 import org.xith3d.base.Xith3DEnvironment;
 import org.xith3d.loaders.texture.TextureLoader;
 import org.xith3d.scenegraph.BranchGroup;
+import org.xith3d.scenegraph.Geometry;
 import org.xith3d.scenegraph.Group;
 import org.xith3d.scenegraph.Light;
 import org.xith3d.scenegraph.Material;
@@ -36,6 +37,7 @@ public class SampleApp extends DistributedRenderLoop {
 		Group group1;
 		Material material1;
 		Material material2;
+		Material material3;
 		Transform3D transform;
 		TransformGroup transformGroup;
 		Cube cube1;
@@ -58,13 +60,19 @@ public class SampleApp extends DistributedRenderLoop {
         material2.setEmissiveColor(Colorf.GREEN);
         material2.setColorTarget(Material.NONE);
         material2.setLightingEnabled(true);
+        
+        material3 = new Material();
+        material3.setEmissiveColor(Colorf.BLUE);
+        material3.setColorTarget(Material.NONE);
+        material3.setLightingEnabled(true);
 		
 		transform = new Transform3D(0.0f, 0.3f, 0.5f);
 		transform.rotXYZ(35, 25, 0);
 		transformGroup = new TransformGroup(transform);
 		
-		cube1 = new Cube(0.5f, material1);
+		cube1 = new Cube(0.5f);
 		cube1.setName("cube1");
+		cube1.getAppearance(true).setMaterial(material1);
 		
 		transformGroup.addChild(cube1);
 		group1.addChild(transformGroup);
@@ -79,8 +87,9 @@ public class SampleApp extends DistributedRenderLoop {
 		transform = new Transform3D(-1.0f, 0.5f, 0.0f);
 		transformGroup = new TransformGroup(transform);
 		
-		rectangle1 = new Rectangle(0.5f, 0.5f, texture2D);
+		rectangle1 = new Rectangle(0.5f, 0.5f, null, null, null);
 		rectangle1.setName("rectangle1");
+		rectangle1.getAppearance(true).setTexture(texture2D);
 		
 		transformGroup.addChild(rectangle1);
 		group1.addChild(transformGroup);
@@ -88,8 +97,19 @@ public class SampleApp extends DistributedRenderLoop {
 		transform = new Transform3D(0.7f, 0.2f, 0.3f);
 		transformGroup = new TransformGroup(transform);
 		
-		sphere1 = new Sphere(0.2f, 20, 20, material2);
+		sphere1 = new Sphere(0.2f, 20, 20, Geometry.COORDINATES | Geometry.NORMALS, false, 2);
 		sphere1.setName("sphere1");
+		sphere1.getAppearance(true).setMaterial(material2);
+		
+		transformGroup.addChild(sphere1);
+		group1.addChild(transformGroup);
+		
+		transform = new Transform3D(0.55f, -0.2f, 0.2f);
+		transformGroup = new TransformGroup(transform);
+		
+		sphere1 = new Sphere(0.1f, 20, 20, Geometry.COORDINATES | Geometry.NORMALS, false, 2);
+		sphere1.setName("sphere2");
+		sphere1.getAppearance(true).setMaterial(material3);
 		
 		transformGroup.addChild(sphere1);
 		group1.addChild(transformGroup);

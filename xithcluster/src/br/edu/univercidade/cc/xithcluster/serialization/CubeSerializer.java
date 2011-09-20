@@ -3,9 +3,7 @@ package br.edu.univercidade.cc.xithcluster.serialization;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import org.openmali.vecmath2.Colorf;
-import org.xith3d.scenegraph.Material;
-import org.xith3d.scenegraph.Texture;
+import org.xith3d.scenegraph.Appearance;
 import br.edu.univercidade.cc.xithcluster.primitives.Cube;
 
 public class CubeSerializer extends Serializer<Cube> {
@@ -16,9 +14,7 @@ public class CubeSerializer extends Serializer<Cube> {
 		out.writeInt(cube.getFeatures());
 		out.writeBoolean(cube.isColorAlpha());
 		out.writeInt(cube.getTexCoordsSize());
-		SerializationHelper.writeColorf(out, cube.getColor());
-		SerializationHelper.writeMaterial(out, cube.getMaterial());
-		SerializationHelper.writeTexture(out, cube.getTexture());
+		SerializationHelper.writeAppearance(out, cube.getAppearance());
 	}
 	
 	@Override
@@ -27,27 +23,16 @@ public class CubeSerializer extends Serializer<Cube> {
 		int features;
 		boolean colorAlpha;
 		int texCoordsSize;
-		Colorf color;
-		Material material;
-		Texture texture;
+		Appearance appearance;
 		
 		size = in.readFloat();
 		features = in.readInt();
 		colorAlpha = in.readBoolean();
 		texCoordsSize = in.readInt();
-		color = SerializationHelper.readColorf(in);
-		material = SerializationHelper.readMaterial(in);
-		texture = SerializationHelper.readTexture(in);
+		appearance = SerializationHelper.readAppearance(in);
 		
 		Cube newCube = new Cube(size, features, colorAlpha, texCoordsSize);
-		
-		if (color != null) {
-			newCube.setColor(color);
-		} else if (material != null) {
-			newCube.setMaterial(material);
-		} else if (texture != null) {
-			newCube.setTexture(texture);
-		}
+		newCube.setAppearance(appearance);
 		
 		return newCube;
 	}

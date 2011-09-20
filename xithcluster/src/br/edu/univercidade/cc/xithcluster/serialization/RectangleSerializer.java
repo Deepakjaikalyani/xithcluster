@@ -3,12 +3,10 @@ package br.edu.univercidade.cc.xithcluster.serialization;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import org.openmali.vecmath2.Colorf;
 import org.openmali.vecmath2.Tuple2f;
 import org.openmali.vecmath2.Tuple3f;
-import org.xith3d.scenegraph.Texture;
+import org.xith3d.scenegraph.Appearance;
 import br.edu.univercidade.cc.xithcluster.primitives.Rectangle;
-
 
 public class RectangleSerializer extends Serializer<Rectangle> {
 
@@ -17,10 +15,9 @@ public class RectangleSerializer extends Serializer<Rectangle> {
 		out.writeFloat(rectangle.getWidth());
 		out.writeFloat(rectangle.getHeight());
 		SerializationHelper.writeTuple3f(out, rectangle.getOffset());
-		SerializationHelper.writeTexture(out, rectangle.getTexture());
 		SerializationHelper.writeTuple2f(out, rectangle.getTexLowerLeft());
 		SerializationHelper.writeTuple2f(out, rectangle.getTexUpperRight());
-		SerializationHelper.writeColorf(out, rectangle.getColor());
+		SerializationHelper.writeAppearance(out, rectangle.getAppearance());
 	}
 
 	@Override
@@ -28,20 +25,22 @@ public class RectangleSerializer extends Serializer<Rectangle> {
 		float width;
 		float height;
 		Tuple3f offset;
-		Texture texture;
 		Tuple2f texLowerLeft;
 		Tuple2f texUpperRight;
-		Colorf color;
+		Appearance appearance;
+		Rectangle newRectangle;
 		
 		width = in.readFloat();
 		height = in.readFloat();
 		offset = SerializationHelper.readTuple3f(in);
-		texture = SerializationHelper.readTexture(in);
 		texLowerLeft = SerializationHelper.readTuple2f(in);
-		texUpperRight = SerializationHelper.readTuple2f(in);;
-		color = SerializationHelper.readColorf(in);
+		texUpperRight = SerializationHelper.readTuple2f(in);
+		appearance = SerializationHelper.readAppearance(in);
 		
-		return new Rectangle(width, height, offset, texture, texLowerLeft, texUpperRight, color);
+		newRectangle = new Rectangle(width, height, offset, texLowerLeft, texUpperRight);
+		newRectangle.setAppearance(appearance);
+		
+		return newRectangle;
 	}
 	
 }

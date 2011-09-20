@@ -25,7 +25,6 @@ public class SimpleDistribution implements DistributionStrategy {
 	
 	@Override
 	public List<BranchGroup> distribute(BranchGroup root, int numberOfRenderers) {
-		int shapesPerRenderer;
 		BranchGroup branchGroup;
 		int c;
 		
@@ -52,12 +51,9 @@ public class SimpleDistribution implements DistributionStrategy {
 			
 		});
 		
-		shapesPerRenderer = (int) Math.ceil((double) shapes.size() / (double) numberOfRenderers);
-		
 		log.info("Number of lights: " + lights.size());
 		log.info("Number of shapes: " + shapes.size());
 		log.info("Number of renderers: " + numberOfRenderers);
-		log.info("Shapes per renderer: " + shapesPerRenderer);
 		
 		branchGroups.clear();
 		for (int i = 0; i < numberOfRenderers; i++) {
@@ -70,10 +66,13 @@ public class SimpleDistribution implements DistributionStrategy {
 			for (Light light : lights) {
 				nodePathReplicator.build(light);
 			}
-			
-			while (!shapes.isEmpty() && c++ < shapesPerRenderer) {
-				nodePathReplicator.build(shapes.pop());
-			}
+		}
+		
+		c = 0;
+		// Round-robin
+		while (!shapes.isEmpty()) {
+			nodePathReplicator.setRoot(branchGroups.get((c++) % branchGroups.size()));
+			nodePathReplicator.build(shapes.pop());
 		}
 		
 		return branchGroups;
