@@ -6,7 +6,6 @@ import java.util.Observable;
 import java.util.Observer;
 import org.apache.log4j.Logger;
 import org.xith3d.scenegraph.BranchGroup;
-import org.xith3d.scenegraph.Light;
 import org.xith3d.scenegraph.View;
 import org.xsocket.connection.INonBlockingConnection;
 import org.xsocket.connection.NonBlockingConnection;
@@ -52,9 +51,9 @@ public final class RendererNetworkManager implements Observer {
 		masterConnection.setAutoflush(false);
 	}
 	
-	private void rebuildScene(View view, List<Light> lightSources, BranchGroup geometries) {
+	private void rebuildScene(View pointOfView, BranchGroup scene) {
 		synchronized (renderer.getSceneLock()) {
-			renderer.updateScene(view, lightSources, geometries);
+			renderer.updateScene(pointOfView, scene);
 		}
 	}
 	
@@ -104,7 +103,7 @@ public final class RendererNetworkManager implements Observer {
 		}
 	}
 	
-	public synchronized void onStartSession(int id, int screenWidth, int screenHeight, double targetFPS, byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) throws IOException {
+	public synchronized void onStartSession(int id, int screenWidth, int screenHeight, double targetFPS, byte[] pointOfViewData, byte[] sceneData) throws IOException {
 		sessionStarted = false;
 		
 		log.debug("****************");
@@ -116,8 +115,7 @@ public final class RendererNetworkManager implements Observer {
 		log.trace("Screen height: " + screenHeight);
 		log.trace("Target FPS: " + targetFPS);
 		log.trace("POV data size: " + pointOfViewData.length + " bytes");
-		log.trace("Light sources data size: " + lightSourcesData.length + " bytes");
-		log.trace("Geometries data size: " + geometriesData.length + " bytes");
+		log.trace("Scene data size: " + sceneData.length + " bytes");
 		
 		if (composerConnection == null || !composerConnection.isOpen()) {
 			log.trace("Connecting to composer");
@@ -141,7 +139,7 @@ public final class RendererNetworkManager implements Observer {
 		renderer.setId(id);
 		renderer.setScreenSize(screenWidth, screenHeight);
 		
-		startParallelSceneDeserialization(pointOfViewData, lightSourcesData, geometriesData);
+		startParallelSceneDeserialization(pointOfViewData, sceneData);
 		
 		log.info("Session started successfully");
 	}
@@ -154,8 +152,8 @@ public final class RendererNetworkManager implements Observer {
 		}
 	}
 	
-	private void startParallelSceneDeserialization(byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) {
-		sceneDeserializer.setPackagesData(pointOfViewData, lightSourcesData, geometriesData);
+	private void startParallelSceneDeserialization(byte[] pointOfViewData, byte[] sceneData) {
+		sceneDeserializer.setSceneData(pointOfViewData, sceneData);
 		
 		sceneDeserializationThread = new Thread(sceneDeserializer);
 		sceneDeserializationThread.start();
@@ -192,7 +190,7 @@ public final class RendererNetworkManager implements Observer {
 			
 			result = (SceneDeserializer.DeserializationResult) arg;
 			
-			rebuildScene(result.getView(), result.getLightSources(), result.getGeometries());
+			rebuildScene(result.getPointOfView(), result.getScene());
 		}
 	}
 	

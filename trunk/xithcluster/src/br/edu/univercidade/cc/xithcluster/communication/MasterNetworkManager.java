@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import org.apache.log4j.Logger;
 import org.xith3d.scenegraph.BranchGroup;
-import org.xith3d.scenegraph.Light;
 import org.xith3d.scenegraph.Node;
 import org.xith3d.scenegraph.View;
 import org.xsocket.connection.INonBlockingConnection;
@@ -24,9 +23,8 @@ import br.edu.univercidade.cc.xithcluster.PendingUpdate.Type;
 import br.edu.univercidade.cc.xithcluster.UpdateManager;
 import br.edu.univercidade.cc.xithcluster.XithClusterConfiguration;
 import br.edu.univercidade.cc.xithcluster.communication.protocol.MasterProtocolHandler;
-import br.edu.univercidade.cc.xithcluster.serialization.packagers.GeometriesPackager;
-import br.edu.univercidade.cc.xithcluster.serialization.packagers.LightSourcesPackager;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.PointOfViewPackager;
+import br.edu.univercidade.cc.xithcluster.serialization.packagers.ScenePackager;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.UpdatesPackager;
 
 public final class MasterNetworkManager {
@@ -39,9 +37,7 @@ public final class MasterNetworkManager {
 	
 	private final PointOfViewPackager pointOfViewPackager = new PointOfViewPackager();
 	
-	private final LightSourcesPackager lightSourcesPackager = new LightSourcesPackager();
-	
-	private final GeometriesPackager geometriesPackager = new GeometriesPackager();
+	private final ScenePackager scenePackager = new ScenePackager();
 	
 	private final DistributedRenderLoop distributedRenderLoop;
 	
@@ -186,16 +182,14 @@ public final class MasterNetworkManager {
 	}
 	
 	public synchronized void startNewSession() {
+		BranchGroup scene;
 		View pointOfView;
-		List<Light> lightSources;
-		List<BranchGroup> geometries;
+		List<BranchGroup> distributedScenes;
 		Iterator<INonBlockingConnection> i;
 		INonBlockingConnection rendererConnection;
-		BranchGroup root;
-		BranchGroup rootOfARenderer;
+		BranchGroup rendererScene;
 		byte[] pointOfViewData;
-		byte[] lightSourcesData;
-		byte[] geometriesData;
+		byte[] sceneData;
 		int rendererIndex;
 		
 		if (sessionStarted || sessionStarting || !isThereAtLeastOneRendererAndOneComposer()) {
@@ -205,17 +199,16 @@ public final class MasterNetworkManager {
 		sessionStarting = true;
 		
 		synchronized (distributedRenderLoop.getSceneLock()) {
-			root = distributedRenderLoop.getRoot();
+			scene = distributedRenderLoop.getScene();
 			pointOfView = distributedRenderLoop.getPointOfView();
-			lightSources = distributedRenderLoop.getLightSources();
 		}
 		
 		log.info("Starting a new session");
 		log.info("Executing " + distributionStrategy.getClass().getSimpleName() + "...");
 		
-		geometries = distributionStrategy.distribute(root, renderersConnections.size());
+		distributedScenes = distributionStrategy.distribute(scene, renderersConnections.size());
 		
-		if (geometries.size() != renderersConnections.size()) {
+		if (distributedScenes.size() != renderersConnections.size()) {
 			// TODO:
 			throw new RuntimeException("The number of distributions is not the same as the number of renderers");
 		}
@@ -225,18 +218,17 @@ public final class MasterNetworkManager {
 			while (i.hasNext()) {
 				rendererConnection = i.next();
 				rendererIndex = getRendererIndex(rendererConnection);
-				rootOfARenderer = geometries.get(rendererIndex);
+				rendererScene = distributedScenes.get(rendererIndex);
 				
 				log.debug("**************");
 				log.debug("Renderer " + rendererIndex);
 				log.debug("**************");
 				
-				ConnectionSetter.setConnection(rootOfARenderer, rendererConnection);
+				ConnectionSetter.setConnection(rendererScene, rendererConnection);
 				
 				try {
 					pointOfViewData = pointOfViewPackager.serialize(pointOfView);
-					lightSourcesData = lightSourcesPackager.serialize(lightSources);
-					geometriesData = geometriesPackager.serialize(rootOfARenderer);
+					sceneData = scenePackager.serialize(rendererScene);
 				} catch (IOException e) {
 					log.error("Error serializing the scene", e);
 					sessionStarted = false;
@@ -244,8 +236,7 @@ public final class MasterNetworkManager {
 				}
 				
 				log.trace("POV data size: " + pointOfViewData.length + " bytes");
-				log.trace("Light sources data size: " + lightSourcesData.length + " bytes");
-				log.trace("Geometries data size: " + geometriesData.length + " bytes");
+				log.trace("Scene data size: " + sceneData.length + " bytes");
 				
 				try {
 					masterProtocolHandler.sendStartSessionMessage(
@@ -255,8 +246,7 @@ public final class MasterNetworkManager {
 							XithClusterConfiguration.screenHeight,
 							XithClusterConfiguration.targetFPS,
 							pointOfViewData, 
-							lightSourcesData, 
-							geometriesData);
+							sceneData);
 				} catch (IOException e) {
 					log.error("Error sending distributed scene", e);
 					sessionStarted = false;

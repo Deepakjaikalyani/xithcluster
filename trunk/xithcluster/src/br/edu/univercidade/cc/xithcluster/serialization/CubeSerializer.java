@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import org.openmali.vecmath2.Colorf;
+import org.xith3d.scenegraph.Material;
 import org.xith3d.scenegraph.Texture;
 import br.edu.univercidade.cc.xithcluster.primitives.Cube;
 
@@ -16,6 +17,7 @@ public class CubeSerializer extends Serializer<Cube> {
 		out.writeBoolean(cube.isColorAlpha());
 		out.writeInt(cube.getTexCoordsSize());
 		SerializationHelper.writeColorf(out, cube.getColor());
+		SerializationHelper.writeMaterial(out, cube.getMaterial());
 		SerializationHelper.writeTexture(out, cube.getTexture());
 	}
 	
@@ -26,6 +28,7 @@ public class CubeSerializer extends Serializer<Cube> {
 		boolean colorAlpha;
 		int texCoordsSize;
 		Colorf color;
+		Material material;
 		Texture texture;
 		
 		size = in.readFloat();
@@ -33,12 +36,15 @@ public class CubeSerializer extends Serializer<Cube> {
 		colorAlpha = in.readBoolean();
 		texCoordsSize = in.readInt();
 		color = SerializationHelper.readColorf(in);
+		material = SerializationHelper.readMaterial(in);
 		texture = SerializationHelper.readTexture(in);
 		
 		Cube newCube = new Cube(size, features, colorAlpha, texCoordsSize);
 		
 		if (color != null) {
 			newCube.setColor(color);
+		} else if (material != null) {
+			newCube.setMaterial(material);
 		} else if (texture != null) {
 			newCube.setTexture(texture);
 		}

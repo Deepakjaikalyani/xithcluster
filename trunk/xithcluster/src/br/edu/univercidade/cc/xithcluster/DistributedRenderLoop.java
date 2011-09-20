@@ -3,7 +3,6 @@ package br.edu.univercidade.cc.xithcluster;
 import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.util.List;
 import javax.xml.parsers.FactoryConfigurationError;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.xith3d.base.Xith3DEnvironment;
@@ -11,7 +10,6 @@ import org.xith3d.loop.InputAdapterRenderLoop;
 import org.xith3d.loop.UpdatingThread;
 import org.xith3d.loop.opscheduler.OperationScheduler;
 import org.xith3d.scenegraph.BranchGroup;
-import org.xith3d.scenegraph.Light;
 import org.xith3d.scenegraph.View;
 import br.edu.univercidade.cc.xithcluster.communication.MasterNetworkManager;
 
@@ -144,16 +142,12 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop {
 		return sceneLock;
 	}
 	
-	public BranchGroup getRoot() {
+	public BranchGroup getScene() {
 		return getXith3DEnvironment().getBranchGroup();
 	}
 	
 	public View getPointOfView() {
 		return getXith3DEnvironment().getView();
-	}
-	
-	public List<Light> getLightSources() {
-		return LightSourceFinder.getLightSources(getRoot());
 	}
 	
 }

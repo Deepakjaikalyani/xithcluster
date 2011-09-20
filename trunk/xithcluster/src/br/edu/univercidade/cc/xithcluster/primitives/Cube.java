@@ -2,6 +2,7 @@ package br.edu.univercidade.cc.xithcluster.primitives;
 
 import org.openmali.vecmath2.Colorf;
 import org.xith3d.scenegraph.Geometry;
+import org.xith3d.scenegraph.Material;
 import org.xith3d.scenegraph.Node;
 import org.xith3d.scenegraph.Shape3D;
 import org.xith3d.scenegraph.Texture;
@@ -17,6 +18,8 @@ public class Cube extends org.xith3d.scenegraph.primitives.Cube {
 	private int texCoordsSize;
 	
 	private Colorf color;
+	
+	private Material material;
 	
 	private Texture texture;
 	
@@ -37,31 +40,22 @@ public class Cube extends org.xith3d.scenegraph.primitives.Cube {
 		this(size, Geometry.COORDINATES | Geometry.NORMALS | Geometry.TEXTURE_COORDINATES, false, 2);
 	}
 	
-	public Cube(float size, Colorf color) {
-		super(size, Geometry.COORDINATES | Geometry.NORMALS, false, 2);
+	public Cube(float size, Material material) {
+		this(size, Geometry.COORDINATES | Geometry.NORMALS, false, 2);
 		
-		setColor(color);
-		
-		this.color = color;
+		setMaterial(material);
 	}
 	
-	public void setColor(Colorf color) {
-		getAppearance(true).getColoringAttributes(true).setColor(color);
-		if (color.hasAlpha()) {
-			getAppearance(true).getTransparencyAttributes(true).setTransparency(color.getAlpha());
-		}
+	public Cube(float size, Colorf color) {
+		this(size, Geometry.COORDINATES | Geometry.NORMALS, false, 2);
+		
+		setColor(color);
 	}
 	
 	public Cube(float size, Texture texture) {
 		this(size, Geometry.COORDINATES | Geometry.NORMALS | Geometry.TEXTURE_COORDINATES, false, 2);
 		
 		setTexture(texture);
-		
-		this.texture = texture;
-	}
-	
-	public void setTexture(Texture texture) {
-		this.getAppearance(true).setTexture(texture);
 	}
 	
 	public float getSize() {
@@ -72,36 +66,46 @@ public class Cube extends org.xith3d.scenegraph.primitives.Cube {
 		return features;
 	}
 	
-	public void setFeatures(int features) {
-		this.features = features;
-	}
-	
 	public boolean isColorAlpha() {
 		return colorAlpha;
 	}
 	
-	public void setColorAlpha(boolean colorAlpha) {
-		this.colorAlpha = colorAlpha;
+	public Material getMaterial() {
+		return material;
+	}
+	
+	public void setMaterial(Material material) {
+		this.getAppearance(true).setMaterial(material);
+		
+		this.material = material;
 	}
 	
 	public int getTexCoordsSize() {
 		return texCoordsSize;
 	}
 	
-	public void setTexCoordsSize(int texCoordsSize) {
-		this.texCoordsSize = texCoordsSize;
-	}
-	
 	public Colorf getColor() {
 		return color;
+	}
+	
+	public void setColor(Colorf color) {
+		getAppearance(true).getColoringAttributes(true).setColor(color);
+		
+		if (color.hasAlpha()) {
+			getAppearance(true).getTransparencyAttributes(true).setTransparency(color.getAlpha());
+		}
+		
+		this.color = color;
 	}
 	
 	public Texture getTexture() {
 		return texture;
 	}
 	
-	public void setSize(float size) {
-		this.size = size;
+	public void setTexture(Texture texture) {
+		this.getAppearance(true).setTexture(texture);
+		
+		this.texture = texture;
 	}
 	
 	@Override
@@ -114,6 +118,8 @@ public class Cube extends org.xith3d.scenegraph.primitives.Cube {
 		
 		if (color != null) {
 			newCube.setColor(color);
+		} else if (material != null) {
+			newCube.setMaterial(material);
 		} else if (texture != null) {
 			newCube.setTexture(texture);
 		}
