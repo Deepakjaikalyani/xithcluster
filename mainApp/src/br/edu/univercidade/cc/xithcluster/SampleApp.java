@@ -94,7 +94,7 @@ public class SampleApp extends DistributedRenderLoop {
 		transformGroup.addChild(rectangle1);
 		group1.addChild(transformGroup);
 		
-		transform = new Transform3D(0.7f, 0.2f, 0.3f);
+		/*transform = new Transform3D(0.7f, 0.2f, 0.3f);
 		transformGroup = new TransformGroup(transform);
 		
 		sphere1 = new Sphere(0.2f, 20, 20, Geometry.COORDINATES | Geometry.NORMALS, false, 2);
@@ -102,7 +102,7 @@ public class SampleApp extends DistributedRenderLoop {
 		sphere1.getAppearance(true).setMaterial(material2);
 		
 		transformGroup.addChild(sphere1);
-		group1.addChild(transformGroup);
+		group1.addChild(transformGroup);*/
 		
 		transform = new Transform3D(0.55f, -0.2f, 0.2f);
 		transformGroup = new TransformGroup(transform);

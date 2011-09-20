@@ -23,7 +23,6 @@ import org.xith3d.utility.events.WindowClosingRenderLoopEnder;
 import br.edu.univercidade.cc.xithcluster.communication.RendererNetworkManager;
 import br.edu.univercidade.cc.xithcluster.util.BufferUtils;
 import br.edu.univercidade.cc.xithcluster.util.SceneBuilder;
-import br.edu.univercidade.cc.xithcluster.util.ViewHelper;
 
 public class Renderer extends InputAdapterRenderLoop {
 	
@@ -65,7 +64,10 @@ public class Renderer extends InputAdapterRenderLoop {
 		
 		new Xith3DEnvironment(this);
 		
-		setRoot(new BranchGroup());
+		root = new BranchGroup();
+		renderPass = getXith3DEnvironment().addPerspectiveBranch(root);
+		
+		buildTextureRenderTargets();
 		
 		canvas = Canvas3DFactory.createWindowed(screenWidth, screenHeight, APP_TITLE);
 		canvas.setBackgroundColor(Colorf.BLACK);
@@ -97,18 +99,6 @@ public class Renderer extends InputAdapterRenderLoop {
 		}
 	}
 	
-	private void setRoot(BranchGroup newRoot) {
-		if (root != null) {
-			SceneBuilder.copyToDestinationAndInvalidateSource(root, newRoot);
-		} else {
-			root = newRoot;
-			
-			renderPass = getXith3DEnvironment().addPerspectiveBranch(root);
-			
-			buildTextureRenderTargets();
-		}
-	}
-
 	private void buildTextureRenderTargets() {
 		org.xith3d.render.Renderer renderer;
 		
@@ -166,10 +156,8 @@ public class Renderer extends InputAdapterRenderLoop {
 	}
 	
 	public void updateScene(View view, BranchGroup newRoot) {
-		// TODO: Check this!
-		ViewHelper.copy(view, getXith3DEnvironment().getView());
-		
-		setRoot(newRoot);
+		SceneBuilder.copy(getXith3DEnvironment().getView(), view);
+		SceneBuilder.copyAndInvalidateSource(root, newRoot);
 	}
 	
 	/*
