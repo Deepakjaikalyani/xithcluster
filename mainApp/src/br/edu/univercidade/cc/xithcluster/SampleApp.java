@@ -5,23 +5,26 @@ import java.io.FileNotFoundException;
 import org.jagatoo.input.devices.components.Key;
 import org.jagatoo.input.events.KeyPressedEvent;
 import org.openmali.vecmath2.Colorf;
+import org.openmali.vecmath2.Vector3f;
 import org.xith3d.base.Xith3DEnvironment;
 import org.xith3d.loaders.texture.TextureLoader;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Group;
-import org.xith3d.scenegraph.StaticTransform;
+import org.xith3d.scenegraph.Light;
+import org.xith3d.scenegraph.Material;
 import org.xith3d.scenegraph.Texture2D;
 import org.xith3d.scenegraph.Transform3D;
 import org.xith3d.scenegraph.TransformGroup;
 import br.edu.univercidade.cc.xithcluster.primitives.Cube;
 import br.edu.univercidade.cc.xithcluster.primitives.Rectangle;
+import br.edu.univercidade.cc.xithcluster.primitives.Sphere;
 
 public class SampleApp extends DistributedRenderLoop {
 	
 	public SampleApp() {
 		super(120f);
 		
-		new Xith3DEnvironment(0f, 0f, 5f, 0f, 0f, 0f, 0f, 1f, 0f, this);
+		new Xith3DEnvironment(0f, 0f, 3f, 0f, 0f, 0f, 0f, 1f, 0f, this);
 		
 		getXith3DEnvironment().addPerspectiveBranch(createTestScene());
 		
@@ -29,23 +32,43 @@ public class SampleApp extends DistributedRenderLoop {
 	}
 	
 	private BranchGroup createTestScene() {
-		BranchGroup root = new BranchGroup();
-		Group group1 = new Group();
-		Group group2 = new Group();
-		
-		group1.setName("group1");
-		group2.setName("group2");
-		
+		BranchGroup root;
+		Group group1;
+		Material material1;
+		Material material2;
 		Transform3D transform;
-		
-		transform = new Transform3D(0.3f, 0.3f, 0.5f);
-		transform.rotY(15);
-		transform.rotX(15);
-		
-		TransformGroup transformGroup1 = new TransformGroup(transform);
-		transformGroup1.setName("transformGroup1");
-		
+		TransformGroup transformGroup;
+		Cube cube1;
+		Rectangle rectangle1;
+		Sphere sphere1;
+		Light light1;
 		Texture2D texture2D;
+		
+		root = new BranchGroup();
+		
+		group1 = new Group();
+		group1.setName("group1");
+		
+		material1 = new Material();
+        material1.setEmissiveColor(Colorf.RED);
+        material1.setColorTarget(Material.NONE);
+        material1.setLightingEnabled(true);
+        
+        material2 = new Material();
+        material2.setEmissiveColor(Colorf.GREEN);
+        material2.setColorTarget(Material.NONE);
+        material2.setLightingEnabled(true);
+		
+		transform = new Transform3D(0.0f, 0.3f, 0.5f);
+		transform.rotXYZ(35, 25, 0);
+		transformGroup = new TransformGroup(transform);
+		
+		cube1 = new Cube(0.5f, material1);
+		cube1.setName("cube1");
+		
+		transformGroup.addChild(cube1);
+		group1.addChild(transformGroup);
+		
 		try {
 			texture2D = TextureLoader.getInstance().loadTexture(new FileInputStream("resources/textures/crate.png"));
 		} catch (FileNotFoundException e) {
@@ -53,35 +76,31 @@ public class SampleApp extends DistributedRenderLoop {
 			throw new RuntimeException("Texture not found");
 		}
 		
-		Cube cube = new Cube(0.5f, texture2D);
-		cube.setName("cube1");
+		transform = new Transform3D(-1.0f, 0.5f, 0.0f);
+		transformGroup = new TransformGroup(transform);
 		
-		transformGroup1.addChild(cube);
+		rectangle1 = new Rectangle(0.5f, 0.5f, texture2D);
+		rectangle1.setName("rectangle1");
 		
-		Rectangle rectangle2 = new Rectangle(0.5f, 0.5f, Colorf.RED);
-		rectangle2.setName("rectangle2");
-		StaticTransform.translate(rectangle2, -1.0f, 0.5f, 0.0f);
+		transformGroup.addChild(rectangle1);
+		group1.addChild(transformGroup);
 		
-		Rectangle rectangle3 = new Rectangle(0.5f, 0.5f, Colorf.GREEN);
-		rectangle3.setName("rectangle3");
-		StaticTransform.translate(rectangle3, -1.0f, 0.9f, 0.0f);
+		transform = new Transform3D(0.7f, 0.2f, 0.3f);
+		transformGroup = new TransformGroup(transform);
 		
-		Rectangle rectangle4 = new Rectangle(0.5f, 0.5f, Colorf.BLUE);
-		rectangle4.setName("rectangle4");
-		StaticTransform.translate(rectangle4, -0.5f, -0.5f, 0.0f);
+		sphere1 = new Sphere(0.2f, 20, 20, material2);
+		sphere1.setName("sphere1");
 		
-		Rectangle rectangle5 = new Rectangle(0.5f, 0.5f, Colorf.YELLOW);
-		rectangle5.setName("rectangle5");
-		StaticTransform.translate(rectangle5, 0.5f, -0.5f, 0.0f);
+		transformGroup.addChild(sphere1);
+		group1.addChild(transformGroup);
 		
-		group2.addChild(transformGroup1);
+		transform = new Transform3D(0.0f, 0.0f, 1.0f);
+		transformGroup = new TransformGroup(transform);
 		
-		group2.addChild(rectangle2);
-		group2.addChild(rectangle3);
-		group2.addChild(rectangle4);
-		group2.addChild(rectangle5);
+		light1 = new DirectionalLight(true, new Colorf(0.5f, 0.5f, 0.5f), Vector3f.NEGATIVE_Z_AXIS);
 		
-		group1.addChild(group2);
+		transformGroup.addChild(light1);
+		root.addChild(transformGroup);
 		
 		root.addChild(group1);
 		

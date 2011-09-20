@@ -51,8 +51,8 @@ public final class RendererProtocolHandler implements IDataHandler {
 		}
 	}
 
-	void onStartSessionCompleted(int id, int screenWidth, int screenHeight, double targetFPS, byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) throws IOException {
-		rendererNetworkManager.onStartSession(id, screenWidth, screenHeight, targetFPS, pointOfViewData, lightSourcesData, geometriesData);
+	void onStartSessionCompleted(int id, int screenWidth, int screenHeight, double targetFPS, byte[] pointOfViewData, byte[] sceneData) throws IOException {
+		rendererNetworkManager.onStartSession(id, screenWidth, screenHeight, targetFPS, pointOfViewData, sceneData);
 	}
 
 	void onUpdateCompleted(byte[] updatesData) throws IOException {

@@ -1,0 +1,7 @@
+# This is the source version file used to propagate the version
+# to various places during the build process. The build number
+# is extracted from the subversion revision automatically
+version.major = 0
+version.minor = 9
+version.sub = 7
+version.hint = dev

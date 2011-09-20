@@ -2,7 +2,6 @@ package br.edu.univercidade.cc.xithcluster;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.jagatoo.input.InputSystem;
 import org.jagatoo.input.InputSystemException;
@@ -18,7 +17,6 @@ import org.xith3d.render.Canvas3DFactory;
 import org.xith3d.render.RenderPass;
 import org.xith3d.render.TextureRenderTarget;
 import org.xith3d.scenegraph.BranchGroup;
-import org.xith3d.scenegraph.Light;
 import org.xith3d.scenegraph.Texture2D;
 import org.xith3d.scenegraph.View;
 import org.xith3d.utility.events.WindowClosingRenderLoopEnder;
@@ -158,11 +156,7 @@ public class Renderer extends InputAdapterRenderLoop {
 		// getXith3DEnvironment().getCanvas().setTitle(APP_TITLE + "[id=" + id + "]");
 	}
 	
-	public void updateScene(View view, List<Light> lightSources, BranchGroup newRoot) {
-		for (Light lightSource : lightSources) {
-			newRoot.addChild(lightSource);
-		}
-		
+	public void updateScene(View view, BranchGroup newRoot) {
 		// TODO: Check this!
 		ViewHelper.copy(view, getXith3DEnvironment().getView());
 		

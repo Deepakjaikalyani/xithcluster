@@ -18,9 +18,7 @@ public final class StartSessionDataHandler extends ChainedSafeDataHandler<Render
 	
 	private byte[] pointOfViewData;
 	
-	private byte[] lightSourcesData;
-	
-	private byte[] geometriesData;
+	private byte[] sceneData;
 	
 	public StartSessionDataHandler(RendererProtocolHandler rendererProtocolHandler) {
 		super(rendererProtocolHandler);
@@ -33,15 +31,14 @@ public final class StartSessionDataHandler extends ChainedSafeDataHandler<Render
 		screenHeight = arg0.readInt();
 		targetFPS = arg0.readDouble();
 		pointOfViewData = arg0.readBytesByLength(arg0.readInt());
-		lightSourcesData = arg0.readBytesByLength(arg0.readInt());
-		geometriesData = arg0.readBytesByLength(arg0.readInt());
+		sceneData = arg0.readBytesByLength(arg0.readInt());
 		
 		return true;
 	}
 
 	@Override
 	protected void onDataReady(INonBlockingConnection arg0) throws IOException {
-		getNextDataHandler().onStartSessionCompleted(id, screenWidth, screenHeight, targetFPS, pointOfViewData, lightSourcesData, geometriesData);
+		getNextDataHandler().onStartSessionCompleted(id, screenWidth, screenHeight, targetFPS, pointOfViewData, sceneData);
 	}
 	
 }

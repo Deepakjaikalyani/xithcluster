@@ -30,8 +30,7 @@ public final class MasterProtocolHandler implements IConnectHandler, IDataHandle
 			int screenHeight,
 			double targetFPS,
 			byte[] pointOfViewData, 
-			byte[] lightSourcesData, 
-			byte[] geometriesData) 
+			byte[] sceneData) 
 	throws BufferOverflowException, ClosedChannelException, SocketTimeoutException, IOException {
 		rendererConnection.write(MessageType.START_SESSION.ordinal());
 		rendererConnection.flush();
@@ -42,10 +41,8 @@ public final class MasterProtocolHandler implements IConnectHandler, IDataHandle
 		rendererConnection.write(targetFPS);
 		rendererConnection.write(pointOfViewData.length);
 		rendererConnection.write(pointOfViewData);
-		rendererConnection.write(lightSourcesData.length);
-		rendererConnection.write(lightSourcesData);
-		rendererConnection.write(geometriesData.length);
-		rendererConnection.write(geometriesData);
+		rendererConnection.write(sceneData.length);
+		rendererConnection.write(sceneData);
 		rendererConnection.flush();
 	}
 	

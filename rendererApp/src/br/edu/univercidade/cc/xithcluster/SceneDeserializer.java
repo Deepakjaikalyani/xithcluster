@@ -1,80 +1,63 @@
 package br.edu.univercidade.cc.xithcluster;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.Observable;
 import org.xith3d.scenegraph.BranchGroup;
-import org.xith3d.scenegraph.Light;
 import org.xith3d.scenegraph.View;
-import br.edu.univercidade.cc.xithcluster.serialization.packagers.GeometriesPackager;
-import br.edu.univercidade.cc.xithcluster.serialization.packagers.LightSourcesPackager;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.PointOfViewPackager;
+import br.edu.univercidade.cc.xithcluster.serialization.packagers.ScenePackager;
 
 public class SceneDeserializer extends Observable implements Runnable {
 	
 	public static class DeserializationResult {
 		
-		private View view;
+		private View pointOfView;
 		
-		private List<Light> lightSources;
-		
-		private BranchGroup geometries;
+		private BranchGroup scene;
 
-		DeserializationResult(View view, List<Light> lightSources, BranchGroup geometries) {
-			this.view = view;
-			this.lightSources = lightSources;
-			this.geometries = geometries;
+		DeserializationResult(View pointOfView, BranchGroup scene) {
+			this.pointOfView = pointOfView;
+			this.scene = scene;
 		}
 		
-		public View getView() {
-			return view;
+		public View getPointOfView() {
+			return pointOfView;
 		}
 		
-		public List<Light> getLightSources() {
-			return lightSources;
-		}
-
-		public BranchGroup getGeometries() {
-			return geometries;
+		public BranchGroup getScene() {
+			return scene;
 		}
 		
 	}
 	
 	private PointOfViewPackager pointOfViewPackager = new PointOfViewPackager();
 	
-	private LightSourcesPackager lightSourcesPackager = new LightSourcesPackager();
-	
-	private GeometriesPackager geometriesPackager = new GeometriesPackager();
+	private ScenePackager scenePackager = new ScenePackager();
 	
 	private byte[] pointOfViewData;
 	
-	private byte[] lightSourcesData;
+	private byte[] sceneData;
 	
-	private byte[] geometriesData;
-	
-	public void setPackagesData(byte[] pointOfViewData, byte[] lightSourcesData, byte[] geometriesData) {
+	public void setSceneData(byte[] pointOfViewData, byte[] sceneData) {
 		this.pointOfViewData = pointOfViewData;
-		this.lightSourcesData = lightSourcesData;
-		this.geometriesData = geometriesData;
+		this.sceneData = sceneData;
 	}
 	
 	@Override
 	public void run() {
 		View view;
-		List<Light> lightSources;
-		BranchGroup geometries;
+		BranchGroup scene;
 		DeserializationResult result;
 		
 		try {
 			view = pointOfViewPackager.deserialize(pointOfViewData);
-			lightSources = lightSourcesPackager.deserialize(lightSourcesData);
-			geometries = geometriesPackager.deserialize(geometriesData);
+			scene = scenePackager.deserialize(sceneData);
 		} catch (IOException e) {
 			// TODO:
 			throw new RuntimeException("Error deserializing scene data", e);
 		}
 		
-		result = new DeserializationResult(view, lightSources, geometries);
+		result = new DeserializationResult(view, scene);
 		
 		// TODO:
 		System.out.println("Scene deserialized successfully");
