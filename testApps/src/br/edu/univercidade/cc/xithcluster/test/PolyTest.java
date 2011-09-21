@@ -1,19 +1,15 @@
-package br.edu.univercidade.cc.xithcluster;
+package br.edu.univercidade.cc.xithcluster.test;
 
 import org.jagatoo.input.devices.components.Key;
 import org.jagatoo.input.events.KeyPressedEvent;
-import org.openmali.vecmath2.Colorf;
 import org.xith3d.base.Xith3DEnvironment;
 import org.xith3d.scenegraph.BranchGroup;
+import br.edu.univercidade.cc.xithcluster.DistributedRenderLoop;
+import br.edu.univercidade.cc.xithcluster.SimpleDistribution;
+import br.edu.univercidade.cc.xithcluster.XithClusterConfiguration;
 
 public abstract class PolyTest extends DistributedRenderLoop {
 	
-	private static final Colorf[] COLORS = { Colorf.WHITE, Colorf.BLUE, Colorf.BROWN, Colorf.CYAN, Colorf.GRAY, Colorf.GREEN, Colorf.LIGHT_BROWN, Colorf.LIGHT_GRAY, Colorf.MAGENTA, Colorf.ORANGE, Colorf.PINK, Colorf.RED, Colorf.YELLOW };
-
-	protected static Colorf randomColor() {
-		return COLORS[(int) Math.floor(Math.random() * COLORS.length)];
-	}
-
 	public PolyTest(Xith3DEnvironment x3dEnv, float maxFPS) {
 		super(x3dEnv, maxFPS);
 	}
