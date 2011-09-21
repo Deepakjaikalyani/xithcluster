@@ -1,14 +1,13 @@
-package br.edu.univercidade.cc.xithcluster.communication.protocol;
+package br.edu.univercidade.cc.xithcluster.communication;
 
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
 import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.INonBlockingConnection;
+import br.edu.univercidade.cc.xithcluster.communication.ChainedSafeDataHandler;
 
-public final class StartSessionDataHandler extends ChainedSafeDataHandler<RendererProtocolHandler> {
-	
-	private int id;
+public final class StartSessionDataHandler extends ChainedSafeDataHandler<ComposerMessageBroker> {
 	
 	private int screenWidth;
 	
@@ -16,29 +15,22 @@ public final class StartSessionDataHandler extends ChainedSafeDataHandler<Render
 	
 	private double targetFPS;
 	
-	private byte[] pointOfViewData;
-	
-	private byte[] sceneData;
-	
-	public StartSessionDataHandler(RendererProtocolHandler rendererProtocolHandler) {
-		super(rendererProtocolHandler);
+	public StartSessionDataHandler(ComposerMessageBroker nextDataHandler) {
+		super(nextDataHandler);
 	}
 	
 	@Override
 	protected boolean onHandleData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
-		id = arg0.readInt();
 		screenWidth = arg0.readInt();
 		screenHeight = arg0.readInt();
 		targetFPS = arg0.readDouble();
-		pointOfViewData = arg0.readBytesByLength(arg0.readInt());
-		sceneData = arg0.readBytesByLength(arg0.readInt());
 		
 		return true;
 	}
 
 	@Override
 	protected void onDataReady(INonBlockingConnection arg0) throws IOException {
-		getNextDataHandler().onStartSessionCompleted(id, screenWidth, screenHeight, targetFPS, pointOfViewData, sceneData);
+		getNextDataHandler().onStartSessionCompleted(arg0, screenWidth, screenHeight, targetFPS);
 	}
 	
 }

@@ -2,10 +2,13 @@ package br.edu.univercidade.cc.xithcluster.communication;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.nio.BufferOverflowException;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.apache.log4j.Logger;
@@ -16,22 +19,23 @@ import org.xsocket.connection.Server;
 import br.edu.univercidade.cc.xithcluster.Composer;
 import br.edu.univercidade.cc.xithcluster.ComposerConfiguration;
 import br.edu.univercidade.cc.xithcluster.CompressionMethod;
-import br.edu.univercidade.cc.xithcluster.communication.protocol.ComposerProtocolHandler;
 
 public final class ComposerNetworkManager {
 	
 	private final Logger log = Logger.getLogger(ComposerNetworkManager.class);
 	
+	private final ComposerMessageBroker composerMessageBroker = new ComposerMessageBroker();
+	
 	private List<INonBlockingConnection> renderersConnections = Collections.synchronizedList(new ArrayList<INonBlockingConnection>());
 	
 	private final Composer composer;
 	
-	private final ComposerProtocolHandler composerProtocolHandler;
+	private IServer renderersServer;
 	
 	private INonBlockingConnection masterConnection;
-	
-	private IServer renderersServer;
 
+	private boolean sessionStarted = false;
+	
 	private final Map<Integer, RendererHandler> renderersHandlers = Collections.synchronizedMap(new HashMap<Integer, RendererHandler>());
 	
 	private final BitSet newImageMask = new BitSet();
@@ -40,7 +44,6 @@ public final class ComposerNetworkManager {
 	
 	public ComposerNetworkManager(Composer composer) {
 		this.composer = composer;
-		this.composerProtocolHandler = new ComposerProtocolHandler(this);
 	}
 	
 	private int getRendererIndex(INonBlockingConnection rendererConnection) {
@@ -51,74 +54,67 @@ public final class ComposerNetworkManager {
 		return rendererId.intValue();
 	}
 	
+	public void initialize() throws UnknownHostException, IOException {
+		renderersServer = new Server(ComposerConfiguration.renderersConnectionAddress, ComposerConfiguration.renderersConnectionPort, composerMessageBroker);
+		renderersServer.start();
+		
+		masterConnection = new NonBlockingConnection(ComposerConfiguration.masterListeningAddress, ComposerConfiguration.masterListeningPort, composerMessageBroker);
+		masterConnection.setAutoflush(false);
+	}
+	
 	private void setRendererIndex(INonBlockingConnection arg0) {
 		arg0.setAttachment(renderersConnections.size());
 	}
 
-	public void initialize() throws UnknownHostException, IOException {
-		renderersServer = new Server(ComposerConfiguration.renderersConnectionAddress, ComposerConfiguration.renderersConnectionPort, composerProtocolHandler);
-		renderersServer.start();
-		
-		masterConnection = new NonBlockingConnection(ComposerConfiguration.masterListeningAddress, ComposerConfiguration.masterListeningPort, composerProtocolHandler);
-		masterConnection.setAutoflush(false);
-	}
-
-	public synchronized boolean hasAllSubImages() {
+	private boolean hasAllSubImages() {
 		return !renderersHandlers.isEmpty() && newImageMask.cardinality() == renderersHandlers.size();
-	}
-	
-	public synchronized int getNumberOfSubImages() {
-		return renderersHandlers.size();
 	}
 	
 	private void notifySessionStarted() {
 		try {
-			composerProtocolHandler.sendSessionStartedMessage(masterConnection); 
+			sendSessionStartedMessage(); 
 		} catch (IOException e) {
 			log.error("Error notifying master node that session started successfully", e);
 		}
 	}
 
-	public synchronized byte[][] getColorAndAlphaBuffers() {
+	private byte[][] getColorAndAlphaBuffers() {
 		byte[][] colorAndAlphaBuffers;
 		int i;
 		
 		colorAndAlphaBuffers = new byte[renderersHandlers.size()][];
 		i = 0;
-		synchronized (renderersHandlers) {
-			for (RendererHandler rendererHandler : renderersHandlers.values()) {
+		for (RendererHandler rendererHandler : renderersHandlers.values()) {
 				colorAndAlphaBuffers[i++] = rendererHandler.getColorAndAlphaBuffer();
-			}
 		}
 		
 		return colorAndAlphaBuffers;
 	}
 
-	public synchronized byte[][] getDepthBuffers() {
+	private byte[][] getDepthBuffers() {
 		byte[][] depthBuffers;
 		int i;
 		
 		depthBuffers = new byte[renderersHandlers.size()][];
 		i = 0;
-		synchronized (renderersHandlers) {
-			for (RendererHandler rendererHandler : renderersHandlers.values()) {
-				depthBuffers[i++] = rendererHandler.getDepthBuffer();
-			}
+		for (RendererHandler rendererHandler : renderersHandlers.values()) {
+			depthBuffers[i++] = rendererHandler.getDepthBuffer();
 		}
 		
 		return depthBuffers;
 	}
 	
-	public void onStartFrame(int frameIndex) {
-		if (currentFrameIndex != -1 && currentFrameIndex != frameIndex && !hasAllSubImages()) {
-			log.error("Dropping unfinished frame: " + currentFrameIndex);
+	private void onStartFrame(int frameIndex) {
+		if (currentFrameIndex != -1 && currentFrameIndex != frameIndex) {
+			log.error("Frame lost: " + currentFrameIndex);
 		}
 		
 		newImageMask.clear();
+		
 		currentFrameIndex = frameIndex;
 	}
 
-	public void onStartSession(int screenWidth, int screenHeight, double targetFPS) {
+	private void onStartSession(int screenWidth, int screenHeight, double targetFPS) {
 		log.debug("****************");
 		log.debug("Session starting");
 		log.debug("****************");
@@ -133,10 +129,12 @@ public final class ComposerNetworkManager {
 		
 		notifySessionStarted();
 		
+		sessionStarted = true;
+		
 		log.info("Session started successfully");
 	}
 
-	public synchronized void onNewImage(INonBlockingConnection arg0, int frameIndex, CompressionMethod compressionMethod, byte[] colorAndAlphaBuffer, byte[] depthBuffer) {
+	private void onNewImage(INonBlockingConnection arg0, int frameIndex, CompressionMethod compressionMethod, byte[] colorAndAlphaBuffer, byte[] depthBuffer) {
 		INonBlockingConnection rendererConnection;
 		RendererHandler handler;
 		
@@ -162,14 +160,17 @@ public final class ComposerNetworkManager {
 		handler.setDepthBuffer(depthBuffer);
 		
 		newImageMask.set(getRendererIndex(rendererConnection));
+		
 		if (hasAllSubImages()) {
+			composer.setFrameData(renderersHandlers.size(), getColorAndAlphaBuffers(), getDepthBuffers());
+			
 			notifyFinishedFrame();
 		}
 	}
 
 	private void notifyFinishedFrame() {
 		try {
-			composerProtocolHandler.sendFinishedFrameMessage(masterConnection, currentFrameIndex); 
+			sendFinishedFrameMessage(currentFrameIndex); 
 		} catch (IOException e) {
 			log.error("Error notifying master node that the frame was finished", e);
 		}
@@ -183,36 +184,30 @@ public final class ComposerNetworkManager {
 		return arg0.getLocalPort() == ComposerConfiguration.masterListeningPort;
 	}
 
-	public synchronized boolean onConnected(INonBlockingConnection arg0) {
+	public void onConnected(INonBlockingConnection arg0) {
 		if (isRendererConnection(arg0)) {
-			return onRendererConnected(arg0);
+			onRendererConnected(arg0);
 		} else if (!isMyOwnConnection(arg0)) {
-			return true;
+			// TODO: Do nothing!
 		} else {
 			log.error("Unknown connection refused");
-			
-			return false;
 		}
 	}
 
-	private synchronized boolean onRendererConnected(INonBlockingConnection arg0) {
+	private void onRendererConnected(INonBlockingConnection arg0) {
 		INonBlockingConnection rendererConnection;
 		
 		rendererConnection = arg0;
 		
-		synchronized (renderersConnections) {
-			setRendererIndex(rendererConnection);
-			renderersConnections.add(rendererConnection);
-		}
+		setRendererIndex(rendererConnection);
+		renderersConnections.add(rendererConnection);
 		
 		rendererConnection.setAutoflush(false);
 		
 		log.info("New renderer connected");
-		
-		return true;
 	}
 
-	public synchronized boolean onRendererDisconnect(INonBlockingConnection arg0) {
+	private void onRendererDisconnected(INonBlockingConnection arg0) {
 		int rendererIndex;
 		
 		rendererIndex = getRendererIndex(arg0);
@@ -220,31 +215,101 @@ public final class ComposerNetworkManager {
 		newImageMask.clear(rendererIndex);
 		
 		renderersConnections.remove(rendererIndex);
-		synchronized (renderersConnections) {
-			for (int j = rendererIndex; j < renderersConnections.size(); j++) {
-				renderersConnections.get(j).setAttachment(j);
-			}
+		for (int j = rendererIndex; j < renderersConnections.size(); j++) {
+			renderersConnections.get(j).setAttachment(j);
 		}
 		
 		renderersHandlers.remove(rendererIndex);
 		
 		log.info("Renderer disconnected");
-		
-		return true;
 	}
 
-	public synchronized void onSetCompositionOrder(INonBlockingConnection arg0, int compositionOrder) {
+	private void onSetCompositionOrder(INonBlockingConnection arg0, int compositionOrder) {
 		int rendererIndex;
 		
 		rendererIndex = getRendererIndex(arg0);
 		
-		synchronized(renderersHandlers) {
-			if (!renderersHandlers.containsKey(rendererIndex)) {
-				renderersHandlers.put(rendererIndex, new RendererHandler(compositionOrder));
-				
-				log.info("Renderer " + rendererIndex + " has composition order " + compositionOrder);
+		if (!renderersHandlers.containsKey(rendererIndex)) {
+			renderersHandlers.put(rendererIndex, new RendererHandler(compositionOrder));
+			
+			log.info("Renderer " + rendererIndex + " has composition order " + compositionOrder);
+		} else {
+			log.info("Trying to set the composition order repeatedly for the same renderer: " + rendererIndex);
+		}
+	}
+	
+	private void sendSessionStartedMessage() throws BufferOverflowException, IOException {
+		masterConnection.write(MessageType.SESSION_STARTED.ordinal());
+		masterConnection.flush();
+	}
+
+	private void sendFinishedFrameMessage(int frameIndex) throws BufferOverflowException, IOException {
+		masterConnection.write(MessageType.FINISHED_FRAME.ordinal());
+		masterConnection.flush();
+		
+		masterConnection.write(frameIndex);
+		masterConnection.flush();
+	}
+	
+	public void update() {
+		Deque<Message> messages;
+		Message message;
+		Message lastStartSessionMessage;
+		Iterator<Message> iterator;
+		Iterator<Message> descendingIterator;
+		
+		messages = MessageQueue.getInstance().retrieveMessages();
+		
+		descendingIterator = messages.descendingIterator();
+		while (descendingIterator.hasNext()) {
+			message = descendingIterator.next();
+			if (message.getType() == MessageType.CONNECTED) {
+				onConnected(message.getSource());
+			} else if (message.getType() == MessageType.DISCONNECTED) {
+				// TODO: onDisconnected(..)
+				onRendererDisconnected(message.getSource());
 			} else {
-				log.info("Trying to set the composition order repeatedly for the same renderer: " + rendererIndex);
+				continue;
+			}
+			descendingIterator.remove();
+		}
+		
+		iterator = messages.iterator();
+		while (iterator.hasNext()) {
+			message = iterator.next();
+			if (message.getType() == MessageType.SET_COMPOSITION_ORDER) {
+				onSetCompositionOrder(message.getSource(), (Integer) message.getParameters()[0]);
+				iterator.remove();
+			}
+		}
+		
+		if (sessionStarted) {
+			descendingIterator = messages.descendingIterator();
+			while (descendingIterator.hasNext()) {
+				message = descendingIterator.next();
+				if (message.getType() == MessageType.START_FRAME) {
+					onStartFrame((Integer) message.getParameters()[0]);
+				} else if (message.getType() == MessageType.NEW_IMAGE) {
+					onNewImage(message.getSource(), (Integer) message.getParameters()[0], (CompressionMethod) message.getParameters()[1], (byte[]) message.getParameters()[2], (byte[]) message.getParameters()[2]);
+				}
+			}
+		} else {
+			/*
+			 * Consider only the last start session message.
+			 */
+			lastStartSessionMessage = null;
+			descendingIterator = messages.descendingIterator();
+			while (descendingIterator.hasNext()) {
+				message = descendingIterator.next();
+				if (lastStartSessionMessage != null && message.getType() == MessageType.START_SESSION) {
+					lastStartSessionMessage = message;
+				} else {
+					MessageQueue.getInstance().postMessage(message);
+				}
+			}
+			
+			if (lastStartSessionMessage != null) {
+				onStartSession((Integer) lastStartSessionMessage.getParameters()[0], (Integer) lastStartSessionMessage.getParameters()[1], (Double) lastStartSessionMessage.getParameters()[2]);
 			}
 		}
 	}

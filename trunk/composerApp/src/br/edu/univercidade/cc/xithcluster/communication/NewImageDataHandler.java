@@ -1,4 +1,4 @@
-package br.edu.univercidade.cc.xithcluster.communication.protocol;
+package br.edu.univercidade.cc.xithcluster.communication;
 
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
@@ -6,8 +6,9 @@ import java.nio.channels.ClosedChannelException;
 import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.INonBlockingConnection;
 import br.edu.univercidade.cc.xithcluster.CompressionMethod;
+import br.edu.univercidade.cc.xithcluster.communication.ChainedSafeDataHandler;
 
-public final class NewImageDataHandler extends ChainedSafeDataHandler<ComposerProtocolHandler> {
+public final class NewImageDataHandler extends ChainedSafeDataHandler<ComposerMessageBroker> {
 	
 	private int frameIndex;
 	
@@ -17,8 +18,8 @@ public final class NewImageDataHandler extends ChainedSafeDataHandler<ComposerPr
 	
 	private byte[] depthBuffer;
 	
-	public NewImageDataHandler(ComposerProtocolHandler chainedDataHandler) {
-		super(chainedDataHandler);
+	public NewImageDataHandler(ComposerMessageBroker nextDataHandler) {
+		super(nextDataHandler);
 	}
 
 	@Override

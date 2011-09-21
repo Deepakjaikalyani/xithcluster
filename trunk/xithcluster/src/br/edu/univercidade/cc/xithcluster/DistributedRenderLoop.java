@@ -5,27 +5,33 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import javax.xml.parsers.FactoryConfigurationError;
 import org.apache.log4j.xml.DOMConfigurator;
+import org.jagatoo.input.InputSystem;
+import org.jagatoo.input.InputSystemException;
+import org.jagatoo.input.devices.components.Key;
+import org.jagatoo.input.events.KeyPressedEvent;
+import org.openmali.vecmath2.Colorf;
 import org.xith3d.base.Xith3DEnvironment;
 import org.xith3d.loop.InputAdapterRenderLoop;
-import org.xith3d.loop.UpdatingThread;
-import org.xith3d.loop.opscheduler.OperationScheduler;
+import org.xith3d.render.Canvas3D;
+import org.xith3d.render.Canvas3DFactory;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.View;
+import org.xith3d.utility.events.WindowClosingRenderLoopEnder;
 import br.edu.univercidade.cc.xithcluster.communication.MasterNetworkManager;
 
 public class DistributedRenderLoop extends InputAdapterRenderLoop {
 	
 	private static final String LOG4J_CONFIGURATION_FILE = "xithcluster-log4j.xml";
+
+	private static final String APP_TITLE = "Application";
 	
 	private UpdateManager updateManager;
 	
 	private MasterNetworkManager networkManager;
 	
 	private DistributionStrategy distributionStrategy;
-	
-	private int currentFrame = -1;
-	
-	private final Object sceneLock = new Object();
+
+	private Canvas3D canvas;
 	
 	public DistributedRenderLoop() {
 		super();
@@ -60,13 +66,24 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop {
 			throw new RuntimeException("You must set a distribution strategy");
 		}
 		
+		canvas = Canvas3DFactory.createWindowed(XithClusterConfiguration.screenWidth, XithClusterConfiguration.screenHeight, APP_TITLE);
+		canvas.setBackgroundColor(Colorf.BLACK);
+		canvas.addWindowClosingListener(new WindowClosingRenderLoopEnder(this));
+		getXith3DEnvironment().addCanvas(canvas);
+		
+		try {
+			InputSystem.getInstance().registerNewKeyboardAndMouse(canvas.getPeer());
+		} catch (InputSystemException e) {
+			// TODO:
+			throw new RuntimeException("Error registering new keyboard and mouse", e);
+		}
+		
 		updateManager = new UpdateManager();
 		getXith3DEnvironment().addScenegraphModificationListener(updateManager);
 		
 		networkManager = new MasterNetworkManager(this, updateManager, distributionStrategy);
 		try {
 			networkManager.initialize();
-			super.begin(runMode, timingMode);
 		} catch (UnknownHostException e) {
 			// TODO:
 			throw new RuntimeException("Error starting network manager", e);
@@ -74,6 +91,10 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop {
 			// TODO:
 			throw new RuntimeException("Error starting network manager", e);
 		}
+		
+		getXith3DEnvironment().getOperationScheduler().addUpdatable(networkManager);
+		
+		super.begin(runMode, timingMode);
 	}
 
 	private void initializeLog4j() throws FactoryConfigurationError {
@@ -85,61 +106,12 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop {
 	}
 	
 	@Override
-	protected void loopIteration(long gameTime, long frameTime, UpdatingThread.TimingMode timingMode) {
-		int framesToSkip;
-		
-		if (!networkManager.isSessionStarted()) {
-			networkManager.startNewSession();
-		} else {
-			framesToSkip = networkManager.getSkipNextFrames();
-			if (framesToSkip > 0) {
-				// TODO: dT = dT + (frameTime * framesToSkip)
-			} else {
-				networkManager.notifyFrameStart(++currentFrame % Integer.MAX_VALUE);
-			}
-			
-			// TODO: doSimulations(dT)
-			// TODO: Check if this lock is needed!
-			synchronized (sceneLock) {
-				prepareNextFrame(gameTime, frameTime, timingMode);
-				
-				networkManager.sendPendingUpdates();
-			}
+	public void onKeyPressed(KeyPressedEvent e, Key key) {
+		switch (key.getKeyID()) {
+		case ESCAPE:
+			this.end();
+			break;
 		}
-	}
-	
-	@Override
-	protected void prepareNextFrame(long gameTime, long frameTime, UpdatingThread.TimingMode timingMode) {
-		OperationScheduler scheduler;
-		
-		if (getXith3DEnvironment() != null) {
-			getXith3DEnvironment().updatePhysicsEngine(gameTime, frameTime, timingMode);
-			getXith3DEnvironment().updateInputSystem(gameTime, timingMode);
-		}
-		
-		scheduler = getOperationScheduler();
-		if (scheduler != null) {
-			scheduler.update(gameTime, frameTime, timingMode);
-		}
-		
-		if (getUpdater() == null || getUpdater() == scheduler) {
-			return;
-		}
-		
-		getUpdater().update(gameTime, frameTime, timingMode);
-	}
-	
-	protected void renderNextFrame(long gameTime, long frameTime, UpdatingThread.TimingMode timingMode) {
-		if (getXith3DEnvironment() != null) {
-			getXith3DEnvironment().render(getGameNanoTime(), getLastNanoFrameTime());
-		} else {
-			// TODO:
-			throw new RuntimeException("You must setup a Xith3d environment");
-		}
-	}
-
-	public Object getSceneLock() {
-		return sceneLock;
 	}
 	
 	public BranchGroup getScene() {

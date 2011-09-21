@@ -1,14 +1,14 @@
-package br.edu.univercidade.cc.xithcluster.communication.protocol;
+package br.edu.univercidade.cc.xithcluster.communication;
 
 import java.io.IOException;
 import org.xsocket.connection.INonBlockingConnection;
 
-public final class ProtocolHelper {
+public final class CommunicationHelper {
 	
-	private ProtocolHelper() {
+	private CommunicationHelper() {
 	}
 	
-	public static MessageType readMessageType(INonBlockingConnection connection) throws IOException {
+	public static MessageType safelyReadMessageType(INonBlockingConnection connection) throws IOException {
 		final MessageType[] recordTypes = MessageType.values();
 		MessageType recordType;
 		int ordinal;
