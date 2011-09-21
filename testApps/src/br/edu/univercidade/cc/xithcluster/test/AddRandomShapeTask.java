@@ -5,30 +5,27 @@ import java.util.TimerTask;
 import org.openmali.vecmath2.Tuple3f;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Group;
-import org.xith3d.scenegraph.Transform3D;
+import org.xith3d.scenegraph.Transform;
 import org.xith3d.scenegraph.TransformGroup;
 import org.xith3d.scenegraph.primitives.Cube;
+import br.edu.univercidade.cc.xithcluster.test.utils.TestUtils;
 
 public class AddRandomShapeTask extends TimerTask {
 	
-	private int screenWidth;
-	
-	private int screenHeight;
-	
+	private static final float MAX_ANGLE = 45.0f;
+
 	private SceneObserver sceneObserver;
 	
 	private Random random;
 	
-	public AddRandomShapeTask(int screenWidth, int screenHeight, SceneObserver sceneObserver) {
-		this.screenWidth = screenWidth;
-		this.screenHeight = screenHeight;
+	public AddRandomShapeTask(SceneObserver sceneObserver) {
 		this.sceneObserver = sceneObserver;
 		
 		random = new Random();
 	}
 	
 	private Tuple3f generateRandomPosition() {
-		return new Tuple3f(random.nextFloat() * (float) screenWidth, random.nextFloat() * (float) screenHeight, 0);
+		return new Tuple3f(random.nextFloat() * 1.0f, random.nextFloat() * 1.0f, -0.5f);
 	}
 	
 	@Override
@@ -36,20 +33,25 @@ public class AddRandomShapeTask extends TimerTask {
 		BranchGroup root;
 		Group group;
 		TransformGroup transformGroup;
-		Transform3D transform;
+		Transform transform;
 		Cube cube;
 		
 		root = new BranchGroup();
 		group = new Group();
+		transform = new Transform();
 		
-		transform = new Transform3D(generateRandomPosition());
-		transform.rotXYZ(random.nextFloat() * 45f, random.nextFloat() * 45f, random.nextFloat() * 45f);
-		transformGroup = new TransformGroup(transform);
-		
-		cube = new Cube(0.5f);
-		transformGroup.addChild(cube);
-		
-		group.addChild(transformGroup);
+		for (int i = 0; i < 5; i++) {
+			cube = new Cube(0.3f);
+			cube.getAppearance(true).setColor(TestUtils.randomColor());
+			
+			transform.clear();
+			transform.addTranslation(generateRandomPosition());
+			transform.addRotation(random.nextFloat() * MAX_ANGLE, random.nextFloat() * MAX_ANGLE, random.nextFloat() * MAX_ANGLE);
+			transformGroup = new TransformGroup(transform.getTransform());
+			transformGroup.addChild(cube);
+			
+			group.addChild(transformGroup);
+		}
 		
 		root.addChild(group);
 		
