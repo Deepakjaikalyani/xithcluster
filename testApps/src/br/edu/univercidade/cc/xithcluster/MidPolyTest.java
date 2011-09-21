@@ -16,7 +16,8 @@ public class MidPolyTest extends PolyTest {
 		
 		for (int i = 0; i < 32; i++) {
 			for (int j = 0; j < 32; j++) {
-				rectangle = new Rectangle(0.15f, 0.15f, randomColor());
+				rectangle = new Rectangle(0.15f, 0.15f, null, null, null);
+				rectangle.getAppearance(true).setColor(randomColor());
 				StaticTransform.translate(rectangle, (j * 0.15f) - 2.4f, (i * 0.15f) - 2.4f, 0);
 				group1.addChild(rectangle);
 			}
