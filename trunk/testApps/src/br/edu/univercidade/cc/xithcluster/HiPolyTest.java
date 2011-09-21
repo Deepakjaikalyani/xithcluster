@@ -16,7 +16,8 @@ public class HiPolyTest extends PolyTest {
 		
 		for (int i = 0; i < 100; i++) {
 			for (int j = 0; j < 100; j++) {
-				rectangle = new Rectangle(0.07f, 0.07f, randomColor());
+				rectangle = new Rectangle(0.07f, 0.07f, null, null, null);
+				rectangle.getAppearance(true).setColor(randomColor());
 				StaticTransform.translate(rectangle, (j * 0.07f) - 3.5f, (i * 0.07f) - 3.5f, 0);
 				group1.addChild(rectangle);
 			}

@@ -16,7 +16,8 @@ public class LowPolyTest extends PolyTest {
 		
 		for (int i = 0; i < 10; i++) {
 			for (int j = 0; j < 10; j++) {
-				rectangle = new Rectangle(0.5f, 0.5f, randomColor());
+				rectangle = new Rectangle(0.5f, 0.5f, null, null, null);
+				rectangle.getAppearance(true).setColor(randomColor());
 				StaticTransform.translate(rectangle, (j * 0.5f) - 2.5f, (i * 0.5f) - 2.5f, 0);
 				group1.addChild(rectangle);
 			}
