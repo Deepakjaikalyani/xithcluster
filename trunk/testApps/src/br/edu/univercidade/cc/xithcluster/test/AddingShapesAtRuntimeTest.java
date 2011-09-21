@@ -10,7 +10,6 @@ import org.xith3d.render.Canvas3D;
 import org.xith3d.render.Canvas3DFactory;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.utility.events.WindowClosingRenderLoopEnder;
-import br.edu.univercidade.cc.xithcluster.util.SceneBuilder;
 
 public class AddingShapesAtRuntimeTest extends RenderLoop implements SceneObserver {
 	
@@ -21,12 +20,16 @@ public class AddingShapesAtRuntimeTest extends RenderLoop implements SceneObserv
 	private static final String APP_TITLE = "Adding Shapes At Runtime Test";
 	
 	private static final Long ADD_RANDOM_SHAPE_TASK_INTERVAL = 1500L;
-	
+
 	private BranchGroup root;
 	
 	private Canvas3D canvas;
 	
 	private Timer timer;
+
+	private SceneBuildingUpdatable sceneBuildingUpdatable;
+
+	private SceneReAddingUpdatable sceneReAddingUpdatable;
 	
 	public AddingShapesAtRuntimeTest() {
 		new Xith3DEnvironment(this);
@@ -48,12 +51,19 @@ public class AddingShapesAtRuntimeTest extends RenderLoop implements SceneObserv
 		}
 		
 		timer = new Timer();
-		timer.schedule(new AddRandomShapeTask(SCREEN_WIDTH, SCREEN_HEIGHT, this), ADD_RANDOM_SHAPE_TASK_INTERVAL);
+		timer.schedule(new AddRandomShapeTask(this), ADD_RANDOM_SHAPE_TASK_INTERVAL);
+		
+		/*sceneBuildingUpdatable = new SceneBuildingUpdatable(root);
+		getXith3DEnvironment().getOperationScheduler().addUpdatable(sceneBuildingUpdatable);*/
+		
+		sceneReAddingUpdatable = new SceneReAddingUpdatable(getXith3DEnvironment());
+		getXith3DEnvironment().getOperationScheduler().addUpdatable(sceneReAddingUpdatable);
 	}
 	
 	@Override
 	public void sceneChange(BranchGroup arg0) {
-		SceneBuilder.copyAndInvalidateSource(root, arg0);
+		//sceneBuildingUpdatable.setNewRoot(arg0);
+		sceneReAddingUpdatable.setNewRoot(arg0);
 	}
 	
 	/*
