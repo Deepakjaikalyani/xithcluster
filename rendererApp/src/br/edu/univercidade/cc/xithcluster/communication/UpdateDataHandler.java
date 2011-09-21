@@ -1,30 +1,30 @@
-package br.edu.univercidade.cc.xithcluster.communication.protocol;
+package br.edu.univercidade.cc.xithcluster.communication;
 
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
 import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.INonBlockingConnection;
+import br.edu.univercidade.cc.xithcluster.communication.ChainedSafeDataHandler;
 
-
-public class StartFrameDataHandler extends ChainedSafeDataHandler<ComposerProtocolHandler> {
-
-	private int frameIndex;
+public final class UpdateDataHandler extends ChainedSafeDataHandler<RendererMessageBroker> {
 	
-	public StartFrameDataHandler(ComposerProtocolHandler nextDataHandler) {
+	private byte[] updatesData;
+	
+	public UpdateDataHandler(RendererMessageBroker nextDataHandler) {
 		super(nextDataHandler);
 	}
-
+	
 	@Override
 	protected boolean onHandleData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
-		frameIndex = arg0.readInt();
+		updatesData = arg0.readBytesByLength(arg0.readInt());
 		
 		return true;
 	}
 
 	@Override
 	protected void onDataReady(INonBlockingConnection arg0) throws IOException {
-		getNextDataHandler().onStartFrameCompleted(frameIndex);
+		getNextDataHandler().onUpdateCompleted(arg0, updatesData);
 	}
 	
 }

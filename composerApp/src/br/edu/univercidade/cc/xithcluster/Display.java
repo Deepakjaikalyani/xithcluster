@@ -110,7 +110,7 @@ public class Display extends JFrame {
 		this.framesPerSecond = framesPerSecond;
 	}
 	
-	public void setImageData(int[] argbImageData) {
+	public void setARGBImageData(int[] argbImageData) {
 		System.arraycopy(argbImageData, 0, argbDataBuffer, 0, argbDataBuffer.length);
 	}
 	

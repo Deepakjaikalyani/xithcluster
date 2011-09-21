@@ -44,8 +44,6 @@ public class Renderer extends InputAdapterRenderLoop {
 	
 	private Texture2D depthTexture;
 	
-	private final Object sceneLock = new Object();
-
 	private Canvas3D canvas;
 
 	private int screenWidth = DEFAULT_WIDTH;
@@ -77,6 +75,7 @@ public class Renderer extends InputAdapterRenderLoop {
 		try {
 			InputSystem.getInstance().registerNewKeyboardAndMouse(canvas.getPeer());
 		} catch (InputSystemException e) {
+			// TODO:
 			throw new RuntimeException("Error registering new keyboard and mouse", e);
 		}
 		
@@ -87,6 +86,8 @@ public class Renderer extends InputAdapterRenderLoop {
 			// TODO:
 			throw new RuntimeException("Error starting network manager", e);
 		}
+		
+		getXith3DEnvironment().getOperationScheduler().addUpdatable(networkManager);
 		
 		super.begin(runMode, timingMode);
 	}
@@ -120,21 +121,16 @@ public class Renderer extends InputAdapterRenderLoop {
 		canvas.setSize(screenWidth, screenHeight);
 	}
 	
-	@Override
-	protected void loopIteration(long gameTime, long frameTime, TimingMode timingMode) {
-		super.prepareNextFrame(gameTime, frameTime, timingMode);
-		
-		if (networkManager.startFrame()) {
-			synchronized (sceneLock) {
-				super.renderNextFrame(gameTime, frameTime, timingMode);
-				
-				networkManager.sendColorAlphaAndDepthBuffers(readBytesFromTexture(colorAndAlphaTexture), readBytesFromTexture(depthTexture));
-			}
-		}
-	}
-	
 	private byte[] readBytesFromTexture(Texture2D texture) {
 		return BufferUtils.safeBufferRead(texture.getTextureCanvas().getImage().getDataBuffer());
+	}
+	
+	public byte[] getColorAndAlphaBuffer() {
+		return readBytesFromTexture(colorAndAlphaTexture);
+	}
+	
+	public byte[] getDepthBuffer() {
+		return readBytesFromTexture(depthTexture);
 	}
 	
 	@Override
@@ -146,13 +142,8 @@ public class Renderer extends InputAdapterRenderLoop {
 		}
 	}
 	
-	public Object getSceneLock() {
-		return sceneLock;
-	}
-	
 	public void setId(int id) {
-		// FIXME:
-		// getXith3DEnvironment().getCanvas().setTitle(APP_TITLE + "[id=" + id + "]");
+		//getXith3DEnvironment().getCanvas().setTitle(APP_TITLE + "[id=" + id + "]");
 	}
 	
 	public void updateScene(View view, BranchGroup newRoot) {

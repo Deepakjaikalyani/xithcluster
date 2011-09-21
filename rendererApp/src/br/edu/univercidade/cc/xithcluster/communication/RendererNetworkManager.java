@@ -1,110 +1,84 @@
 package br.edu.univercidade.cc.xithcluster.communication;
 
 import java.io.IOException;
-import java.util.List;
+import java.nio.BufferOverflowException;
+import java.util.Deque;
+import java.util.Iterator;
 import java.util.Observable;
 import java.util.Observer;
 import org.apache.log4j.Logger;
-import org.xith3d.scenegraph.BranchGroup;
-import org.xith3d.scenegraph.View;
+import org.xith3d.loop.Updatable;
+import org.xith3d.loop.UpdatingThread.TimingMode;
 import org.xsocket.connection.INonBlockingConnection;
 import org.xsocket.connection.NonBlockingConnection;
-import br.edu.univercidade.cc.xithcluster.PendingUpdate;
+import br.edu.univercidade.cc.xithcluster.CompressionMethod;
 import br.edu.univercidade.cc.xithcluster.Renderer;
 import br.edu.univercidade.cc.xithcluster.RendererConfiguration;
 import br.edu.univercidade.cc.xithcluster.SceneDeserializer;
-import br.edu.univercidade.cc.xithcluster.communication.protocol.RendererProtocolHandler;
-import br.edu.univercidade.cc.xithcluster.serialization.packagers.UpdatesPackager;
+import br.edu.univercidade.cc.xithcluster.SceneDeserializer.DeserializationResult;
 
-public final class RendererNetworkManager implements Observer {
+public final class RendererNetworkManager implements Observer, Updatable {
 	
 	private Logger log = Logger.getLogger(RendererNetworkManager.class);
 	
+	private enum SessionState {
+		CLOSED,
+		STARTING,
+		STARTED
+	}
+	
+	private RendererMessageBroker rendererMessageBroker = new RendererMessageBroker();
+	
 	private SceneDeserializer sceneDeserializer = new SceneDeserializer();
+	
+	private Renderer renderer;
 	
 	private INonBlockingConnection masterConnection;
 	
 	private INonBlockingConnection composerConnection;
 	
-	private UpdatesPackager updatesPackager = new UpdatesPackager();
+	//private UpdatesPackager updatesPackager = new UpdatesPackager();
 	
 	private Thread sceneDeserializationThread;
 	
-	private boolean sessionStarted = false;
+	private SessionState sessionState = SessionState.CLOSED;
 	
-	private boolean startFrame = false;
-	
-	private Renderer renderer;
-	
-	private RendererProtocolHandler rendererProtocolHandler;
+	private boolean renderFrame = false;
 	
 	private int currentFrameIndex = -1;
+
+	private DeserializationResult deserializationResult;
 	
 	public RendererNetworkManager(Renderer renderer) {
 		this.renderer = renderer;
 		this.sceneDeserializer.addObserver(this);
-		this.rendererProtocolHandler = new RendererProtocolHandler(this);
 	}
 	
 	public void initialize() throws IOException {
-		masterConnection = new NonBlockingConnection(RendererConfiguration.masterListeningAddress, RendererConfiguration.masterListeningPort, rendererProtocolHandler);
+		masterConnection = new NonBlockingConnection(RendererConfiguration.masterListeningAddress, RendererConfiguration.masterListeningPort, rendererMessageBroker);
 		masterConnection.setAutoflush(false);
 	}
 	
-	private void rebuildScene(View pointOfView, BranchGroup scene) {
-		synchronized (renderer.getSceneLock()) {
-			renderer.updateScene(pointOfView, scene);
-		}
-	}
-	
-	private void updateScene(List<PendingUpdate> pendingUpdates) {
-		// TODO:
-	}
-	
-	public synchronized boolean startFrame() {
-		boolean param0;
-		
-		param0 = startFrame;
-		startFrame = false;
-		
-		return param0;
-	}
-	
-	public void notifySessionStarted() {
+	private void notifySessionStarted() {
 		try {
-			rendererProtocolHandler.sendSessionStartedMessage(masterConnection);
+			sendSessionStartedMessage();
 		} catch (IOException e) {
 			log.error("Error notifying master node that session started successfully", e);
 		}
 	}
 	
-	public synchronized boolean onUpdate(byte[] updatesData) throws IOException {
-		if (sessionStarted) {
-			updateScene(updatesPackager.deserialize(updatesData));
-			
-			return true;
-		} else {
-			log.error("Cannot update scene before starting a session");
-			
-			return false;
-		}
+	private void onUpdate(byte[] updatesData) {
+		// TODO:
+		//updateScene(updatesPackager.deserialize(updatesData));
 	}
 	
-	public synchronized boolean onStartFrame(int frameIndex) {
-		if (sessionStarted) {
-			startFrame = true;
-			currentFrameIndex = frameIndex;
-			
-			return true;
-		} else {
-			log.error("Cannot render frame before starting a session");
-			
-			return false;
-		}
+	private void onStartFrame(int frameIndex) {
+		renderFrame = true;
+		currentFrameIndex = frameIndex;
 	}
 	
-	public synchronized void onStartSession(int id, int screenWidth, int screenHeight, double targetFPS, byte[] pointOfViewData, byte[] sceneData) throws IOException {
-		sessionStarted = false;
+	private void onStartSession(int id, int screenWidth, int screenHeight, double targetFPS, byte[] pointOfViewData, byte[] sceneData) {
+		sessionState = SessionState.STARTING;
 		
 		log.debug("****************");
 		log.debug("Session starting");
@@ -146,7 +120,7 @@ public final class RendererNetworkManager implements Observer {
 	
 	private void notifyCompositionOrder() {
 		try {
-			rendererProtocolHandler.sendSetCompositionOrderMessage(composerConnection, RendererConfiguration.compositionOrder);
+			sendSetCompositionOrderMessage(RendererConfiguration.compositionOrder);
 		} catch (IOException e) {
 			log.error("Error notifying composer node the renderer's composition order", e);
 		}
@@ -174,11 +148,116 @@ public final class RendererNetworkManager implements Observer {
 		return sceneDeserializationThread != null;
 	}
 	
+	private void sendSessionStartedMessage() throws BufferOverflowException, IOException {
+		masterConnection.write(MessageType.SESSION_STARTED.ordinal());
+		masterConnection.flush();
+	}
+	
+	private void sendNewImageMessage(int frameIndex, CompressionMethod compressionMethod, byte[] colorAndAlphaBuffer, byte[] depthBuffer) throws BufferOverflowException, IOException {
+		composerConnection.write(MessageType.NEW_IMAGE.ordinal());
+		composerConnection.flush();
+		
+		composerConnection.write(frameIndex);
+		composerConnection.write(compressionMethod.ordinal());
+		composerConnection.write(colorAndAlphaBuffer.length);
+		composerConnection.write(colorAndAlphaBuffer);
+		composerConnection.write(depthBuffer.length);
+		composerConnection.write(depthBuffer);
+		composerConnection.flush();
+	}
+	
+	private void sendSetCompositionOrderMessage(int compositionOrder) throws BufferOverflowException, IOException {
+		composerConnection.write(MessageType.SET_COMPOSITION_ORDER.ordinal());
+		composerConnection.flush();
+		
+		composerConnection.write(compositionOrder);
+		composerConnection.flush();
+	}
+
 	@Override
 	public void update(Observable o, Object arg) {
-		SceneDeserializer.DeserializationResult result;
-		
 		if (o == sceneDeserializer) {
+			deserializationResult = (DeserializationResult) arg;
+		}
+	}
+	
+	@Override
+	public void update(long gameTime, long frameTime, TimingMode timingMode) {
+		Deque<Message> messages;
+		Message message;
+		Iterator<Message> iterator;
+		Iterator<Message> descendingIterator;
+		Message lastUpdateMessage;
+		Message lastStartFrameMessage;
+		byte[] colorAndAlphaBuffer;
+		
+		messages = MessageQueue.getInstance().retrieveMessages();
+		if (sessionState == SessionState.STARTED) {
+			/*
+			 * Consider only the last update message received.
+			 */
+			lastUpdateMessage = null;
+			descendingIterator = messages.descendingIterator();
+			while (descendingIterator.hasNext()) {
+				message = descendingIterator.next();
+				if (message.getType() == MessageType.UPDATE) {
+					lastUpdateMessage = message;
+					break;
+				}
+			}
+			
+			if (lastUpdateMessage != null) {
+				onUpdate((byte[]) lastUpdateMessage.getParameters()[0]);
+			}
+			
+			if (!renderFrame) {
+				/*
+				 * Consider only the last start frame message received.
+				 */
+				lastStartFrameMessage = null;
+				descendingIterator = messages.descendingIterator();
+				while (descendingIterator.hasNext()) {
+					message = descendingIterator.next();
+					if (lastStartFrameMessage == null && message.getType() == MessageType.START_FRAME) {
+						lastStartFrameMessage = message;
+					} else {
+						log.error("Start frame message lost: " + message.getParameters()[0]);
+					}
+				}
+				
+				if (lastStartFrameMessage != null) {
+					onStartFrame((Integer) lastStartFrameMessage.getParameters()[0]);
+				}
+			} else {
+				colorAndAlphaBuffer = renderer.getColorAndAlphaBuffer();
+				
+				switch (RendererConfiguration.compressionMethod) {
+				case PNG:
+					// TODO: Deflate!
+					break;
+				}
+				
+				try {
+					sendNewImageMessage(currentFrameIndex, RendererConfiguration.compressionMethod, colorAndAlphaBuffer, renderer.getDepthBuffer());
+				} catch (IOException e) {
+					log.error("Error sending image buffers to composer", e);
+				}
+				
+				renderFrame = false;
+			}
+		} else if (sessionState == SessionState.CLOSED) {
+			/*
+			 * Consider only start session messages, all others are ignored.
+			 */
+			iterator = messages.iterator();
+			while (iterator.hasNext()) {
+				message = iterator.next();
+				if (message.getType() == MessageType.START_SESSION) {
+					onStartSession((Integer) message.getParameters()[0], (Integer) message.getParameters()[1], (Integer) message.getParameters()[2], (Double) message.getParameters()[3], (byte[]) message.getParameters()[4], (byte[]) message.getParameters()[5]);
+					break;
+				}
+			}
+		} else if (deserializationResult != null) {
 			/*
 			 * Scene rebuilding is an operation that should never cause "abends"
 			 * so we should never prevent the cluster session to be started
@@ -186,37 +265,11 @@ public final class RendererNetworkManager implements Observer {
 			 */
 			notifySessionStarted();
 			
-			sessionStarted = true;
+			sessionState = SessionState.STARTED;
 			
-			result = (SceneDeserializer.DeserializationResult) arg;
+			renderer.updateScene(deserializationResult.getPointOfView(), deserializationResult.getScene());
 			
-			rebuildScene(result.getPointOfView(), result.getScene());
-		}
-	}
-	
-	public void sendColorAlphaAndDepthBuffers(byte[] colorAndAlphaBuffer, byte[] depthBuffer) {
-		switch (RendererConfiguration.compressionMethod) {
-		case PNG:
-			// TODO: Deflate!
-			break;
-		}
-		
-		// DEBUG:
-		checkDepthBuffer(depthBuffer);
-		
-		// TODO: Do re-attempts!
-		try {
-			rendererProtocolHandler.sendNewImageMessage(composerConnection, currentFrameIndex, RendererConfiguration.compressionMethod, colorAndAlphaBuffer, depthBuffer);
-		} catch (IOException e) {
-			log.error("Error sending image buffers to composer", e);
-		}
-	}
-	
-	private void checkDepthBuffer(byte[] depthBuffer) {
-		for (int i = 0; i < depthBuffer.length; i++) {
-			if (depthBuffer[i] != 0) {
-				System.out.println("depth[" + i + "]=" + depthBuffer[i]);
-			}
+			deserializationResult = null;
 		}
 	}
 	

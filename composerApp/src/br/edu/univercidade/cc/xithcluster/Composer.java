@@ -24,6 +24,12 @@ public class Composer implements Runnable, WindowListener {
 	private int screenWidth;
 
 	private int screenHeight;
+
+	private byte[][] colorAndAlphaBuffers;
+
+	private byte[][] depthBuffers;
+
+	private int numSubImages;
 	
 	public Composer() {
 		// TODO:
@@ -114,18 +120,32 @@ public class Composer implements Runnable, WindowListener {
 	}
 
 	private void loopIteration(double framesPerSecond) {
+		int[] argbImageData;
+		
 		if (display == null) {
 			return;
 		}
 		
 		display.updateFPSCounter(framesPerSecond);
 	
-		if (networkManager.hasAllSubImages()) {
-			// Buffer swapping
-			display.setImageData(compositionStrategy.compose(screenWidth, screenHeight, networkManager.getNumberOfSubImages(), networkManager.getColorAndAlphaBuffers(), networkManager.getDepthBuffers()));
+		if (colorAndAlphaBuffers != null && depthBuffers != null) {
+			argbImageData = compositionStrategy.compose(screenWidth, screenHeight, numSubImages, colorAndAlphaBuffers, depthBuffers);
+			
+			display.setARGBImageData(argbImageData);
+			
+			colorAndAlphaBuffers = null;
+			depthBuffers = null;
 		}
 		
 		display.blit();
+		
+		networkManager.update();
+	}
+	
+	public void setFrameData(int numSubImages, byte[][] colorAndAlphaBuffers, byte[][] depthBuffers) {
+		this.numSubImages = numSubImages;
+		this.colorAndAlphaBuffers = colorAndAlphaBuffers;
+		this.depthBuffers = depthBuffers;
 	}
 	
 	@Override

@@ -1,16 +1,17 @@
-package br.edu.univercidade.cc.xithcluster.communication.protocol;
+package br.edu.univercidade.cc.xithcluster.communication;
 
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
 import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.INonBlockingConnection;
+import br.edu.univercidade.cc.xithcluster.communication.ChainedSafeDataHandler;
 
-public class SetCompositionOrderDataHandler extends ChainedSafeDataHandler<ComposerProtocolHandler> {
+public class SetCompositionOrderDataHandler extends ChainedSafeDataHandler<ComposerMessageBroker> {
 	
 	private int compositionOrder;
 
-	public SetCompositionOrderDataHandler(ComposerProtocolHandler nextDataHandler) {
+	public SetCompositionOrderDataHandler(ComposerMessageBroker nextDataHandler) {
 		super(nextDataHandler);
 	}
 	

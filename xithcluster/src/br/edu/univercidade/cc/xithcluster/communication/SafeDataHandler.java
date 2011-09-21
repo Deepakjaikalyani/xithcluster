@@ -1,4 +1,4 @@
-package br.edu.univercidade.cc.xithcluster.communication.protocol;
+package br.edu.univercidade.cc.xithcluster.communication;
 
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
