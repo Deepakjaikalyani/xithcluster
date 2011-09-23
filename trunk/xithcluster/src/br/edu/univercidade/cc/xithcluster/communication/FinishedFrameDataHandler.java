@@ -7,7 +7,7 @@ import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.INonBlockingConnection;
 
 
-public class FinishedFrameDataHandler extends ChainedSafeDataHandler<MasterMessageBroker> {
+public class FinishedFrameDataHandler extends ChainedTransactionalDataHandler<MasterMessageBroker> {
 
 	private int frameIndex;
 	

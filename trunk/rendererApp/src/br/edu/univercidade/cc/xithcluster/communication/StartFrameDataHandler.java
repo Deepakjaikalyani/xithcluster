@@ -5,10 +5,10 @@ import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
 import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.INonBlockingConnection;
-import br.edu.univercidade.cc.xithcluster.communication.ChainedSafeDataHandler;
+import br.edu.univercidade.cc.xithcluster.communication.ChainedTransactionalDataHandler;
 
 
-public class StartFrameDataHandler extends ChainedSafeDataHandler<RendererMessageBroker> {
+public class StartFrameDataHandler extends ChainedTransactionalDataHandler<RendererMessageBroker> {
 
 	private int frameIndex;
 

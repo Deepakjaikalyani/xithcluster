@@ -4,11 +4,11 @@ import java.io.IOException;
 import org.xsocket.connection.IDataHandler;
 import org.xsocket.connection.INonBlockingConnection;
 
-public abstract class ChainedSafeDataHandler<NextDataHandler extends IDataHandler> extends SafeDataHandler {
+public abstract class ChainedTransactionalDataHandler<NextDataHandler extends IDataHandler> extends TransactionalDataHandler {
 	
 	private NextDataHandler nextDataHandler;
 	
-	public ChainedSafeDataHandler(NextDataHandler nextDataHandler) {
+	public ChainedTransactionalDataHandler(NextDataHandler nextDataHandler) {
 		this.nextDataHandler = nextDataHandler;
 	}
 	
