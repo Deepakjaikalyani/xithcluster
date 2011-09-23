@@ -1,31 +1,44 @@
 package br.edu.univercidade.cc.xithcluster.communication;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
+import java.util.PriorityQueue;
+import java.util.Queue;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public final class MessageQueue {
 	
-	private static final int MAX_NUM_MESSAGES = 1024;
+	private static final int INITIAL_CAPACITY = 1024;
 
-	private static final MessageQueue instance = new MessageQueue();
+	private static Lock primaryBufferLock = new ReentrantLock();
 	
-	private Deque<Message> messageBuffer = new ArrayDeque<Message>(MAX_NUM_MESSAGES);
+	private static Queue<Message> primaryBuffer = new PriorityQueue<Message>(INITIAL_CAPACITY);
+	
+	private static Queue<Message> secondaryBuffer = new PriorityBlockingQueue<Message>(INITIAL_CAPACITY);
 
-	public static MessageQueue getInstance() {
-		return instance;
+	
+	public static void postMessage(Message message) {
+		if (primaryBufferLock.tryLock()) {
+			primaryBuffer.add(message);
+			primaryBufferLock.unlock();
+		} else {
+			secondaryBuffer.add(message);
+		}
 	}
 	
-	public synchronized void postMessage(Message message) {
-		messageBuffer.offerLast(message);
+	public static Queue<Message> startReadingMessages() {
+		primaryBufferLock.lock();
+		
+		// copy secondary buffer
+		if (!secondaryBuffer.isEmpty()) {
+			primaryBuffer.addAll(secondaryBuffer);
+		}
+		
+		return primaryBuffer;
 	}
 	
-	public synchronized Deque<Message> retrieveMessages() {
-		Deque<Message> messages;
-		
-		messages = new ArrayDeque<Message>(messageBuffer);
-		messageBuffer.clear();
-		
-		return messages;
+	public static void stopReadingMessages() {
+		primaryBufferLock.unlock();
 	}
 	
 }

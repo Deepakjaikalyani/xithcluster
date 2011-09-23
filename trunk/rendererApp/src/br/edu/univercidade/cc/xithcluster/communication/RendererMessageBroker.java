@@ -13,10 +13,10 @@ public final class RendererMessageBroker implements IDataHandler {
 	private final Logger log = Logger.getLogger(RendererMessageBroker.class);
 	
 	@Override
-	public boolean onData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
+	public boolean onData(INonBlockingConnection connection) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
 		MessageType messageType;
 		
-		messageType = CommunicationHelper.safelyReadMessageType(arg0);
+		messageType = CommunicationHelper.safelyReadMessageType(connection);
 		
 		if (messageType == null) {
 			return true;
@@ -24,15 +24,15 @@ public final class RendererMessageBroker implements IDataHandler {
 		
 		switch (messageType) {
 		case START_SESSION:
-			arg0.setHandler(new StartSessionDataHandler(this));
+			connection.setHandler(new StartSessionDataHandler(this));
 			
 			return true;
 		case START_FRAME:
-			arg0.setHandler(new StartFrameDataHandler(this));
+			connection.setHandler(new StartFrameDataHandler(this));
 			
 			return true;
 		case UPDATE:
-			arg0.setHandler(new UpdateDataHandler(this));
+			connection.setHandler(new UpdateDataHandler(this));
 			
 			return true;
 		default:
@@ -43,15 +43,15 @@ public final class RendererMessageBroker implements IDataHandler {
 	}
 
 	void onStartSessionCompleted(INonBlockingConnection connection, int id, int screenWidth, int screenHeight, double targetFPS, byte[] pointOfViewData, byte[] sceneData) throws IOException {
-		MessageQueue.getInstance().postMessage(new Message(MessageType.START_SESSION, connection, id, screenWidth, screenHeight, targetFPS, pointOfViewData, sceneData));
+		MessageQueue.postMessage(new Message(MessageType.START_SESSION, connection, id, screenWidth, screenHeight, targetFPS, pointOfViewData, sceneData));
 	}
 
 	void onUpdateCompleted(INonBlockingConnection connection, byte[] updatesData) throws IOException {
-		MessageQueue.getInstance().postMessage(new Message(MessageType.UPDATE, connection, updatesData));
+		MessageQueue.postMessage(new Message(MessageType.UPDATE, connection, updatesData));
 	}
 	
 	void onStartFrameCompleted(INonBlockingConnection connection, int frameIndex) {
-		MessageQueue.getInstance().postMessage(new Message(MessageType.START_FRAME, connection, frameIndex));
+		MessageQueue.postMessage(new Message(MessageType.START_FRAME, connection, frameIndex));
 	}
 
 }

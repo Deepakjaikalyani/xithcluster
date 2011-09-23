@@ -6,11 +6,11 @@ import java.nio.BufferOverflowException;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import org.apache.log4j.Logger;
 import org.xsocket.connection.INonBlockingConnection;
 import org.xsocket.connection.IServer;
@@ -46,14 +46,6 @@ public final class ComposerNetworkManager {
 		this.composer = composer;
 	}
 	
-	private int getRendererIndex(INonBlockingConnection rendererConnection) {
-		Integer rendererId;
-		
-		rendererId = (Integer) rendererConnection.getAttachment();
-		
-		return rendererId.intValue();
-	}
-	
 	public void initialize() throws UnknownHostException, IOException {
 		renderersServer = new Server(ComposerConfiguration.renderersConnectionAddress, ComposerConfiguration.renderersConnectionPort, composerMessageBroker);
 		renderersServer.start();
@@ -62,15 +54,19 @@ public final class ComposerNetworkManager {
 		masterConnection.setAutoflush(false);
 	}
 	
+	private int getRendererIndex(INonBlockingConnection rendererConnection) {
+		Integer rendererId;
+		
+		rendererId = (Integer) rendererConnection.getAttachment();
+		
+		return rendererId.intValue();
+	}
+	
 	private void setRendererIndex(INonBlockingConnection arg0) {
 		arg0.setAttachment(renderersConnections.size());
 	}
 
-	private boolean hasAllSubImages() {
-		return !renderersHandlers.isEmpty() && newImageMask.cardinality() == renderersHandlers.size();
-	}
-	
-	private void notifySessionStarted() {
+	private void sendSessionStarted() {
 		try {
 			sendSessionStartedMessage(); 
 		} catch (IOException e) {
@@ -104,16 +100,6 @@ public final class ComposerNetworkManager {
 		return depthBuffers;
 	}
 	
-	private void onStartFrame(int frameIndex) {
-		if (currentFrameIndex != -1 && currentFrameIndex != frameIndex) {
-			log.error("Frame lost: " + currentFrameIndex);
-		}
-		
-		newImageMask.clear();
-		
-		currentFrameIndex = frameIndex;
-	}
-
 	private void onStartSession(int screenWidth, int screenHeight, double targetFPS) {
 		log.debug("****************");
 		log.debug("Session starting");
@@ -127,16 +113,12 @@ public final class ComposerNetworkManager {
 		
 		// TODO: set target FPS!
 		
-		notifySessionStarted();
-		
-		sessionStarted = true;
-		
-		log.info("Session started successfully");
+		sendSessionStarted();
 	}
 
 	private void onNewImage(INonBlockingConnection arg0, int frameIndex, CompressionMethod compressionMethod, byte[] colorAndAlphaBuffer, byte[] depthBuffer) {
 		INonBlockingConnection rendererConnection;
-		RendererHandler handler;
+		RendererHandler rendererHandler;
 		
 		if (frameIndex != currentFrameIndex) {
 			log.error("Discarting out-of-sync frame: " + frameIndex);
@@ -145,8 +127,8 @@ public final class ComposerNetworkManager {
 		
 		rendererConnection = arg0;
 		
-		handler = renderersHandlers.get(getRendererIndex(rendererConnection));
-		if (handler == null) {
+		rendererHandler = renderersHandlers.get(getRendererIndex(rendererConnection));
+		if (rendererHandler == null) {
 			log.error("Trying to set a new image on a renderer that hasn't informed his composition order");
 		}
 		
@@ -156,26 +138,12 @@ public final class ComposerNetworkManager {
 			break;
 		}
 		
-		handler.setColorAndAlphaBuffer(colorAndAlphaBuffer);
-		handler.setDepthBuffer(depthBuffer);
+		rendererHandler.setColorAndAlphaBuffer(colorAndAlphaBuffer);
+		rendererHandler.setDepthBuffer(depthBuffer);
 		
 		newImageMask.set(getRendererIndex(rendererConnection));
-		
-		if (hasAllSubImages()) {
-			composer.setFrameData(renderersHandlers.size(), getColorAndAlphaBuffers(), getDepthBuffers());
-			
-			notifyFinishedFrame();
-		}
 	}
 
-	private void notifyFinishedFrame() {
-		try {
-			sendFinishedFrameMessage(currentFrameIndex); 
-		} catch (IOException e) {
-			log.error("Error notifying master node that the frame was finished", e);
-		}
-	}
-	
 	private boolean isRendererConnection(INonBlockingConnection arg0) {
 		return arg0.getLocalPort() == ComposerConfiguration.renderersConnectionPort;
 	}
@@ -184,7 +152,7 @@ public final class ComposerNetworkManager {
 		return arg0.getLocalPort() == ComposerConfiguration.masterListeningPort;
 	}
 
-	public void onConnected(INonBlockingConnection arg0) {
+	private void onConnected(INonBlockingConnection arg0) {
 		if (isRendererConnection(arg0)) {
 			onRendererConnected(arg0);
 		} else if (!isMyOwnConnection(arg0)) {
@@ -243,26 +211,38 @@ public final class ComposerNetworkManager {
 		masterConnection.flush();
 	}
 
-	private void sendFinishedFrameMessage(int frameIndex) throws BufferOverflowException, IOException {
+	private void sendFinishedFrameMessage() throws BufferOverflowException, IOException {
 		masterConnection.write(MessageType.FINISHED_FRAME.ordinal());
 		masterConnection.flush();
 		
-		masterConnection.write(frameIndex);
+		masterConnection.write(currentFrameIndex);
 		masterConnection.flush();
 	}
 	
+	/* 
+	 * ================================
+	 * Network messages processing loop
+	 * ================================
+	 */
 	public void update() {
-		Deque<Message> messages;
+		Queue<Message> messages;
 		Message message;
 		Message lastStartSessionMessage;
 		Iterator<Message> iterator;
-		Iterator<Message> descendingIterator;
+		int frameIndex;
+		CompressionMethod compressionMethod;
+		byte[] colorAndAlphaBuffer;
+		byte[] depthBuffer;
+		int compositionOrder;
+		int screenWidth;
+		int screenHeight;
+		double targetFPS;
 		
-		messages = MessageQueue.getInstance().retrieveMessages();
+		messages = MessageQueue.startReadingMessages();
 		
-		descendingIterator = messages.descendingIterator();
-		while (descendingIterator.hasNext()) {
-			message = descendingIterator.next();
+		iterator = messages.iterator();
+		while (iterator.hasNext()) {
+			message = iterator.next();
 			if (message.getType() == MessageType.CONNECTED) {
 				onConnected(message.getSource());
 			} else if (message.getType() == MessageType.DISCONNECTED) {
@@ -271,47 +251,105 @@ public final class ComposerNetworkManager {
 			} else {
 				continue;
 			}
-			descendingIterator.remove();
-		}
-		
-		iterator = messages.iterator();
-		while (iterator.hasNext()) {
-			message = iterator.next();
-			if (message.getType() == MessageType.SET_COMPOSITION_ORDER) {
-				onSetCompositionOrder(message.getSource(), (Integer) message.getParameters()[0]);
-				iterator.remove();
-			}
+			
+			iterator.remove();
 		}
 		
 		if (sessionStarted) {
-			descendingIterator = messages.descendingIterator();
-			while (descendingIterator.hasNext()) {
-				message = descendingIterator.next();
+			iterator = messages.iterator();
+			while (iterator.hasNext()) {
+				message = iterator.next();
 				if (message.getType() == MessageType.START_FRAME) {
-					onStartFrame((Integer) message.getParameters()[0]);
+					log.info("Start frame received");
+					
+					frameIndex = (Integer) message.getParameters()[0];
+					
+					if (currentFrameIndex != -1 && currentFrameIndex != frameIndex) {
+						log.error("Invalid frame: " + currentFrameIndex);
+					} else {
+						currentFrameIndex = frameIndex;
+						newImageMask.clear();
+					}
 				} else if (message.getType() == MessageType.NEW_IMAGE) {
-					onNewImage(message.getSource(), (Integer) message.getParameters()[0], (CompressionMethod) message.getParameters()[1], (byte[]) message.getParameters()[2], (byte[]) message.getParameters()[2]);
-				}
-			}
-		} else {
-			/*
-			 * Consider only the last start session message.
-			 */
-			lastStartSessionMessage = null;
-			descendingIterator = messages.descendingIterator();
-			while (descendingIterator.hasNext()) {
-				message = descendingIterator.next();
-				if (lastStartSessionMessage != null && message.getType() == MessageType.START_SESSION) {
-					lastStartSessionMessage = message;
+					log.info("New image received");
+					
+					frameIndex = (Integer) message.getParameters()[0];
+					compressionMethod = (CompressionMethod) message.getParameters()[1];
+					colorAndAlphaBuffer = (byte[]) message.getParameters()[2];
+					depthBuffer = (byte[]) message.getParameters()[3];
+					
+					onNewImage(message.getSource(), frameIndex, compressionMethod, colorAndAlphaBuffer, depthBuffer);
+					
+					if (!renderersHandlers.isEmpty() && newImageMask.cardinality() == renderersHandlers.size()) {
+						log.info("Finished frame: " + currentFrameIndex);
+						
+						composer.setFrameData(renderersHandlers.size(), getColorAndAlphaBuffers(), getDepthBuffers());
+						
+						try {
+							sendFinishedFrameMessage(); 
+						} catch (IOException e) {
+							log.error("Error notifying master node that the frame was finished", e);
+						}
+					}
 				} else {
-					MessageQueue.getInstance().postMessage(message);
+					continue;
 				}
-			}
-			
-			if (lastStartSessionMessage != null) {
-				onStartSession((Integer) lastStartSessionMessage.getParameters()[0], (Integer) lastStartSessionMessage.getParameters()[1], (Double) lastStartSessionMessage.getParameters()[2]);
+				
+				iterator.remove();
 			}
 		}
+		// sessionStarted == false
+		else if (!renderersConnections.isEmpty()) {
+			if (renderersConnections.size() == renderersHandlers.size()) {
+				/*
+				 * Consider only the last start session message.
+				 */
+				lastStartSessionMessage = null;
+				iterator = messages.iterator();
+				while (iterator.hasNext()) {
+					message = iterator.next();
+					if (message.getType() == MessageType.START_SESSION) {
+						lastStartSessionMessage = message;
+					} else {
+						continue;
+					}
+					
+					iterator.remove();
+				}
+				
+				if (lastStartSessionMessage != null) {
+					log.info("Start session received");
+					
+					screenWidth = (Integer) lastStartSessionMessage.getParameters()[0];
+					screenHeight = (Integer) lastStartSessionMessage.getParameters()[1];
+					targetFPS = (Double) lastStartSessionMessage.getParameters()[2];
+					
+					onStartSession(screenWidth, screenHeight, targetFPS);
+					
+					sessionStarted = true;
+					
+					log.info("Session started successfully");
+				}
+			} else {
+				iterator = messages.iterator();
+				while (iterator.hasNext()) {
+					message = iterator.next();
+					if (message.getType() == MessageType.SET_COMPOSITION_ORDER) {
+						log.info("Composition order received");
+						
+						compositionOrder = (Integer) message.getParameters()[0];
+						
+						onSetCompositionOrder(message.getSource(), compositionOrder);
+					} else {
+						continue;
+					}
+					
+					iterator.remove();
+				}
+			}
+		}
+		
+		MessageQueue.stopReadingMessages();
 	}
 
 }
