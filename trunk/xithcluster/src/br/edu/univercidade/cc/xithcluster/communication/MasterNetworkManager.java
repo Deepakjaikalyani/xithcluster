@@ -374,8 +374,7 @@ public final class MasterNetworkManager implements Updatable {
 		
 		messages = MessageQueue.startReadingMessages();
 		
-		// sessionState == SessionState.STARTED || sessionState ==
-		// SessionState.CLOSED
+		// sessionState == SessionState.STARTED || sessionState == SessionState.CLOSED
 		if (sessionState != SessionState.STARTING) {
 			clusterConfigurationChanged = false;
 			iterator = messages.iterator();
@@ -394,12 +393,16 @@ public final class MasterNetworkManager implements Updatable {
 			}
 			
 			if (clusterConfigurationChanged) {
-				if (sessionState == SessionState.STARTED && !isThereAtLeastOneRendererAndOneComposer()) {
+				if (sessionState == SessionState.STARTED) {
+					sessionState = SessionState.CLOSED;
+					
 					renderersSessionStartedMask.clear();
 					composerSessionStarted = false;
 					
 					log.info("Current session closed");
-				} else if (sessionState == SessionState.CLOSED && isThereAtLeastOneRendererAndOneComposer()) {
+				} 
+				
+				if (sessionState == SessionState.CLOSED && isThereAtLeastOneRendererAndOneComposer()) {
 					sessionState = SessionState.STARTING;
 					if (!startNewSession()) {
 						sessionState = SessionState.CLOSED;

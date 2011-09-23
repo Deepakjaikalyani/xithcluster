@@ -238,6 +238,13 @@ public final class ComposerNetworkManager {
 		int screenHeight;
 		double targetFPS;
 		
+		if (!masterConnection.isOpen()) {
+			log.info("Master node disconnected");
+			
+			// TODO:
+			System.exit(-1);
+		}
+		
 		messages = MessageQueue.startReadingMessages();
 		
 		iterator = messages.iterator();
@@ -256,6 +263,16 @@ public final class ComposerNetworkManager {
 		}
 		
 		if (sessionStarted) {
+			if (renderersConnections.isEmpty()) {
+				log.info("Current session was closed");
+				
+				sessionStarted = false;
+				
+				MessageQueue.stopReadingMessages();
+				
+				return;
+			}
+			
 			iterator = messages.iterator();
 			while (iterator.hasNext()) {
 				message = iterator.next();

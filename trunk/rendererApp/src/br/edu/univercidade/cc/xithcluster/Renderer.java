@@ -12,13 +12,14 @@ import org.openmali.vecmath2.Colorf;
 import org.xith3d.base.Xith3DEnvironment;
 import org.xith3d.loaders.texture.TextureCreator;
 import org.xith3d.loop.InputAdapterRenderLoop;
+import org.xith3d.render.BaseRenderPassConfig;
 import org.xith3d.render.Canvas3D;
 import org.xith3d.render.Canvas3DFactory;
-import org.xith3d.render.RenderPass;
 import org.xith3d.render.TextureRenderTarget;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Texture2D;
 import org.xith3d.scenegraph.View;
+import org.xith3d.scenegraph.View.ProjectionPolicy;
 import org.xith3d.utility.events.WindowClosingRenderLoopEnder;
 import br.edu.univercidade.cc.xithcluster.communication.RendererNetworkManager;
 import br.edu.univercidade.cc.xithcluster.util.BufferUtils;
@@ -36,8 +37,6 @@ public class Renderer extends InputAdapterRenderLoop {
 	
 	private static final int DEFAULT_HEIGHT = 600;
 	
-	private BranchGroup root;
-	
 	private RendererNetworkManager networkManager;
 	
 	private Texture2D colorAndAlphaTexture;
@@ -50,8 +49,6 @@ public class Renderer extends InputAdapterRenderLoop {
 
 	private int screenHeight = DEFAULT_HEIGHT;
 
-	private RenderPass renderPass;
-	
 	public Renderer(float maxFPS) {
 		super(maxFPS);
 	}
@@ -62,8 +59,7 @@ public class Renderer extends InputAdapterRenderLoop {
 		
 		new Xith3DEnvironment(this);
 		
-		root = new BranchGroup();
-		renderPass = getXith3DEnvironment().addPerspectiveBranch(root);
+		getXith3DEnvironment().addPerspectiveBranch(new BranchGroup());
 		
 		buildTextureRenderTargets();
 		
@@ -108,15 +104,15 @@ public class Renderer extends InputAdapterRenderLoop {
 		
 		renderer = getXith3DEnvironment().getRenderer();
 		
-		renderer.addRenderTarget(new TextureRenderTarget(root, colorAndAlphaTexture, Colorf.BLACK, true), renderPass.getConfig());
-		renderer.addRenderTarget(new TextureRenderTarget(root, depthTexture), renderPass.getConfig());
+		renderer.addRenderTarget(new TextureRenderTarget(getXith3DEnvironment().getBranchGroup(), colorAndAlphaTexture, Colorf.BLACK, true), new BaseRenderPassConfig(ProjectionPolicy.PERSPECTIVE_PROJECTION));
+		renderer.addRenderTarget(new TextureRenderTarget(getXith3DEnvironment().getBranchGroup(), depthTexture, true), new BaseRenderPassConfig(ProjectionPolicy.PERSPECTIVE_PROJECTION));
 	}
 	
 	public void setScreenSize(int screenWidth, int screenHeight) {
 		this.screenWidth = screenWidth;
 		this.screenHeight = screenHeight;
 		
-		buildTextureRenderTargets();
+		//buildTextureRenderTargets();
 		
 		canvas.setSize(screenWidth, screenHeight);
 	}
@@ -143,12 +139,16 @@ public class Renderer extends InputAdapterRenderLoop {
 	}
 	
 	public void setId(int id) {
-		//getXith3DEnvironment().getCanvas().setTitle(APP_TITLE + "[id=" + id + "]");
+		getXith3DEnvironment().getCanvas().setTitle(APP_TITLE + "[id=" + id + "]");
 	}
 	
 	public void updateScene(View view, BranchGroup newRoot) {
 		SceneBuilder.copy(getXith3DEnvironment().getView(), view);
-		SceneBuilder.copyAndInvalidateSource(root, newRoot);
+		
+		getXith3DEnvironment().removeAllBranchGraphs();
+		getXith3DEnvironment().addPerspectiveBranch(newRoot);
+		
+		buildTextureRenderTargets();
 	}
 	
 	/*

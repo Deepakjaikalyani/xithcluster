@@ -56,7 +56,7 @@ public final class RendererNetworkManager implements Observer, Updatable {
 		masterConnection.setAutoflush(false);
 	}
 	
-	private void notifySessionStarted() {
+	private void sendSessionStarted() {
 		try {
 			sendSessionStartedMessage();
 		} catch (IOException e) {
@@ -205,9 +205,53 @@ public final class RendererNetworkManager implements Observer, Updatable {
 		byte[] pointOfViewData;
 		byte[] sceneData;
 		
+		if (!masterConnection.isOpen()) {
+			log.info("Master node disconnected");
+			
+			// TODO:
+			System.exit(-1);
+		}
+		
 		messages = MessageQueue.startReadingMessages();
 		
+		/*
+		 * Consider only the last start session message.
+		 */
+		lastStartSessionMessage = null;
+		iterator = messages.iterator();
+		while (iterator.hasNext()) {
+			message = iterator.next();
+			if (message.getType() == MessageType.START_SESSION) {
+				lastStartSessionMessage = message;
+			} else {
+				continue;
+			}
+			
+			iterator.remove();
+		}
+		
+		if (lastStartSessionMessage != null) {
+			rendererId = (Integer) lastStartSessionMessage.getParameters()[0];
+			screenWidth = (Integer) lastStartSessionMessage.getParameters()[1];
+			screenHeight = (Integer) lastStartSessionMessage.getParameters()[2];
+			targetFPS = (Double) lastStartSessionMessage.getParameters()[3];
+			pointOfViewData = (byte[]) lastStartSessionMessage.getParameters()[4];
+			sceneData = (byte[]) lastStartSessionMessage.getParameters()[5];
+			
+			onStartSession(rendererId, screenWidth, screenHeight, targetFPS, pointOfViewData, sceneData);
+		}
+		
 		if (sessionState == SessionState.STARTED) {
+			if (!composerConnection.isOpen()) {
+				log.info("Current session was closed");
+				
+				sessionState = SessionState.CLOSED;
+				
+				MessageQueue.stopReadingMessages();
+				
+				return;
+			}
+			
 			/*
 			 * Consider only the last update message received.
 			 */
@@ -274,50 +318,25 @@ public final class RendererNetworkManager implements Observer, Updatable {
 					log.error("Error sending image buffers to composer", e);
 				}
 			}
-		} else if (sessionState == SessionState.CLOSED) {
-			/*
-			 * Consider only the last start session message.
-			 */
-			lastStartSessionMessage = null;
-			iterator = messages.iterator();
-			while (iterator.hasNext()) {
-				message = iterator.next();
-				if (message.getType() == MessageType.START_SESSION) {
-					lastStartSessionMessage = message;
-				} else {
-					continue;
+		} else if (sessionState == SessionState.STARTING) { 
+				if (deserializationResult != null) {
+					/*
+					 * Scene rebuilding is an operation that should never cause "abends"
+					 * so we should never prevent the cluster session to be started
+					 * because of it.
+					 */
+					sendSessionStarted();
+					
+					sessionState = SessionState.STARTED;
+					
+					log.info("Session started successfully");
+					
+					renderer.updateScene(deserializationResult.getPointOfView(), deserializationResult.getScene());
+					
+					log.info("Scene updated");
+					
+					deserializationResult = null;
 				}
-				
-				iterator.remove();
-			}
-			
-			if (lastStartSessionMessage != null) {
-				rendererId = (Integer) lastStartSessionMessage.getParameters()[0];
-				screenWidth = (Integer) lastStartSessionMessage.getParameters()[1];
-				screenHeight = (Integer) lastStartSessionMessage.getParameters()[2];
-				targetFPS = (Double) lastStartSessionMessage.getParameters()[3];
-				pointOfViewData = (byte[]) lastStartSessionMessage.getParameters()[4];
-				sceneData = (byte[]) lastStartSessionMessage.getParameters()[5];
-				
-				onStartSession(rendererId, screenWidth, screenHeight, targetFPS, pointOfViewData, sceneData);
-			}
-		} else if (deserializationResult != null) {
-			/*
-			 * Scene rebuilding is an operation that should never cause "abends"
-			 * so we should never prevent the cluster session to be started
-			 * because of it.
-			 */
-			notifySessionStarted();
-			
-			sessionState = SessionState.STARTED;
-			
-			log.info("Session started successfully");
-			
-			renderer.updateScene(deserializationResult.getPointOfView(), deserializationResult.getScene());
-			
-			log.info("Scene updated");
-			
-			deserializationResult = null;
 		}
 		
 		MessageQueue.stopReadingMessages();

@@ -1,5 +1,7 @@
 package br.edu.univercidade.cc.xithcluster.util;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Node;
 import org.xith3d.scenegraph.View;
@@ -19,13 +21,21 @@ public final class SceneBuilder {
 	}
 
 	public static void copyAndInvalidateSource(BranchGroup destination, BranchGroup source) {
+		List<Node> children;
+		
 		if (source == null || destination == null) {
 			throw new IllegalArgumentException();
 		}
 		
-		for (int i = 0; i < source.numChildren(); i++) {
-			Node child = source.getChild(i);
-			child.detach();
+		int numChildren = source.numChildren();
+		children = new ArrayList<Node>();
+		for (int i = 0; i < numChildren; i++) {
+			children.add(source.getChild(i));
+		}
+		
+		source.removeAllChildren();
+		
+		for (Node child : children) {
 			destination.addChild(child);
 		}
 	}
