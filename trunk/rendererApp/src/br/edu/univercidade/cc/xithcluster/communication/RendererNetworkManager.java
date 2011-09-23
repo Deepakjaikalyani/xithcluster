@@ -56,14 +56,6 @@ public final class RendererNetworkManager implements Observer, Updatable {
 		masterConnection.setAutoflush(false);
 	}
 	
-	private void sendSessionStarted() {
-		try {
-			sendSessionStartedMessage();
-		} catch (IOException e) {
-			log.error("Error notifying master node that session started successfully", e);
-		}
-	}
-	
 	private void onUpdate(byte[] updatesData) {
 		// TODO:
 		// updateScene(updatesPackager.deserialize(updatesData));
@@ -318,25 +310,28 @@ public final class RendererNetworkManager implements Observer, Updatable {
 					log.error("Error sending image buffers to composer", e);
 				}
 			}
-		} else if (sessionState == SessionState.STARTING) { 
-				if (deserializationResult != null) {
-					/*
-					 * Scene rebuilding is an operation that should never cause "abends"
-					 * so we should never prevent the cluster session to be started
-					 * because of it.
-					 */
-					sendSessionStarted();
-					
-					sessionState = SessionState.STARTED;
-					
-					log.info("Session started successfully");
-					
-					renderer.updateScene(deserializationResult.getPointOfView(), deserializationResult.getScene());
-					
-					log.info("Scene updated");
-					
-					deserializationResult = null;
-				}
+		} else if (sessionState == SessionState.STARTING && deserializationResult != null) {
+			/*
+			 * Scene rebuilding is an operation that should never cause "abends"
+			 * so we should never prevent the cluster session to be started
+			 * because of it.
+			 */
+			try {
+				sendSessionStartedMessage();
+			} catch (IOException e) {
+				// TODO:
+				throw new RuntimeException("Error notifying master node that session started successfully", e);
+			}
+			
+			sessionState = SessionState.STARTED;
+			
+			log.info("Session started successfully");
+			
+			renderer.updateScene(deserializationResult.getPointOfView(), deserializationResult.getScene());
+			
+			log.info("Scene updated with success");
+			
+			deserializationResult = null;
 		}
 		
 		MessageQueue.stopReadingMessages();
