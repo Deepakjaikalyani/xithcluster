@@ -186,7 +186,7 @@ public class SerializationHelper {
 		}
 	}
 	
-	public static void writeTransform(DataOutputStream out, Transform3D transform) throws IOException {
+	public static void writeTransform3D(DataOutputStream out, Transform3D transform) throws IOException {
 		if (nullCheck(out, transform)) {
 			writeMatrix4f(out, transform.getMatrix4f());
 		}
@@ -240,7 +240,7 @@ public class SerializationHelper {
 		}
 	}
 	
-	public static Transform3D readTransform(DataInputStream in) throws IOException {
+	public static Transform3D readTransform3D(DataInputStream in) throws IOException {
 		if (nullCheck(in)) {
 			return new Transform3D(readMatrix4f(in));
 		} else {
@@ -1033,7 +1033,7 @@ public class SerializationHelper {
 			writeEnum(out, textureAttributes.getTextureMode());
 			writeColorf(out, textureAttributes.getTextureBlendColor());
 			writeEnum(out, textureAttributes.getPerspectiveCorrectionMode());
-			writeTransform(out, textureAttributes.getTextureTransform());
+			writeTransform3D(out, textureAttributes.getTextureTransform());
 			writeEnum(out, textureAttributes.getCombineRGBMode());
 			writeEnum(out, textureAttributes.getCombineAlphaMode());
 			
@@ -1061,7 +1061,7 @@ public class SerializationHelper {
 			textureAttributes.setTextureMode(readEnum(in, TextureMode.values()));
 			textureAttributes.setTextureBlendColor(readColorf(in));
 			textureAttributes.setPerspectiveCorrectionMode(readEnum(in, PerspectiveCorrectionMode.values()));
-			textureAttributes.setTextureTransform(readTransform(in));
+			textureAttributes.setTextureTransform(readTransform3D(in));
 			textureAttributes.setCombineRGBMode(readEnum(in, TextureCombineMode.values()));
 			textureAttributes.setCombineAlphaMode(readEnum(in, TextureCombineMode.values()));
 			

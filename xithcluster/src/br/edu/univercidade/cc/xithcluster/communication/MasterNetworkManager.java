@@ -37,9 +37,7 @@ public final class MasterNetworkManager implements Updatable {
 	private Logger log = Logger.getLogger(MasterNetworkManager.class);
 	
 	private enum SessionState {
-		CLOSED,
-		STARTING,
-		STARTED
+		CLOSED, STARTING, STARTED
 	}
 	
 	private final MasterMessageBroker masterMessageBroker = new MasterMessageBroker();
@@ -66,14 +64,14 @@ public final class MasterNetworkManager implements Updatable {
 	
 	private SessionState sessionState = SessionState.CLOSED;
 	
-	private boolean composerSessionStarted = false; 
+	private boolean composerSessionStarted = false;
 	
 	private final BitSet renderersSessionStartedMask = new BitSet();
 	
 	private int currentFrameIndex = 0;
-
+	
 	private boolean finishedFrame = false;
-
+	
 	private boolean forceFrameStart = false;
 	
 	public MasterNetworkManager(DistributedRenderLoop distributedRenderLoop, UpdateManager updateManager, DistributionStrategy distributionStrategy) {
@@ -109,7 +107,6 @@ public final class MasterNetworkManager implements Updatable {
 		INonBlockingConnection rendererConnection;
 		List<PendingUpdate> updates;
 		
-	
 		log.info("Sending " + updateManager.getPendingUpdates().size() + " pending update(s)");
 		
 		// FIXME: Optimize
@@ -200,10 +197,7 @@ public final class MasterNetworkManager implements Updatable {
 			log.trace("Scene data size: " + sceneData.length + " bytes");
 			
 			try {
-				sendStartSessionMessageToRenderer(
-						rendererConnection, 
-						pointOfViewData, 
-						sceneData);
+				sendStartSessionMessageToRenderer(rendererConnection, pointOfViewData, sceneData);
 			} catch (IOException e) {
 				log.error("Error sending distributed scene", e);
 				return false;
@@ -291,7 +285,7 @@ public final class MasterNetworkManager implements Updatable {
 			composerSessionStarted = true;
 		}
 	}
-
+	
 	private void onDisconnected(INonBlockingConnection arg0) {
 		if (isRendererConnection(arg0)) {
 			onRendererDisconnect(arg0);
@@ -306,7 +300,6 @@ public final class MasterNetworkManager implements Updatable {
 			throw new AssertionError("Should never happen!");
 		}
 	}
-
 	
 	private void onComposerDisconnect() {
 		composerConnection = null;
@@ -357,7 +350,7 @@ public final class MasterNetworkManager implements Updatable {
 		rendererConnection.write(updateData);
 		rendererConnection.flush();
 	}
-
+	
 	private void sendStartFrameMessage(INonBlockingConnection connection, int frameIndex) throws BufferOverflowException, IOException {
 		connection.write(MessageType.START_FRAME.ordinal());
 		connection.flush();
@@ -365,9 +358,9 @@ public final class MasterNetworkManager implements Updatable {
 		connection.write(frameIndex);
 		connection.flush();
 	}
-
-	/* 
-	 * ================================
+	
+	/*
+	 * ================================ 
 	 * Network messages processing loop
 	 * ================================
 	 */
@@ -381,7 +374,8 @@ public final class MasterNetworkManager implements Updatable {
 		
 		messages = MessageQueue.startReadingMessages();
 		
-		// sessionState == SessionState.STARTED || sessionState == SessionState.CLOSED
+		// sessionState == SessionState.STARTED || sessionState ==
+		// SessionState.CLOSED
 		if (sessionState != SessionState.STARTING) {
 			clusterConfigurationChanged = false;
 			iterator = messages.iterator();
@@ -398,7 +392,7 @@ public final class MasterNetworkManager implements Updatable {
 				clusterConfigurationChanged = true;
 				iterator.remove();
 			}
-		
+			
 			if (clusterConfigurationChanged) {
 				if (sessionState == SessionState.STARTED && !isThereAtLeastOneRendererAndOneComposer()) {
 					renderersSessionStartedMask.clear();
@@ -415,7 +409,7 @@ public final class MasterNetworkManager implements Updatable {
 						log.info("Starting a new session");
 					}
 				}
-			} 
+			}
 			
 			if (sessionState == SessionState.STARTED) {
 				iterator = messages.iterator();
@@ -448,6 +442,7 @@ public final class MasterNetworkManager implements Updatable {
 				}
 				
 				if (finishedFrame || forceFrameStart) {
+					finishedFrame = false;
 					forceFrameStart = false;
 					
 					startFrame(++currentFrameIndex);
@@ -461,7 +456,7 @@ public final class MasterNetworkManager implements Updatable {
 					log.info("Pending updates sent");
 				}
 			}
-		// sessionState == SessionState.STARTING
+			// sessionState == SessionState.STARTING
 		} else {
 			iterator = messages.iterator();
 			while (iterator.hasNext()) {
@@ -488,5 +483,5 @@ public final class MasterNetworkManager implements Updatable {
 		
 		MessageQueue.stopReadingMessages();
 	}
-
+	
 }

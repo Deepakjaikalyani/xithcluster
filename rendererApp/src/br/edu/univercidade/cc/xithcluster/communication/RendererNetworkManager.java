@@ -21,9 +21,7 @@ public final class RendererNetworkManager implements Observer, Updatable {
 	private Logger log = Logger.getLogger(RendererNetworkManager.class);
 	
 	private enum SessionState {
-		CLOSED,
-		STARTING,
-		STARTED
+		CLOSED, STARTING, STARTED
 	}
 	
 	private RendererMessageBroker rendererMessageBroker = new RendererMessageBroker();
@@ -36,7 +34,7 @@ public final class RendererNetworkManager implements Observer, Updatable {
 	
 	private INonBlockingConnection composerConnection;
 	
-	//private UpdatesPackager updatesPackager = new UpdatesPackager();
+	// private UpdatesPackager updatesPackager = new UpdatesPackager();
 	
 	private Thread sceneDeserializationThread;
 	
@@ -45,7 +43,7 @@ public final class RendererNetworkManager implements Observer, Updatable {
 	private boolean startFrame = false;
 	
 	private int currentFrameIndex = -1;
-
+	
 	private DeserializationResult deserializationResult;
 	
 	public RendererNetworkManager(Renderer renderer) {
@@ -68,7 +66,7 @@ public final class RendererNetworkManager implements Observer, Updatable {
 	
 	private void onUpdate(byte[] updatesData) {
 		// TODO:
-		//updateScene(updatesPackager.deserialize(updatesData));
+		// updateScene(updatesPackager.deserialize(updatesData));
 	}
 	
 	private void onStartSession(int id, int screenWidth, int screenHeight, double targetFPS, byte[] pointOfViewData, byte[] sceneData) {
@@ -176,7 +174,7 @@ public final class RendererNetworkManager implements Observer, Updatable {
 		composerConnection.write(compositionOrder);
 		composerConnection.flush();
 	}
-
+	
 	@Override
 	public void update(Observable o, Object arg) {
 		if (o == sceneDeserializer) {
@@ -184,8 +182,8 @@ public final class RendererNetworkManager implements Observer, Updatable {
 		}
 	}
 	
-	/* 
-	 * ================================
+	/*
+	 * ================================ 
 	 * Network messages processing loop
 	 * ================================
 	 */
@@ -258,7 +256,7 @@ public final class RendererNetworkManager implements Observer, Updatable {
 					
 					log.info("Starting new frame: " + frameIndex);
 				}
-			// startFrame == true
+				// startFrame == true
 			} else {
 				colorAndAlphaBuffer = renderer.getColorAndAlphaBuffer();
 				

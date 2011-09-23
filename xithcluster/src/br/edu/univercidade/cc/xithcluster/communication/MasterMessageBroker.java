@@ -34,6 +34,8 @@ public final class MasterMessageBroker implements IConnectHandler, IDataHandler,
 		switch (messageType) {
 		case SESSION_STARTED:
 			MessageQueue.postMessage(new Message(MessageType.SESSION_STARTED, connection));
+			
+			return true;
 		case FINISHED_FRAME:
 			connection.setHandler(new FinishedFrameDataHandler(this));
 			

@@ -11,7 +11,7 @@ public class PointOfViewPackager extends Serializer<View> {
 	
 	@Override
 	protected void doSerialization(View pointOfView, DataOutputStream out) throws IOException {
-		SerializationHelper.writeTransform(out, pointOfView.getTransform());
+		SerializationHelper.writeTransform3D(out, pointOfView.getTransform());
 	}
 	
 	@Override
@@ -19,7 +19,7 @@ public class PointOfViewPackager extends Serializer<View> {
 		View pointOfView;
 		
 		pointOfView = new View();
-		pointOfView.setTransform(SerializationHelper.readTransform(in));
+		pointOfView.setTransform(SerializationHelper.readTransform3D(in));
 		
 		return pointOfView;
 	}

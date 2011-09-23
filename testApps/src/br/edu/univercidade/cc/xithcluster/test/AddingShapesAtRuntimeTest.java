@@ -29,7 +29,7 @@ public class AddingShapesAtRuntimeTest extends RenderLoop implements SceneObserv
 
 	private SceneBuildingUpdatable sceneBuildingUpdatable;
 
-	private SceneReAddingUpdatable sceneReAddingUpdatable;
+	//private SceneReAddingUpdatable sceneReAddingUpdatable;
 	
 	public AddingShapesAtRuntimeTest() {
 		new Xith3DEnvironment(this);
@@ -53,17 +53,17 @@ public class AddingShapesAtRuntimeTest extends RenderLoop implements SceneObserv
 		timer = new Timer();
 		timer.schedule(new AddRandomShapeTask(this), ADD_RANDOM_SHAPE_TASK_INTERVAL);
 		
-		/*sceneBuildingUpdatable = new SceneBuildingUpdatable(root);
-		getXith3DEnvironment().getOperationScheduler().addUpdatable(sceneBuildingUpdatable);*/
+		sceneBuildingUpdatable = new SceneBuildingUpdatable(root);
+		getXith3DEnvironment().getOperationScheduler().addUpdatable(sceneBuildingUpdatable);
 		
-		sceneReAddingUpdatable = new SceneReAddingUpdatable(getXith3DEnvironment());
-		getXith3DEnvironment().getOperationScheduler().addUpdatable(sceneReAddingUpdatable);
+		/*sceneReAddingUpdatable = new SceneReAddingUpdatable(getXith3DEnvironment());
+		getXith3DEnvironment().getOperationScheduler().addUpdatable(sceneReAddingUpdatable);*/
 	}
 	
 	@Override
 	public void sceneChange(BranchGroup arg0) {
-		//sceneBuildingUpdatable.setNewRoot(arg0);
-		sceneReAddingUpdatable.setNewRoot(arg0);
+		sceneBuildingUpdatable.setNewRoot(arg0);
+		//sceneReAddingUpdatable.setNewRoot(arg0);
 	}
 	
 	/*
