@@ -33,13 +33,13 @@ public final class ComposerNetworkManager {
 	private IServer renderersServer;
 	
 	private INonBlockingConnection masterConnection;
-
+	
 	private boolean sessionStarted = false;
 	
 	private final Map<Integer, RendererHandler> renderersHandlers = Collections.synchronizedMap(new HashMap<Integer, RendererHandler>());
 	
 	private final BitSet newImageMask = new BitSet();
-
+	
 	private int currentFrameIndex = -1;
 	
 	public ComposerNetworkManager(Composer composer) {
@@ -65,15 +65,15 @@ public final class ComposerNetworkManager {
 	private void setRendererIndex(INonBlockingConnection arg0) {
 		arg0.setAttachment(renderersConnections.size());
 	}
-
+	
 	private void sendSessionStarted() {
 		try {
-			sendSessionStartedMessage(); 
+			sendSessionStartedMessage();
 		} catch (IOException e) {
 			log.error("Error notifying master node that session started successfully", e);
 		}
 	}
-
+	
 	private byte[][] getColorAndAlphaBuffers() {
 		byte[][] colorAndAlphaBuffers;
 		int i;
@@ -81,12 +81,12 @@ public final class ComposerNetworkManager {
 		colorAndAlphaBuffers = new byte[renderersHandlers.size()][];
 		i = 0;
 		for (RendererHandler rendererHandler : renderersHandlers.values()) {
-				colorAndAlphaBuffers[i++] = rendererHandler.getColorAndAlphaBuffer();
+			colorAndAlphaBuffers[i++] = rendererHandler.getColorAndAlphaBuffer();
 		}
 		
 		return colorAndAlphaBuffers;
 	}
-
+	
 	private byte[][] getDepthBuffers() {
 		byte[][] depthBuffers;
 		int i;
@@ -115,13 +115,13 @@ public final class ComposerNetworkManager {
 		
 		sendSessionStarted();
 	}
-
+	
 	private void onNewImage(INonBlockingConnection arg0, int frameIndex, CompressionMethod compressionMethod, byte[] colorAndAlphaBuffer, byte[] depthBuffer) {
 		INonBlockingConnection rendererConnection;
 		RendererHandler rendererHandler;
 		
 		if (frameIndex != currentFrameIndex) {
-			log.error("Discarting out-of-sync frame: " + frameIndex);
+			log.error("Discarting out-of-sync image: " + frameIndex);
 			return;
 		}
 		
@@ -143,7 +143,7 @@ public final class ComposerNetworkManager {
 		
 		newImageMask.set(getRendererIndex(rendererConnection));
 	}
-
+	
 	private boolean isRendererConnection(INonBlockingConnection arg0) {
 		return arg0.getLocalPort() == ComposerConfiguration.renderersConnectionPort;
 	}
@@ -151,7 +151,7 @@ public final class ComposerNetworkManager {
 	private boolean isMyOwnConnection(INonBlockingConnection arg0) {
 		return arg0.getLocalPort() == ComposerConfiguration.masterListeningPort;
 	}
-
+	
 	private void onConnected(INonBlockingConnection arg0) {
 		if (isRendererConnection(arg0)) {
 			onRendererConnected(arg0);
@@ -161,7 +161,7 @@ public final class ComposerNetworkManager {
 			log.error("Unknown connection refused");
 		}
 	}
-
+	
 	private void onRendererConnected(INonBlockingConnection arg0) {
 		INonBlockingConnection rendererConnection;
 		
@@ -174,7 +174,7 @@ public final class ComposerNetworkManager {
 		
 		log.info("New renderer connected");
 	}
-
+	
 	private void onRendererDisconnected(INonBlockingConnection arg0) {
 		int rendererIndex;
 		
@@ -191,7 +191,7 @@ public final class ComposerNetworkManager {
 		
 		log.info("Renderer disconnected");
 	}
-
+	
 	private void onSetCompositionOrder(INonBlockingConnection arg0, int compositionOrder) {
 		int rendererIndex;
 		
@@ -210,7 +210,7 @@ public final class ComposerNetworkManager {
 		masterConnection.write(MessageType.SESSION_STARTED.ordinal());
 		masterConnection.flush();
 	}
-
+	
 	private void sendFinishedFrameMessage() throws BufferOverflowException, IOException {
 		masterConnection.write(MessageType.FINISHED_FRAME.ordinal());
 		masterConnection.flush();
@@ -219,8 +219,8 @@ public final class ComposerNetworkManager {
 		masterConnection.flush();
 	}
 	
-	/* 
-	 * ================================
+	/*
+	 * ================================ 
 	 * Network messages processing loop
 	 * ================================
 	 */
@@ -260,23 +260,19 @@ public final class ComposerNetworkManager {
 			while (iterator.hasNext()) {
 				message = iterator.next();
 				if (message.getType() == MessageType.START_FRAME) {
-					log.info("Start frame received");
-					
 					frameIndex = (Integer) message.getParameters()[0];
 					
-					if (currentFrameIndex != -1 && currentFrameIndex != frameIndex) {
-						log.error("Invalid frame: " + currentFrameIndex);
-					} else {
-						currentFrameIndex = frameIndex;
-						newImageMask.clear();
-					}
-				} else if (message.getType() == MessageType.NEW_IMAGE) {
-					log.info("New image received");
+					log.info("Start frame received: " + frameIndex);
 					
+					currentFrameIndex = frameIndex;
+					newImageMask.clear();
+				} else if (message.getType() == MessageType.NEW_IMAGE) {
 					frameIndex = (Integer) message.getParameters()[0];
 					compressionMethod = (CompressionMethod) message.getParameters()[1];
 					colorAndAlphaBuffer = (byte[]) message.getParameters()[2];
 					depthBuffer = (byte[]) message.getParameters()[3];
+					
+					log.info("New image received: " + frameIndex);
 					
 					onNewImage(message.getSource(), frameIndex, compressionMethod, colorAndAlphaBuffer, depthBuffer);
 					
@@ -286,7 +282,7 @@ public final class ComposerNetworkManager {
 						composer.setFrameData(renderersHandlers.size(), getColorAndAlphaBuffers(), getDepthBuffers());
 						
 						try {
-							sendFinishedFrameMessage(); 
+							sendFinishedFrameMessage();
 						} catch (IOException e) {
 							log.error("Error notifying master node that the frame was finished", e);
 						}
@@ -351,5 +347,5 @@ public final class ComposerNetworkManager {
 		
 		MessageQueue.stopReadingMessages();
 	}
-
+	
 }

@@ -11,7 +11,7 @@ public class TransformGroupSerializer extends Serializer<TransformGroup> impleme
 	protected void doSerialization(TransformGroup transformGroup, DataOutputStream out) throws IOException {
 		SerializationHelper.writeString(out, transformGroup.getName());
 		out.writeInt(transformGroup.numChildren());
-		SerializationHelper.writeTransform(out, transformGroup.getTransform());
+		SerializationHelper.writeTransform3D(out, transformGroup.getTransform());
 		SerializationHelper.writePoint3f(out, transformGroup.getPosition());
 	}
 	
@@ -20,10 +20,11 @@ public class TransformGroupSerializer extends Serializer<TransformGroup> impleme
 		TransformGroup transformGroup;
 
 		transformGroup = new TransformGroup();
+		
 		transformGroup.setName(SerializationHelper.readString(in));
 		transformGroup.setUserData(NUMBER_OF_CHILDREN_USER_DATA, in.readInt());
-		transformGroup.setTransform(SerializationHelper.readTransform(in));
-		transformGroup.setPosition(SerializationHelper.readTuple3f(in));
+		transformGroup.setTransform(SerializationHelper.readTransform3D(in));
+		transformGroup.setPosition(SerializationHelper.readPoint3f(in));
 		
 		return transformGroup;
 	}

@@ -337,13 +337,13 @@ public class SerializationHelperTest {
 	}
 	
 	@Test
-	public void testWriteReadTransform() throws IOException {
+	public void testWriteReadTransform3D() throws IOException {
 		// testing null check implementation
-		SerializationHelper.writeTransform(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readTransform(getInputStream()));
+		SerializationHelper.writeTransform3D(getOutputStream(), null);
+		Assert.assertNull(SerializationHelper.readTransform3D(getInputStream()));
 		
-		SerializationHelper.writeTransform(getOutputStream(), TRANSFORM_3D);
-		Assert.assertEquals(TRANSFORM_3D, SerializationHelper.readTransform(getInputStream()));
+		SerializationHelper.writeTransform3D(getOutputStream(), TRANSFORM_3D);
+		Assert.assertEquals(TRANSFORM_3D, SerializationHelper.readTransform3D(getInputStream()));
 	}
 	
 	@Test
