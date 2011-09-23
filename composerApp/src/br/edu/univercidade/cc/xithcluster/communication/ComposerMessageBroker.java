@@ -17,16 +17,16 @@ public class ComposerMessageBroker implements IConnectHandler, IDataHandler, IDi
 	
 	@Override
 	public boolean onConnect(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, MaxReadSizeExceededException {
-		MessageQueue.getInstance().postMessage(new Message(MessageType.CONNECTED, arg0));
+		MessageQueue.postMessage(new Message(MessageType.CONNECTED, arg0));
 		
 		return true;
 	}
 	
 	@Override
-	public boolean onData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
+	public boolean onData(INonBlockingConnection connection) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
 		MessageType messageType;
 		
-		messageType = CommunicationHelper.safelyReadMessageType(arg0);
+		messageType = CommunicationHelper.safelyReadMessageType(connection);
 		
 		if (messageType == null) {
 			return true;
@@ -34,19 +34,19 @@ public class ComposerMessageBroker implements IConnectHandler, IDataHandler, IDi
 		
 		switch (messageType) {
 		case START_SESSION:
-			arg0.setHandler(new StartSessionDataHandler(this));
+			connection.setHandler(new StartSessionDataHandler(this));
 			
 			return true;
 		case SET_COMPOSITION_ORDER:
-			arg0.setHandler(new SetCompositionOrderDataHandler(this));
+			connection.setHandler(new SetCompositionOrderDataHandler(this));
 			
 			return true;
 		case START_FRAME:
-			arg0.setHandler(new StartFrameDataHandler(this));
+			connection.setHandler(new StartFrameDataHandler(this));
 			
 			return true;
 		case NEW_IMAGE:
-			arg0.setHandler(new NewImageDataHandler(this));
+			connection.setHandler(new NewImageDataHandler(this));
 			
 			return true;
 		default:
@@ -58,25 +58,25 @@ public class ComposerMessageBroker implements IConnectHandler, IDataHandler, IDi
 	
 	@Override
 	public boolean onDisconnect(INonBlockingConnection connection) throws IOException {
-		MessageQueue.getInstance().postMessage(new Message(MessageType.DISCONNECTED, connection));
+		MessageQueue.postMessage(new Message(MessageType.DISCONNECTED, connection));
 		
 		return true;
 	}
 	
 	void onStartSessionCompleted(INonBlockingConnection connection, int screenWidth, int screenHeight, double targetFPS) {
-		MessageQueue.getInstance().postMessage(new Message(MessageType.START_SESSION, connection, screenHeight, screenWidth, targetFPS));
+		MessageQueue.postMessage(new Message(MessageType.START_SESSION, connection, screenWidth, screenHeight, targetFPS));
 	}
 	
 	void onNewImageCompleted(INonBlockingConnection connection, int frameIndex, CompressionMethod compressionMethod, byte[] colorAndAlphaBuffer, byte[] depthBuffer) {
-		MessageQueue.getInstance().postMessage(new Message(MessageType.NEW_IMAGE, connection, frameIndex, compressionMethod, colorAndAlphaBuffer, depthBuffer));
+		MessageQueue.postMessage(new Message(MessageType.NEW_IMAGE, connection, frameIndex, compressionMethod, colorAndAlphaBuffer, depthBuffer));
 	}
 
 	void onSetCompositionOrderCompleted(INonBlockingConnection connection, int compositionOrder) {
-		MessageQueue.getInstance().postMessage(new Message(MessageType.SET_COMPOSITION_ORDER, connection, compositionOrder));
+		MessageQueue.postMessage(new Message(MessageType.SET_COMPOSITION_ORDER, connection, compositionOrder));
 	}
 	
 	void onStartFrameCompleted(INonBlockingConnection connection, int frameIndex) {
-		MessageQueue.getInstance().postMessage(new Message(MessageType.START_FRAME, connection, frameIndex));
+		MessageQueue.postMessage(new Message(MessageType.START_FRAME, connection, frameIndex));
 	}
 
 }

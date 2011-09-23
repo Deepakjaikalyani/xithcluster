@@ -26,14 +26,14 @@ public abstract class SafeDataHandler implements IDataHandler {
 		arg0.markReadPosition();
 		try {
 			handleResult = onHandleData(arg0);
+			
+			arg0.removeReadMark();
 		} catch (BufferUnderflowException e) {
 			arg0.resetToReadMark();
 			return true;
 		}
 		
 		onDataReady(arg0);
-		
-		arg0.removeReadMark();
 		
 		afterDataHandling(arg0);
 		

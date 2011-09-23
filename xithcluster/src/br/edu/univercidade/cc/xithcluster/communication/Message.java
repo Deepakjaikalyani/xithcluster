@@ -2,7 +2,9 @@ package br.edu.univercidade.cc.xithcluster.communication;
 
 import org.xsocket.connection.INonBlockingConnection;
 
-public final class Message {
+public final class Message implements Comparable<Message> {
+	
+	private Long creationTime;
 	
 	private MessageType type;
 	
@@ -11,6 +13,8 @@ public final class Message {
 	private Object[] parameters;
 	
 	Message(MessageType type, INonBlockingConnection source, Object... parameters) {
+		creationTime = System.nanoTime();
+		
 		this.type = type;
 		this.source = source;
 		this.parameters = parameters;
@@ -38,6 +42,11 @@ public final class Message {
 	
 	public void setParameters(Object[] parameters) {
 		this.parameters = parameters;
+	}
+
+	@Override
+	public int compareTo(Message o) {
+		return creationTime.compareTo(o.creationTime);
 	}
 	
 }

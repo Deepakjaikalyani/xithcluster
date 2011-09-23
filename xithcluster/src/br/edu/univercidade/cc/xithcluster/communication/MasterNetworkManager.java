@@ -8,11 +8,11 @@ import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import org.apache.log4j.Logger;
 import org.xith3d.loop.Updatable;
 import org.xith3d.loop.UpdatingThread.TimingMode;
@@ -71,6 +71,10 @@ public final class MasterNetworkManager implements Updatable {
 	private final BitSet renderersSessionStartedMask = new BitSet();
 	
 	private int currentFrameIndex = 0;
+
+	private boolean finishedFrame = false;
+
+	private boolean forceFrameStart = false;
 	
 	public MasterNetworkManager(DistributedRenderLoop distributedRenderLoop, UpdateManager updateManager, DistributionStrategy distributionStrategy) {
 		this.distributedRenderLoop = distributedRenderLoop;
@@ -86,15 +90,7 @@ public final class MasterNetworkManager implements Updatable {
 		composerServer.start();
 	}
 	
-	/*private synchronized int getSkipNextFrames() {
-		int framesToSkip = 0;
-		
-		// TODO:
-
-		return framesToSkip;
-	}*/
-	
-	private void notifyFrameStart(int frameIndex) {
+	private void startFrame(int frameIndex) {
 		try {
 			sendStartFrameMessage(composerConnection, frameIndex);
 			
@@ -113,55 +109,54 @@ public final class MasterNetworkManager implements Updatable {
 		INonBlockingConnection rendererConnection;
 		List<PendingUpdate> updates;
 		
-		if (updateManager.hasPendingUpdates()) {
-			log.info("Sending " + updateManager.getPendingUpdates().size() + " pending update(s)");
-			
-			// FIXME: Optimize
-			updatesPerRenderer = new HashMap<INonBlockingConnection, List<PendingUpdate>>();
-			for (PendingUpdate pendingUpdate : updateManager.getPendingUpdates()) {
-				// TODO:
-				if (pendingUpdate.getType() == Type.NODE_ADDED || pendingUpdate.getType() == Type.NODE_REMOVED) {
-					rendererConnection = (INonBlockingConnection) ((Node) pendingUpdate.getTarget()).getUserData(ConnectionSetter.CONNECTION_USER_DATA);
-				} else {
-					rendererConnection = null;
-				}
-				
-				if (rendererConnection != null) {
-					updates = updatesPerRenderer.get(rendererConnection);
-					
-					if (updates == null) {
-						updates = new ArrayList<PendingUpdate>();
-						updatesPerRenderer.put(rendererConnection, updates);
-					}
-					
-					updates.add(pendingUpdate);
-				}
+	
+		log.info("Sending " + updateManager.getPendingUpdates().size() + " pending update(s)");
+		
+		// FIXME: Optimize
+		updatesPerRenderer = new HashMap<INonBlockingConnection, List<PendingUpdate>>();
+		for (PendingUpdate pendingUpdate : updateManager.getPendingUpdates()) {
+			// TODO:
+			if (pendingUpdate.getType() == Type.NODE_ADDED || pendingUpdate.getType() == Type.NODE_REMOVED) {
+				rendererConnection = (INonBlockingConnection) ((Node) pendingUpdate.getTarget()).getUserData(ConnectionSetter.CONNECTION_USER_DATA);
+			} else {
+				rendererConnection = null;
 			}
 			
-			for (int i = 0; i < renderersConnections.size(); i++) {
-				rendererConnection = renderersConnections.get(i);
+			if (rendererConnection != null) {
 				updates = updatesPerRenderer.get(rendererConnection);
 				
-				if (updates != null) {
-					try {
-						sendUpdateMessage(rendererConnection, updatesPackager.serialize(updates));
-						
-						log.info(updates.size() + " update(s) were sent to renderer " + getRendererIndex(rendererConnection));
-					} catch (IOException e) {
-						log.error("Error sending pending updates", e);
-						
-						return false;
-					}
+				if (updates == null) {
+					updates = new ArrayList<PendingUpdate>();
+					updatesPerRenderer.put(rendererConnection, updates);
+				}
+				
+				updates.add(pendingUpdate);
+			}
+		}
+		
+		for (int i = 0; i < renderersConnections.size(); i++) {
+			rendererConnection = renderersConnections.get(i);
+			updates = updatesPerRenderer.get(rendererConnection);
+			
+			if (updates != null) {
+				try {
+					sendUpdateMessageToRenderer(rendererConnection, updatesPackager.serialize(updates));
+					
+					log.info(updates.size() + " update(s) were sent to renderer " + getRendererIndex(rendererConnection));
+				} catch (IOException e) {
+					log.error("Error sending pending updates", e);
+					
+					return false;
 				}
 			}
-			
-			log.info("Pending updates sent successfully");
 		}
+		
+		log.info("Pending updates sent successfully");
 		
 		return true;
 	}
 	
-	public synchronized boolean startNewSession() {
+	private boolean startNewSession() {
 		BranchGroup scene;
 		View pointOfView;
 		List<BranchGroup> distributedScenes;
@@ -169,8 +164,6 @@ public final class MasterNetworkManager implements Updatable {
 		byte[] pointOfViewData;
 		byte[] sceneData;
 		int rendererIndex;
-		
-		sessionState = SessionState.STARTING;
 		
 		scene = distributedRenderLoop.getScene();
 		pointOfView = distributedRenderLoop.getPointOfView();
@@ -207,12 +200,8 @@ public final class MasterNetworkManager implements Updatable {
 			log.trace("Scene data size: " + sceneData.length + " bytes");
 			
 			try {
-				sendStartSessionMessage(
+				sendStartSessionMessageToRenderer(
 						rendererConnection, 
-						getRendererIndex(rendererConnection),
-						XithClusterConfiguration.screenWidth, 
-						XithClusterConfiguration.screenHeight,
-						XithClusterConfiguration.targetFPS,
 						pointOfViewData, 
 						sceneData);
 			} catch (IOException e) {
@@ -223,10 +212,7 @@ public final class MasterNetworkManager implements Updatable {
 		
 		if (composerConnection != null) {
 			try {
-				sendStartSessionMessage(
-						XithClusterConfiguration.screenWidth, 
-						XithClusterConfiguration.screenHeight,
-						XithClusterConfiguration.targetFPS);
+				sendStartSessionMessageToComposer();
 			} catch (IOException e) {
 				log.error("Error notifying composer", e);
 				return false;
@@ -234,12 +220,6 @@ public final class MasterNetworkManager implements Updatable {
 		}
 		
 		return true;
-	}
-	
-	private void closeCurrentSession() {
-		sessionState = SessionState.CLOSED;
-		composerSessionStarted = false;
-		renderersSessionStartedMask.clear();
 	}
 	
 	private int getRendererIndex(INonBlockingConnection rendererConnection) {
@@ -262,19 +242,25 @@ public final class MasterNetworkManager implements Updatable {
 		return composerConnection != null;
 	}
 	
-	private boolean onConnected(INonBlockingConnection arg0) {
+	private void onConnected(INonBlockingConnection arg0) {
 		if (isRendererConnection(arg0)) {
-			return onRendererConnected(arg0);
+			onRendererConnected(arg0);
+			
+			log.info("New renderer connected");
 		} else if (isComposerConnection(arg0)) {
-			return onComposerConnected(arg0);
+			if (isThereAlreadyAConnectedComposer()) {
+				log.error("There can be only one composer");
+			} else {
+				onComposerConnected(arg0);
+				
+				log.info("New composer connected");
+			}
 		} else {
 			log.error("Unknown connection refused");
-			
-			return false;
 		}
 	}
 	
-	private boolean onRendererConnected(INonBlockingConnection arg0) {
+	private void onRendererConnected(INonBlockingConnection arg0) {
 		INonBlockingConnection rendererConnection;
 		
 		rendererConnection = arg0;
@@ -283,26 +269,11 @@ public final class MasterNetworkManager implements Updatable {
 		renderersConnections.add(rendererConnection);
 		
 		rendererConnection.setAutoflush(false);
-		
-		log.info("New renderer connected");
-		
-		return true;
 	}
 	
-	private boolean onComposerConnected(INonBlockingConnection arg0) {
-		if (!isThereAlreadyAConnectedComposer()) {
-			composerConnection = arg0;
-			
-			composerConnection.setAutoflush(false);
-			
-			log.info("Composer connected");
-			
-			return true;
-		} else {
-			log.error("There can be only one composer");
-			
-			return false;
-		}
+	private void onComposerConnected(INonBlockingConnection arg0) {
+		composerConnection = arg0;
+		composerConnection.setAutoflush(false);
 	}
 	
 	private boolean isRendererConnection(INonBlockingConnection arg0) {
@@ -319,21 +290,17 @@ public final class MasterNetworkManager implements Updatable {
 		} else if (isComposerConnection(arg0)) {
 			composerSessionStarted = true;
 		}
-		
-		if (composerSessionStarted && renderersSessionStartedMask.cardinality() == renderersConnections.size()) {
-			sessionState = SessionState.STARTED;
-			
-			log.info("Session started successfully");
-			
-			notifyFrameStart(currentFrameIndex);
-		}
 	}
 
 	private void onDisconnected(INonBlockingConnection arg0) {
 		if (isRendererConnection(arg0)) {
 			onRendererDisconnect(arg0);
+			
+			log.info("Renderer disconnected");
 		} else if (isComposerConnection(arg0)) {
 			onComposerDisconnect();
+			
+			log.info("Composer disconnected");
 		} else {
 			// TODO:
 			throw new AssertionError("Should never happen!");
@@ -341,15 +308,11 @@ public final class MasterNetworkManager implements Updatable {
 	}
 
 	
-	private boolean onComposerDisconnect() {
+	private void onComposerDisconnect() {
 		composerConnection = null;
-		
-		log.info("Composer disconnected");
-		
-		return true;
 	}
 	
-	private boolean onRendererDisconnect(INonBlockingConnection arg0) {
+	private void onRendererDisconnect(INonBlockingConnection arg0) {
 		int rendererIndex;
 		
 		rendererIndex = getRendererIndex(arg0);
@@ -357,25 +320,19 @@ public final class MasterNetworkManager implements Updatable {
 		renderersSessionStartedMask.clear(rendererIndex);
 		
 		renderersConnections.remove(rendererIndex);
-		synchronized (renderersConnections) {
-			for (int j = rendererIndex; j < renderersConnections.size(); j++) {
-				renderersConnections.get(j).setAttachment(j);
-			}
+		for (int j = rendererIndex; j < renderersConnections.size(); j++) {
+			renderersConnections.get(j).setAttachment(j);
 		}
-		
-		log.info("Renderer disconnected");
-		
-		return true;
 	}
 	
-	private void sendStartSessionMessage(INonBlockingConnection rendererConnection, int rendererIndex, int screenWidth, int screenHeight, double targetFPS, byte[] pointOfViewData, byte[] sceneData) throws BufferOverflowException, ClosedChannelException, SocketTimeoutException, IOException {
+	private void sendStartSessionMessageToRenderer(INonBlockingConnection rendererConnection, byte[] pointOfViewData, byte[] sceneData) throws BufferOverflowException, ClosedChannelException, SocketTimeoutException, IOException {
 		rendererConnection.write(MessageType.START_SESSION.ordinal());
 		rendererConnection.flush();
 		
-		rendererConnection.write(rendererIndex);
-		rendererConnection.write(screenWidth);
-		rendererConnection.write(screenHeight);
-		rendererConnection.write(targetFPS);
+		rendererConnection.write(getRendererIndex(rendererConnection));
+		rendererConnection.write(XithClusterConfiguration.screenWidth);
+		rendererConnection.write(XithClusterConfiguration.screenHeight);
+		rendererConnection.write(XithClusterConfiguration.targetFPS);
 		rendererConnection.write(pointOfViewData.length);
 		rendererConnection.write(pointOfViewData);
 		rendererConnection.write(sceneData.length);
@@ -383,28 +340,23 @@ public final class MasterNetworkManager implements Updatable {
 		rendererConnection.flush();
 	}
 	
-	private void sendStartSessionMessage(int screenWidth, int screenHeight, double targetFPS) throws BufferOverflowException, ClosedChannelException, SocketTimeoutException, IOException {
+	private void sendStartSessionMessageToComposer() throws BufferOverflowException, ClosedChannelException, SocketTimeoutException, IOException {
 		composerConnection.write(MessageType.START_SESSION.ordinal());
 		composerConnection.flush();
 		
-		composerConnection.write(screenWidth);
-		composerConnection.write(screenHeight);
-		composerConnection.write(targetFPS);
+		composerConnection.write(XithClusterConfiguration.screenWidth);
+		composerConnection.write(XithClusterConfiguration.screenHeight);
+		composerConnection.write(XithClusterConfiguration.targetFPS);
 		composerConnection.flush();
 	}
 	
-	private void sendUpdateMessage(INonBlockingConnection rendererConnection, byte[] updateData) throws BufferOverflowException, IOException {
+	private void sendUpdateMessageToRenderer(INonBlockingConnection rendererConnection, byte[] updateData) throws BufferOverflowException, IOException {
 		rendererConnection.write(MessageType.UPDATE.ordinal());
 		rendererConnection.flush();
 		
 		rendererConnection.write(updateData);
 		rendererConnection.flush();
 	}
-
-	/*private void sendGetFramesToSkipMessage(INonBlockingConnection composerConnection) throws BufferOverflowException, IOException {
-		composerConnection.write(MessageType.GET_FRAMES_TO_SKIP.ordinal());
-		composerConnection.flush();
-	}*/
 
 	private void sendStartFrameMessage(INonBlockingConnection connection, int frameIndex) throws BufferOverflowException, IOException {
 		connection.write(MessageType.START_FRAME.ordinal());
@@ -414,21 +366,27 @@ public final class MasterNetworkManager implements Updatable {
 		connection.flush();
 	}
 
+	/* 
+	 * ================================
+	 * Network messages processing loop
+	 * ================================
+	 */
 	@Override
 	public void update(long gameTime, long frameTime, TimingMode timingMode) {
-		Deque<Message> messages;
+		Queue<Message> messages;
 		Message message;
 		Iterator<Message> iterator;
-		Iterator<Message> descendingIterator;
+		int frameIndex;
 		boolean clusterConfigurationChanged;
 		
-		messages = MessageQueue.getInstance().retrieveMessages();
+		messages = MessageQueue.startReadingMessages();
 		
+		// sessionState == SessionState.STARTED || sessionState == SessionState.CLOSED
 		if (sessionState != SessionState.STARTING) {
 			clusterConfigurationChanged = false;
-			descendingIterator = messages.descendingIterator();
-			while (descendingIterator.hasNext()) {
-				message = descendingIterator.next();
+			iterator = messages.iterator();
+			while (iterator.hasNext()) {
+				message = iterator.next();
 				if (message.getType() == MessageType.CONNECTED) {
 					onConnected(message.getSource());
 				} else if (message.getType() == MessageType.DISCONNECTED) {
@@ -436,45 +394,99 @@ public final class MasterNetworkManager implements Updatable {
 				} else {
 					continue;
 				}
+				
 				clusterConfigurationChanged = true;
-				descendingIterator.remove();
+				iterator.remove();
 			}
 		
-			if (clusterConfigurationChanged && isThereAtLeastOneRendererAndOneComposer()) {
-				if (sessionState == SessionState.STARTED) {
-					closeCurrentSession();
+			if (clusterConfigurationChanged) {
+				if (sessionState == SessionState.STARTED && !isThereAtLeastOneRendererAndOneComposer()) {
+					renderersSessionStartedMask.clear();
+					composerSessionStarted = false;
+					
+					log.info("Current session closed");
+				} else if (sessionState == SessionState.CLOSED && isThereAtLeastOneRendererAndOneComposer()) {
+					sessionState = SessionState.STARTING;
+					if (!startNewSession()) {
+						sessionState = SessionState.CLOSED;
+						
+						log.error("Error starting session");
+					} else {
+						log.info("Starting a new session");
+					}
 				}
-				
-				startNewSession();
-			} else {
+			} 
+			
+			if (sessionState == SessionState.STARTED) {
 				iterator = messages.iterator();
 				while (iterator.hasNext()) {
 					message = iterator.next();
 					if (message.getType() == MessageType.FINISHED_FRAME) {
-						if (currentFrameIndex == (Integer) message.getParameters()[0]) {
-							notifyFrameStart(currentFrameIndex++);
+						frameIndex = (Integer) message.getParameters()[0];
+						
+						if (currentFrameIndex == frameIndex) {
+							log.info("Finished frame received: " + frameIndex);
+							
+							finishedFrame = true;
 						} else {
-							// TODO: Do nothing!
+							log.error("Invalid finished frame received: " + frameIndex);
 						}
 					} else if (message.getType() == MessageType.SESSION_STARTED) {
-						// TODO: Do nothing!
+						if (isRendererConnection(message.getSource())) {
+							log.error("Invalid session started message received from renderer " + getRendererIndex(message.getSource()));
+						} else if (isComposerConnection(message.getSource())) {
+							log.error("Invalid session started message received from composer");
+						} else {
+							// TODO:
+							throw new AssertionError("Should never happen!");
+						}
+					} else {
+						continue;
 					}
+					
+					iterator.remove();
 				}
 				
-				sendPendingUpdates();
+				if (finishedFrame || forceFrameStart) {
+					forceFrameStart = false;
+					
+					startFrame(++currentFrameIndex);
+					
+					log.info("New frame started: " + currentFrameIndex);
+				}
+				
+				if (updateManager.hasPendingUpdates()) {
+					sendPendingUpdates();
+					
+					log.info("Pending updates sent");
+				}
 			}
+		// sessionState == SessionState.STARTING
 		} else {
 			iterator = messages.iterator();
 			while (iterator.hasNext()) {
 				message = iterator.next();
 				if (message.getType() == MessageType.SESSION_STARTED) {
+					log.info("Session started received");
+					
 					onSessionStarted(message.getSource());
 				} else {
-					// post-back
-					MessageQueue.getInstance().postMessage(message);
+					continue;
 				}
+				
+				iterator.remove();
+			}
+			
+			if (composerSessionStarted && renderersSessionStartedMask.cardinality() == renderersConnections.size()) {
+				sessionState = SessionState.STARTED;
+				
+				log.info("Session started successfully");
+				
+				forceFrameStart = true;
 			}
 		}
+		
+		MessageQueue.stopReadingMessages();
 	}
 
 }

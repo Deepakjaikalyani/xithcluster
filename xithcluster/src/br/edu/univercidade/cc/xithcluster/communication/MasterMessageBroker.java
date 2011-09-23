@@ -16,7 +16,7 @@ public final class MasterMessageBroker implements IConnectHandler, IDataHandler,
 	
 	@Override
 	public boolean onConnect(INonBlockingConnection connection) throws IOException, BufferUnderflowException, MaxReadSizeExceededException {
-		MessageQueue.getInstance().postMessage(new Message(MessageType.CONNECTED, connection));
+		MessageQueue.postMessage(new Message(MessageType.CONNECTED, connection));
 		
 		return true;
 	}
@@ -33,7 +33,7 @@ public final class MasterMessageBroker implements IConnectHandler, IDataHandler,
 		
 		switch (messageType) {
 		case SESSION_STARTED:
-			MessageQueue.getInstance().postMessage(new Message(MessageType.SESSION_STARTED, connection));
+			MessageQueue.postMessage(new Message(MessageType.SESSION_STARTED, connection));
 		case FINISHED_FRAME:
 			connection.setHandler(new FinishedFrameDataHandler(this));
 			
@@ -47,13 +47,13 @@ public final class MasterMessageBroker implements IConnectHandler, IDataHandler,
 
 	@Override
 	public boolean onDisconnect(INonBlockingConnection connection) throws IOException {
-		MessageQueue.getInstance().postMessage(new Message(MessageType.DISCONNECTED, connection));
+		MessageQueue.postMessage(new Message(MessageType.DISCONNECTED, connection));
 		
 		return true;
 	}
 	
 	void onFinishedFrameCompleted(INonBlockingConnection connection, int frameIndex) {
-		MessageQueue.getInstance().postMessage(new Message(MessageType.FINISHED_FRAME, connection, frameIndex));
+		MessageQueue.postMessage(new Message(MessageType.FINISHED_FRAME, connection, frameIndex));
 	}
 	
 }

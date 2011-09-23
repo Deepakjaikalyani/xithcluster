@@ -2,16 +2,15 @@ package br.edu.univercidade.cc.xithcluster.communication;
 
 import java.io.IOException;
 import java.nio.BufferOverflowException;
-import java.util.Deque;
 import java.util.Iterator;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.Queue;
 import org.apache.log4j.Logger;
 import org.xith3d.loop.Updatable;
 import org.xith3d.loop.UpdatingThread.TimingMode;
 import org.xsocket.connection.INonBlockingConnection;
 import org.xsocket.connection.NonBlockingConnection;
-import br.edu.univercidade.cc.xithcluster.CompressionMethod;
 import br.edu.univercidade.cc.xithcluster.Renderer;
 import br.edu.univercidade.cc.xithcluster.RendererConfiguration;
 import br.edu.univercidade.cc.xithcluster.SceneDeserializer;
@@ -43,7 +42,7 @@ public final class RendererNetworkManager implements Observer, Updatable {
 	
 	private SessionState sessionState = SessionState.CLOSED;
 	
-	private boolean renderFrame = false;
+	private boolean startFrame = false;
 	
 	private int currentFrameIndex = -1;
 
@@ -72,11 +71,6 @@ public final class RendererNetworkManager implements Observer, Updatable {
 		//updateScene(updatesPackager.deserialize(updatesData));
 	}
 	
-	private void onStartFrame(int frameIndex) {
-		renderFrame = true;
-		currentFrameIndex = frameIndex;
-	}
-	
 	private void onStartSession(int id, int screenWidth, int screenHeight, double targetFPS, byte[] pointOfViewData, byte[] sceneData) {
 		sessionState = SessionState.STARTING;
 		
@@ -92,7 +86,12 @@ public final class RendererNetworkManager implements Observer, Updatable {
 		log.trace("Scene data size: " + sceneData.length + " bytes");
 		
 		if (composerConnection == null || !composerConnection.isOpen()) {
-			log.trace("Connecting to composer");
+			if (composerConnection == null) {
+				log.info("Connecting to composer");
+			} else {
+				log.info("Re-connecting to composer");
+			}
+			
 			try {
 				composerConnection = new NonBlockingConnection(RendererConfiguration.composerListeningAddress, RendererConfiguration.composerListeningPort);
 				composerConnection.setAutoflush(false);
@@ -102,23 +101,27 @@ public final class RendererNetworkManager implements Observer, Updatable {
 			}
 		}
 		
-		log.trace("Sending composition order: " + RendererConfiguration.compositionOrder);
-		notifyCompositionOrder();
+		log.info("Sending composition order: " + RendererConfiguration.compositionOrder);
+		
+		sendCompositionOrder();
 		
 		if (isParallelSceneDeserializationHappening()) {
-			log.trace("Interrupting parallel scene deserialization");
+			log.info("Interrupting previous parallel scene deserialization");
+			
 			interruptParallelSceneDeserialization();
 		}
 		
 		renderer.setId(id);
 		renderer.setScreenSize(screenWidth, screenHeight);
 		
+		log.info("Starting parallel scene deserialization");
+		
 		startParallelSceneDeserialization(pointOfViewData, sceneData);
 		
 		log.info("Session started successfully");
 	}
 	
-	private void notifyCompositionOrder() {
+	private void sendCompositionOrder() {
 		try {
 			sendSetCompositionOrderMessage(RendererConfiguration.compositionOrder);
 		} catch (IOException e) {
@@ -153,12 +156,12 @@ public final class RendererNetworkManager implements Observer, Updatable {
 		masterConnection.flush();
 	}
 	
-	private void sendNewImageMessage(int frameIndex, CompressionMethod compressionMethod, byte[] colorAndAlphaBuffer, byte[] depthBuffer) throws BufferOverflowException, IOException {
+	private void sendNewImageMessage(byte[] colorAndAlphaBuffer, byte[] depthBuffer) throws BufferOverflowException, IOException {
 		composerConnection.write(MessageType.NEW_IMAGE.ordinal());
 		composerConnection.flush();
 		
-		composerConnection.write(frameIndex);
-		composerConnection.write(compressionMethod.ordinal());
+		composerConnection.write(currentFrameIndex);
+		composerConnection.write(RendererConfiguration.compressionMethod.ordinal());
 		composerConnection.write(colorAndAlphaBuffer.length);
 		composerConnection.write(colorAndAlphaBuffer);
 		composerConnection.write(depthBuffer.length);
@@ -181,53 +184,81 @@ public final class RendererNetworkManager implements Observer, Updatable {
 		}
 	}
 	
+	/* 
+	 * ================================
+	 * Network messages processing loop
+	 * ================================
+	 */
 	@Override
 	public void update(long gameTime, long frameTime, TimingMode timingMode) {
-		Deque<Message> messages;
+		Queue<Message> messages;
 		Message message;
 		Iterator<Message> iterator;
-		Iterator<Message> descendingIterator;
 		Message lastUpdateMessage;
 		Message lastStartFrameMessage;
+		Message lastStartSessionMessage;
+		byte[] updatesData;
 		byte[] colorAndAlphaBuffer;
+		int frameIndex;
+		int rendererId;
+		int screenWidth;
+		int screenHeight;
+		double targetFPS;
+		byte[] pointOfViewData;
+		byte[] sceneData;
 		
-		messages = MessageQueue.getInstance().retrieveMessages();
+		messages = MessageQueue.startReadingMessages();
+		
 		if (sessionState == SessionState.STARTED) {
 			/*
 			 * Consider only the last update message received.
 			 */
 			lastUpdateMessage = null;
-			descendingIterator = messages.descendingIterator();
-			while (descendingIterator.hasNext()) {
-				message = descendingIterator.next();
+			iterator = messages.iterator();
+			while (iterator.hasNext()) {
+				message = iterator.next();
 				if (message.getType() == MessageType.UPDATE) {
 					lastUpdateMessage = message;
-					break;
+				} else {
+					continue;
 				}
+				
+				iterator.remove();
 			}
 			
 			if (lastUpdateMessage != null) {
-				onUpdate((byte[]) lastUpdateMessage.getParameters()[0]);
+				updatesData = (byte[]) lastUpdateMessage.getParameters()[0];
+				onUpdate(updatesData);
+				
+				log.info("Updating scene");
 			}
 			
-			if (!renderFrame) {
+			if (!startFrame) {
 				/*
 				 * Consider only the last start frame message received.
 				 */
 				lastStartFrameMessage = null;
-				descendingIterator = messages.descendingIterator();
-				while (descendingIterator.hasNext()) {
-					message = descendingIterator.next();
-					if (lastStartFrameMessage == null && message.getType() == MessageType.START_FRAME) {
+				iterator = messages.iterator();
+				while (iterator.hasNext()) {
+					message = iterator.next();
+					if (message.getType() == MessageType.START_FRAME) {
 						lastStartFrameMessage = message;
 					} else {
-						log.error("Start frame message lost: " + message.getParameters()[0]);
+						continue;
 					}
+					
+					iterator.remove();
 				}
 				
 				if (lastStartFrameMessage != null) {
-					onStartFrame((Integer) lastStartFrameMessage.getParameters()[0]);
+					frameIndex = (Integer) lastStartFrameMessage.getParameters()[0];
+					
+					startFrame = true;
+					currentFrameIndex = frameIndex;
+					
+					log.info("Starting new frame: " + frameIndex);
 				}
+			// startFrame == true
 			} else {
 				colorAndAlphaBuffer = renderer.getColorAndAlphaBuffer();
 				
@@ -238,24 +269,39 @@ public final class RendererNetworkManager implements Observer, Updatable {
 				}
 				
 				try {
-					sendNewImageMessage(currentFrameIndex, RendererConfiguration.compressionMethod, colorAndAlphaBuffer, renderer.getDepthBuffer());
+					sendNewImageMessage(colorAndAlphaBuffer, renderer.getDepthBuffer());
+					
+					startFrame = false;
 				} catch (IOException e) {
 					log.error("Error sending image buffers to composer", e);
 				}
-				
-				renderFrame = false;
 			}
 		} else if (sessionState == SessionState.CLOSED) {
 			/*
-			 * Consider only start session messages, all others are ignored.
+			 * Consider only the last start session message.
 			 */
+			lastStartSessionMessage = null;
 			iterator = messages.iterator();
 			while (iterator.hasNext()) {
 				message = iterator.next();
 				if (message.getType() == MessageType.START_SESSION) {
-					onStartSession((Integer) message.getParameters()[0], (Integer) message.getParameters()[1], (Integer) message.getParameters()[2], (Double) message.getParameters()[3], (byte[]) message.getParameters()[4], (byte[]) message.getParameters()[5]);
-					break;
+					lastStartSessionMessage = message;
+				} else {
+					continue;
 				}
+				
+				iterator.remove();
+			}
+			
+			if (lastStartSessionMessage != null) {
+				rendererId = (Integer) lastStartSessionMessage.getParameters()[0];
+				screenWidth = (Integer) lastStartSessionMessage.getParameters()[1];
+				screenHeight = (Integer) lastStartSessionMessage.getParameters()[2];
+				targetFPS = (Double) lastStartSessionMessage.getParameters()[3];
+				pointOfViewData = (byte[]) lastStartSessionMessage.getParameters()[4];
+				sceneData = (byte[]) lastStartSessionMessage.getParameters()[5];
+				
+				onStartSession(rendererId, screenWidth, screenHeight, targetFPS, pointOfViewData, sceneData);
 			}
 		} else if (deserializationResult != null) {
 			/*
@@ -267,10 +313,16 @@ public final class RendererNetworkManager implements Observer, Updatable {
 			
 			sessionState = SessionState.STARTED;
 			
+			log.info("Session started successfully");
+			
 			renderer.updateScene(deserializationResult.getPointOfView(), deserializationResult.getScene());
+			
+			log.info("Scene updated");
 			
 			deserializationResult = null;
 		}
+		
+		MessageQueue.stopReadingMessages();
 	}
 	
 }

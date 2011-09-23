@@ -59,9 +59,6 @@ public class SceneDeserializer extends Observable implements Runnable {
 		
 		result = new DeserializationResult(view, scene);
 		
-		// TODO:
-		System.out.println("Scene deserialized successfully");
-		
 		setChanged();
 		
 		notifyObservers(result);
