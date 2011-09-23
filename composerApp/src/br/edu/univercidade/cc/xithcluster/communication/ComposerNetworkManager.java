@@ -24,6 +24,10 @@ public final class ComposerNetworkManager {
 	
 	private final Logger log = Logger.getLogger(ComposerNetworkManager.class);
 	
+	private enum SessionState {
+		CLOSED, STARTING, STARTED
+	}
+	
 	private final ComposerMessageBroker composerMessageBroker = new ComposerMessageBroker();
 	
 	private List<INonBlockingConnection> renderersConnections = Collections.synchronizedList(new ArrayList<INonBlockingConnection>());
@@ -34,7 +38,7 @@ public final class ComposerNetworkManager {
 	
 	private INonBlockingConnection masterConnection;
 	
-	private boolean sessionStarted = false;
+	private SessionState sessionState = SessionState.CLOSED;
 	
 	private final Map<Integer, RendererHandler> renderersHandlers = Collections.synchronizedMap(new HashMap<Integer, RendererHandler>());
 	
@@ -64,14 +68,6 @@ public final class ComposerNetworkManager {
 	
 	private void setRendererIndex(INonBlockingConnection arg0) {
 		arg0.setAttachment(renderersConnections.size());
-	}
-	
-	private void sendSessionStarted() {
-		try {
-			sendSessionStartedMessage();
-		} catch (IOException e) {
-			log.error("Error notifying master node that session started successfully", e);
-		}
 	}
 	
 	private byte[][] getColorAndAlphaBuffers() {
@@ -112,8 +108,6 @@ public final class ComposerNetworkManager {
 		composer.setScreenSize(screenWidth, screenHeight);
 		
 		// TODO: set target FPS!
-		
-		sendSessionStarted();
 	}
 	
 	private void onNewImage(INonBlockingConnection arg0, int frameIndex, CompressionMethod compressionMethod, byte[] colorAndAlphaBuffer, byte[] depthBuffer) {
@@ -237,6 +231,7 @@ public final class ComposerNetworkManager {
 		int screenWidth;
 		int screenHeight;
 		double targetFPS;
+		boolean clusterConfigurationChanged;
 		
 		if (!masterConnection.isOpen()) {
 			log.info("Master node disconnected");
@@ -247,6 +242,7 @@ public final class ComposerNetworkManager {
 		
 		messages = MessageQueue.startReadingMessages();
 		
+		clusterConfigurationChanged = false;
 		iterator = messages.iterator();
 		while (iterator.hasNext()) {
 			message = iterator.next();
@@ -259,20 +255,16 @@ public final class ComposerNetworkManager {
 				continue;
 			}
 			
+			clusterConfigurationChanged = true;
 			iterator.remove();
 		}
 		
-		if (sessionStarted) {
-			if (renderersConnections.isEmpty()) {
-				log.info("Current session was closed");
-				
-				sessionStarted = false;
-				
-				MessageQueue.stopReadingMessages();
-				
-				return;
-			}
-			
+		if (clusterConfigurationChanged) {
+			newImageMask.clear();
+			sessionState = SessionState.CLOSED;
+		}
+		
+		if (sessionState == SessionState.STARTED) {
 			iterator = messages.iterator();
 			while (iterator.hasNext()) {
 				message = iterator.next();
@@ -311,54 +303,65 @@ public final class ComposerNetworkManager {
 				iterator.remove();
 			}
 		}
-		// sessionStarted == false
-		else if (!renderersConnections.isEmpty()) {
-			if (renderersConnections.size() == renderersHandlers.size()) {
-				/*
-				 * Consider only the last start session message.
-				 */
-				lastStartSessionMessage = null;
-				iterator = messages.iterator();
-				while (iterator.hasNext()) {
-					message = iterator.next();
-					if (message.getType() == MessageType.START_SESSION) {
-						lastStartSessionMessage = message;
-					} else {
-						continue;
-					}
-					
-					iterator.remove();
+		else if (sessionState == SessionState.CLOSED) {
+			/*
+			 * Consider only the last start session message.
+			 */
+			lastStartSessionMessage = null;
+			iterator = messages.iterator();
+			while (iterator.hasNext()) {
+				message = iterator.next();
+				if (message.getType() == MessageType.START_SESSION) {
+					lastStartSessionMessage = message;
+				} else {
+					continue;
 				}
 				
-				if (lastStartSessionMessage != null) {
-					log.info("Start session received");
+				iterator.remove();
+			}
+			
+			if (lastStartSessionMessage != null) {
+				log.info("Start session received");
+				
+				screenWidth = (Integer) lastStartSessionMessage.getParameters()[0];
+				screenHeight = (Integer) lastStartSessionMessage.getParameters()[1];
+				targetFPS = (Double) lastStartSessionMessage.getParameters()[2];
+				
+				onStartSession(screenWidth, screenHeight, targetFPS);
+				
+				sessionState = SessionState.STARTING;
+				
+				log.info("Waiting for renderer's composition order");
+			}
+		// sessionState == SessionState.STARTING
+		} else {
+			iterator = messages.iterator();
+			while (iterator.hasNext()) {
+				message = iterator.next();
+				if (message.getType() == MessageType.SET_COMPOSITION_ORDER) {
+					log.info("Composition order received");
 					
-					screenWidth = (Integer) lastStartSessionMessage.getParameters()[0];
-					screenHeight = (Integer) lastStartSessionMessage.getParameters()[1];
-					targetFPS = (Double) lastStartSessionMessage.getParameters()[2];
+					compositionOrder = (Integer) message.getParameters()[0];
 					
-					onStartSession(screenWidth, screenHeight, targetFPS);
-					
-					sessionStarted = true;
-					
-					log.info("Session started successfully");
+					onSetCompositionOrder(message.getSource(), compositionOrder);
+				} else {
+					continue;
 				}
-			} else {
-				iterator = messages.iterator();
-				while (iterator.hasNext()) {
-					message = iterator.next();
-					if (message.getType() == MessageType.SET_COMPOSITION_ORDER) {
-						log.info("Composition order received");
-						
-						compositionOrder = (Integer) message.getParameters()[0];
-						
-						onSetCompositionOrder(message.getSource(), compositionOrder);
-					} else {
-						continue;
-					}
-					
-					iterator.remove();
+				
+				iterator.remove();
+			}
+			
+			if (renderersConnections.size() == renderersHandlers.size()) {
+				try {
+					sendSessionStartedMessage();
+				} catch (IOException e) {
+					// TODO:
+					throw new RuntimeException("Error notifying master node that session started successfully", e);
 				}
+				
+				sessionState = SessionState.STARTED;
+			
+				log.info("Session started successfully");
 			}
 		}
 		
