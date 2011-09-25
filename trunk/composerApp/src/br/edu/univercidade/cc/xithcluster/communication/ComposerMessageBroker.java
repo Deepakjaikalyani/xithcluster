@@ -9,15 +9,22 @@ import org.xsocket.connection.IConnectHandler;
 import org.xsocket.connection.IDataHandler;
 import org.xsocket.connection.IDisconnectHandler;
 import org.xsocket.connection.INonBlockingConnection;
+import br.edu.univercidade.cc.xithcluster.ComposerConfiguration;
 import br.edu.univercidade.cc.xithcluster.CompressionMethod;
 
 public class ComposerMessageBroker implements IConnectHandler, IDataHandler, IDisconnectHandler {
 	
 	private final Logger log = Logger.getLogger(ComposerMessageBroker.class);
 	
+	private boolean isMyOwnConnection(INonBlockingConnection arg0) {
+		return arg0.getLocalPort() == ComposerConfiguration.masterListeningPort;
+	}
+	
 	@Override
 	public boolean onConnect(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, MaxReadSizeExceededException {
-		MessageQueue.postMessage(new Message(MessageType.CONNECTED, arg0));
+		if (!isMyOwnConnection(arg0)) {
+			MessageQueue.postMessage(new Message(MessageType.CONNECTED, arg0));
+		}
 		
 		return true;
 	}

@@ -68,7 +68,7 @@ public final class MasterNetworkManager implements Updatable {
 	
 	private final BitSet renderersSessionStartedMask = new BitSet();
 	
-	private int currentFrameIndex = 0;
+	private int currentFrame = 0;
 	
 	private boolean finishedFrame = false;
 	
@@ -86,20 +86,6 @@ public final class MasterNetworkManager implements Updatable {
 		
 		renderersServer.start();
 		composerServer.start();
-	}
-	
-	private void startFrame(int frameIndex) {
-		try {
-			sendStartFrameMessage(composerConnection, frameIndex);
-			
-			for (INonBlockingConnection rendererConnection : renderersConnections) {
-				sendStartFrameMessage(rendererConnection, frameIndex);
-			}
-			
-			currentFrameIndex = frameIndex;
-		} catch (IOException e) {
-			log.error("Error sending frame start notification: " + frameIndex, e);
-		}
 	}
 	
 	private boolean sendPendingUpdates() {
@@ -153,7 +139,7 @@ public final class MasterNetworkManager implements Updatable {
 		return true;
 	}
 	
-	private boolean startNewSession() {
+	private void distributeScene() {
 		BranchGroup scene;
 		View pointOfView;
 		List<BranchGroup> distributedScenes;
@@ -189,8 +175,8 @@ public final class MasterNetworkManager implements Updatable {
 				pointOfViewData = pointOfViewPackager.serialize(pointOfView);
 				sceneData = scenePackager.serialize(rendererScene);
 			} catch (IOException e) {
-				log.error("Error serializing the scene", e);
-				return false;
+				// TODO:
+				throw new RuntimeException("Error serializing the scene", e);
 			}
 			
 			log.trace("POV data size: " + pointOfViewData.length + " bytes");
@@ -200,7 +186,6 @@ public final class MasterNetworkManager implements Updatable {
 				sendStartSessionMessageToRenderer(rendererConnection, pointOfViewData, sceneData);
 			} catch (IOException e) {
 				log.error("Error sending distributed scene", e);
-				return false;
 			}
 		}
 		
@@ -208,12 +193,10 @@ public final class MasterNetworkManager implements Updatable {
 			try {
 				sendStartSessionMessageToComposer();
 			} catch (IOException e) {
-				log.error("Error notifying composer", e);
-				return false;
+				// TODO:
+				throw new RuntimeException("Error notifying composer", e);
 			}
 		}
-		
-		return true;
 	}
 	
 	private int getRendererIndex(INonBlockingConnection rendererConnection) {
@@ -234,6 +217,79 @@ public final class MasterNetworkManager implements Updatable {
 	
 	private boolean isThereAlreadyAConnectedComposer() {
 		return composerConnection != null;
+	}
+	
+	private void tryToDistributeTheScene() {
+		sessionState = SessionState.STARTING;
+		
+		try {
+			distributeScene();
+			log.info("Starting a new session");
+		} catch (Throwable t) {
+			sessionState = SessionState.CLOSED;
+			log.error("Error starting session");
+		}
+	}
+	
+	private boolean isSessionReadyToStart() {
+		return composerSessionStarted && renderersSessionStartedMask.cardinality() == renderersConnections.size();
+	}
+
+	private void startNewSession() {
+		sessionState = SessionState.STARTED;
+		
+		log.info("Session started successfully");
+		
+		forceFrameStart = true;
+	}
+	
+	private void closeCurrentSession() {
+		sessionState = SessionState.CLOSED;
+		
+		renderersSessionStartedMask.clear();
+		composerSessionStarted = false;
+		
+		log.info("Current session closed");
+	}
+
+	private void startNewFrame() {
+		log.info("Starting new frame");
+		
+		finishedFrame = false;
+		forceFrameStart = false;
+		
+		currentFrame += 1;
+		
+		log.trace("currentFrame=" + currentFrame);
+		
+		try {
+			sendStartFrameMessage(composerConnection, currentFrame);
+			
+			for (INonBlockingConnection rendererConnection : renderersConnections) {
+				sendStartFrameMessage(rendererConnection, currentFrame);
+			}
+		} catch (IOException e) {
+			// TODO:
+			throw new RuntimeException("Error sending start new frame notification: " + currentFrame, e);
+		}
+	}
+
+	private void onFinishedFrame(Message message) {
+		int frameIndex;
+		
+		log.info("Finished frame received");
+		
+		frameIndex = (Integer) message.getParameters()[0];
+		
+		if (currentFrame == frameIndex) {
+			log.info("Finished current frame");
+			log.trace("currentFrame=" + currentFrame);
+			
+			finishedFrame = true;
+		} else {
+			log.error("Out-of-sync finished frame received");
+			log.trace("frameIndex=" + frameIndex);
+		}
 	}
 	
 	private void onConnected(INonBlockingConnection arg0) {
@@ -278,10 +334,15 @@ public final class MasterNetworkManager implements Updatable {
 		return arg0.getLocalPort() == XithClusterConfiguration.composerConnectionPort;
 	}
 	
-	private void onSessionStarted(INonBlockingConnection arg0) {
-		if (isRendererConnection(arg0)) {
-			renderersSessionStartedMask.set(getRendererIndex(arg0));
-		} else if (isComposerConnection(arg0)) {
+	private void onSessionStarted(Message message) {
+		INonBlockingConnection connection;
+		
+		log.info("Session started received");
+		
+		connection = message.getSource();
+		if (isRendererConnection(connection)) {
+			renderersSessionStartedMask.set(getRendererIndex(connection));
+		} else if (isComposerConnection(connection)) {
 			composerSessionStarted = true;
 		}
 	}
@@ -369,13 +430,11 @@ public final class MasterNetworkManager implements Updatable {
 		Queue<Message> messages;
 		Message message;
 		Iterator<Message> iterator;
-		int frameIndex;
 		boolean clusterConfigurationChanged;
 		
 		messages = MessageQueue.startReadingMessages();
 		
-		// sessionState == SessionState.STARTED || sessionState == SessionState.CLOSED
-		if (sessionState != SessionState.STARTING) {
+		if (sessionState == SessionState.STARTED || sessionState == SessionState.CLOSED) {
 			clusterConfigurationChanged = false;
 			iterator = messages.iterator();
 			while (iterator.hasNext()) {
@@ -394,97 +453,46 @@ public final class MasterNetworkManager implements Updatable {
 			
 			if (clusterConfigurationChanged) {
 				if (sessionState == SessionState.STARTED) {
-					sessionState = SessionState.CLOSED;
-					
-					renderersSessionStartedMask.clear();
-					composerSessionStarted = false;
-					
-					log.info("Current session closed");
+					closeCurrentSession();
 				} 
 				
 				if (sessionState == SessionState.CLOSED && isThereAtLeastOneRendererAndOneComposer()) {
-					sessionState = SessionState.STARTING;
-					if (!startNewSession()) {
-						sessionState = SessionState.CLOSED;
-						
-						log.error("Error starting session");
-					} else {
-						log.info("Starting a new session");
-					}
+					tryToDistributeTheScene();
 				}
-			}
-			
-			if (sessionState == SessionState.STARTED) {
+			} else {
 				iterator = messages.iterator();
 				while (iterator.hasNext()) {
 					message = iterator.next();
 					if (message.getType() == MessageType.FINISHED_FRAME) {
-						frameIndex = (Integer) message.getParameters()[0];
-						
-						if (currentFrameIndex == frameIndex) {
-							log.info("Finished frame received: " + frameIndex);
-							
-							finishedFrame = true;
-						} else {
-							log.error("Invalid finished frame received: " + frameIndex);
-						}
-					} else if (message.getType() == MessageType.SESSION_STARTED) {
-						if (isRendererConnection(message.getSource())) {
-							log.error("Invalid session started message received from renderer " + getRendererIndex(message.getSource()));
-						} else if (isComposerConnection(message.getSource())) {
-							log.error("Invalid session started message received from composer");
-						} else {
-							// TODO:
-							throw new AssertionError("Should never happen!");
-						}
-					} else {
-						continue;
+						onFinishedFrame(message);
+						iterator.remove();
 					}
-					
-					iterator.remove();
 				}
 				
 				if (finishedFrame || forceFrameStart) {
-					finishedFrame = false;
-					forceFrameStart = false;
-					
-					startFrame(++currentFrameIndex);
-					
-					log.info("New frame started: " + currentFrameIndex);
+					startNewFrame();
 				}
 				
 				if (updateManager.hasPendingUpdates()) {
 					sendPendingUpdates();
-					
-					log.info("Pending updates sent");
 				}
 			}
-			// sessionState == SessionState.STARTING
-		} else {
+		} else if (sessionState == SessionState.STARTING) {
 			iterator = messages.iterator();
 			while (iterator.hasNext()) {
 				message = iterator.next();
 				if (message.getType() == MessageType.SESSION_STARTED) {
-					log.info("Session started received");
-					
-					onSessionStarted(message.getSource());
-				} else {
-					continue;
+					onSessionStarted(message);
+					iterator.remove();
 				}
-				
-				iterator.remove();
 			}
 			
-			if (composerSessionStarted && renderersSessionStartedMask.cardinality() == renderersConnections.size()) {
-				sessionState = SessionState.STARTED;
-				
-				log.info("Session started successfully");
-				
-				forceFrameStart = true;
+			if (isSessionReadyToStart()) {
+				startNewSession();
 			}
 		}
 		
 		MessageQueue.stopReadingMessages();
 	}
-	
+
 }
