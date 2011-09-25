@@ -1,23 +1,18 @@
 package br.edu.univercidade.cc.xithcluster;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import org.jagatoo.input.devices.components.Key;
 import org.jagatoo.input.events.KeyPressedEvent;
 import org.openmali.vecmath2.Colorf;
 import org.openmali.vecmath2.Vector3f;
 import org.xith3d.base.Xith3DEnvironment;
-import org.xith3d.loaders.texture.TextureLoader;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Geometry;
 import org.xith3d.scenegraph.Group;
 import org.xith3d.scenegraph.Light;
 import org.xith3d.scenegraph.Material;
-import org.xith3d.scenegraph.Texture2D;
 import org.xith3d.scenegraph.Transform;
 import org.xith3d.scenegraph.TransformGroup;
 import br.edu.univercidade.cc.xithcluster.primitives.Cube;
-import br.edu.univercidade.cc.xithcluster.primitives.Rectangle;
 import br.edu.univercidade.cc.xithcluster.primitives.Sphere;
 
 public class SampleApp extends DistributedRenderLoop {
@@ -35,97 +30,130 @@ public class SampleApp extends DistributedRenderLoop {
 	private BranchGroup createTestScene() {
 		BranchGroup root;
 		Group group1;
-		Material material1;
-		Material material2;
-		Material material3;
+		Material material;
 		Transform transform;
-		TransformGroup transformGroup;
-		Cube cube1;
-		Rectangle rectangle1;
-		Sphere sphere1;
+		TransformGroup transformGroup1;
+		TransformGroup transformGroup2;
+		Cube cube;
+		Sphere sphere;
 		Light light1;
-		Texture2D texture2D;
 		
 		root = new BranchGroup();
 		
 		group1 = new Group();
 		group1.setName("group1");
 		
-		material1 = new Material();
-        material1.setEmissiveColor(Colorf.RED);
-        material1.setColorTarget(Material.NONE);
-        material1.setLightingEnabled(true);
+		// CUBE 1
+		
+		material = new Material();
+        material.setEmissiveColor(Colorf.RED);
+        material.setColorTarget(Material.NONE);
+        material.setLightingEnabled(true);
         
-        material2 = new Material();
-        material2.setEmissiveColor(Colorf.GREEN);
-        material2.setColorTarget(Material.NONE);
-        material2.setLightingEnabled(true);
-        
-        material3 = new Material();
-        material3.setEmissiveColor(Colorf.BLUE);
-        material3.setColorTarget(Material.NONE);
-        material3.setLightingEnabled(true);
+		transform = new Transform();
+		transform.setTranslation(0.0f, 0.3f, -0.5f);
+		transformGroup1 = new TransformGroup(transform.getTransform());
+		
+		group1.addChild(transformGroup1);
 		
 		transform = new Transform();
-		transform.setTranslation(0.0f, 0.3f, 0.5f);
-		transform.setRotation(35, 25, 0);
-		transformGroup = new TransformGroup(transform.getTransform());
+		transform.setRotation(-35, 20, 0);
+		transformGroup2 = new TransformGroup(transform.getTransform());
 		
-		cube1 = new Cube(0.5f);
-		cube1.setName("cube1");
-		cube1.getAppearance(true).setMaterial(material1);
+		transformGroup1.addChild(transformGroup2);
 		
-		transformGroup.addChild(cube1);
-		group1.addChild(transformGroup);
+		cube = new Cube(0.75f);
+		cube.setName("cube1");
+		cube.getAppearance(true).setMaterial(material);
 		
-		try {
-			texture2D = TextureLoader.getInstance().loadTexture(new FileInputStream("resources/textures/crate.png"));
-		} catch (FileNotFoundException e) {
-			// TODO:
-			throw new RuntimeException("Texture not found");
-		}
+		transformGroup2.addChild(cube);
+		
+		// CUBE 2
 		
 		transform = new Transform();
-		transform.setTranslation(-1.0f, 0.5f, 0.0f);
-		transformGroup = new TransformGroup(transform.getTransform());
+		transform.setTranslation(-1.0f, 0.3f, -0.5f);
+		transformGroup1 = new TransformGroup(transform.getTransform());
 		
-		rectangle1 = new Rectangle(0.5f, 0.5f, null, null, null);
-		rectangle1.setName("rectangle1");
-		rectangle1.getAppearance(true).setTexture(texture2D);
+		group1.addChild(transformGroup1);
 		
-		transformGroup.addChild(rectangle1);
-		group1.addChild(transformGroup);
+		transform = new Transform();
+		transform.setRotationX(25);
+		transformGroup2 = new TransformGroup(transform.getTransform());
+		
+		transformGroup1.addChild(transformGroup2);
+		
+		material = new Material();
+        material.setEmissiveColor(Colorf.ORANGE);
+        material.setColorTarget(Material.NONE);
+        material.setLightingEnabled(true);
+		
+		cube = new Cube(0.4f);
+		cube.setName("cube2");
+		cube.getAppearance(true).setMaterial(material);
+		
+		transformGroup2.addChild(cube);
+		
+		// SPHERE 1
 		
 		transform = new Transform();
 		transform.setTranslation(0.7f, 0.2f, 0.3f);
-		transformGroup = new TransformGroup(transform.getTransform());
+		transformGroup1 = new TransformGroup(transform.getTransform());
 		
-		sphere1 = new Sphere(0.2f, 20, 20, Geometry.COORDINATES | Geometry.NORMALS, false, 2);
-		sphere1.setName("sphere1");
-		sphere1.getAppearance(true).setMaterial(material2);
+		group1.addChild(transformGroup1);
 		
-		transformGroup.addChild(sphere1);
-		group1.addChild(transformGroup);
+		material = new Material();
+        material.setEmissiveColor(Colorf.GREEN);
+        material.setColorTarget(Material.NONE);
+        material.setLightingEnabled(true);
+		
+		sphere = new Sphere(0.2f, 20, 20, Geometry.COORDINATES | Geometry.NORMALS, false, 2);
+		sphere.setName("sphere1");
+		sphere.getAppearance(true).setMaterial(material);
+		
+		transformGroup1.addChild(sphere);
+		
+		// SPHERE 2
 		
 		transform = new Transform();
 		transform.setTranslation(0.55f, -0.2f, 0.2f);
-		transformGroup = new TransformGroup(transform.getTransform());
+		transformGroup1 = new TransformGroup(transform.getTransform());
 		
-		sphere1 = new Sphere(0.1f, 20, 20, Geometry.COORDINATES | Geometry.NORMALS, false, 2);
-		sphere1.setName("sphere2");
-		sphere1.getAppearance(true).setMaterial(material3);
+		group1.addChild(transformGroup1);
 		
-		transformGroup.addChild(sphere1);
-		group1.addChild(transformGroup);
+		material = new Material();
+        material.setEmissiveColor(Colorf.BLUE);
+        material.setColorTarget(Material.NONE);
+        material.setLightingEnabled(true);
+        
+		sphere = new Sphere(0.1f, 20, 20, Geometry.COORDINATES | Geometry.NORMALS, false, 2);
+		sphere.setName("sphere2");
+		sphere.getAppearance(true).setMaterial(material);
+		
+		transformGroup1.addChild(sphere);
+		
+		// SPHERE 3
 		
 		transform = new Transform();
-		transform.setTranslation(0.0f, 0.0f, 1.0f);
-		transformGroup = new TransformGroup(transform.getTransform());
+		transform.setTranslation(-0.75f, 0, -2.0f);
+		transformGroup1 = new TransformGroup(transform.getTransform());
+		
+		group1.addChild(transformGroup1);
+		
+		material = new Material();
+        material.setEmissiveColor(Colorf.BROWN);
+        material.setColorTarget(Material.NONE);
+        material.setLightingEnabled(true);
+        
+		sphere = new Sphere(0.75f, 20, 20, Geometry.COORDINATES | Geometry.NORMALS, false, 2);
+		sphere.setName("sphere2");
+		sphere.getAppearance(true).setMaterial(material);
+		
+		transformGroup1.addChild(sphere);
+		
+		// LIGHT 1
 		
 		light1 = new DirectionalLight(true, new Colorf(0.5f, 0.5f, 0.5f), Vector3f.NEGATIVE_Z_AXIS);
-		
-		transformGroup.addChild(light1);
-		root.addChild(transformGroup);
+		root.addChild(light1);
 		
 		root.addChild(group1);
 		

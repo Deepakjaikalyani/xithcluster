@@ -16,7 +16,7 @@ import br.edu.univercidade.cc.xithcluster.RendererConfiguration;
 import br.edu.univercidade.cc.xithcluster.SceneDeserializer;
 import br.edu.univercidade.cc.xithcluster.SceneDeserializer.DeserializationResult;
 
-public final class RendererNetworkManager implements Observer, Updatable {
+public final class RendererNetworkManager extends NetworkManager implements Observer, Updatable {
 	
 	private Logger log = Logger.getLogger(RendererNetworkManager.class);
 	
@@ -30,8 +30,6 @@ public final class RendererNetworkManager implements Observer, Updatable {
 	
 	private Renderer renderer;
 	
-	private INonBlockingConnection masterConnection;
-	
 	private INonBlockingConnection composerConnection;
 	
 	// private UpdatesPackager updatesPackager = new UpdatesPackager();
@@ -40,9 +38,9 @@ public final class RendererNetworkManager implements Observer, Updatable {
 	
 	private SessionState sessionState = SessionState.CLOSED;
 	
-	private boolean startFrame = false;
+	private boolean hasSentCurrentFrameCompositor = true;
 	
-	private int currentFrameIndex = -1;
+	private int currentFrame = -1;
 	
 	private DeserializationResult deserializationResult;
 	
@@ -56,31 +54,113 @@ public final class RendererNetworkManager implements Observer, Updatable {
 		masterConnection.setAutoflush(false);
 	}
 	
-	private void onUpdate(byte[] updatesData) {
-		// TODO:
-		// updateScene(updatesPackager.deserialize(updatesData));
+	private boolean isConnectedToComposer() {
+		return composerConnection != null && composerConnection.isOpen();
 	}
 	
-	private void onStartSession(int id, int screenWidth, int screenHeight, double targetFPS, byte[] pointOfViewData, byte[] sceneData) {
+	private boolean isSessionReadyToStart() {
+		return sessionState == SessionState.STARTING && deserializationResult != null;
+	}
+	
+	private void startNewSession() {
+		try {
+			sendSessionStartedMessage();
+		} catch (IOException e) {
+			// TODO:
+			throw new RuntimeException("Error notifying master node that session started successfully", e);
+		}
+		
+		renderer.updateScene(deserializationResult.getPointOfView(), deserializationResult.getScene());
+		
+		
+		log.info("Scene deserialized with success");
+		
+		sessionState = SessionState.STARTED;
+		
+		log.info("Session started successfully");
+	}
+	
+	private void closeCurrentSession() {
+		sessionState = SessionState.CLOSED;
+		
+		log.info("Current session was closed");
+	}
+
+	private void sendCurrentFrameToCompositor() {
+		byte[] colorAndAlphaBuffer;
+		
+		log.info("Sending current frame to compositor");
+		log.trace("currentFrame=" + currentFrame);
+		
+		colorAndAlphaBuffer = renderer.getColorAndAlphaBuffer();
+		
+		switch (RendererConfiguration.compressionMethod) {
+		case PNG:
+			// TODO: Deflate!
+			break;
+		}
+		
+		try {
+			sendNewImageMessage(colorAndAlphaBuffer, renderer.getDepthBuffer());
+		} catch (IOException e) {
+			// TODO:
+			throw new RuntimeException("Error sending image buffers to composer", e);
+		}
+	}
+
+	private void onStartFrame(Message message) {
+		log.info("Start frame received");
+		
+		currentFrame = (Integer) message.getParameters()[0];
+		
+		log.trace("currentFrame=" + currentFrame);
+		
+		hasSentCurrentFrameCompositor = false;
+	}
+	
+	private void onUpdate(Message message) {
+		log.info("Update received");
+		
+		// TODO:
+	}
+	
+	private void onStartSession(Message message) {
+		int rendererId;
+		int screenWidth;
+		int screenHeight;
+		double targetFPS;
+		byte[] pointOfViewData;
+		byte[] sceneData;
+		
+		log.info("Start session received");
+		
+		try {
+			rendererId = (Integer) message.getParameters()[0];
+			screenWidth = (Integer) message.getParameters()[1];
+			screenHeight = (Integer) message.getParameters()[2];
+			targetFPS = (Double) message.getParameters()[3];
+			pointOfViewData = (byte[]) message.getParameters()[4];
+			sceneData = (byte[]) message.getParameters()[5];
+		} catch (Throwable t) {
+			// TODO:
+			throw new RuntimeException("Error reading start session message parameters", t);
+		}
+		
 		sessionState = SessionState.STARTING;
 		
 		log.debug("****************");
 		log.debug("Session starting");
 		log.debug("****************");
 		
-		log.trace("Received id: " + id);
-		log.trace("Screen width: " + screenWidth);
-		log.trace("Screen height: " + screenHeight);
-		log.trace("Target FPS: " + targetFPS);
-		log.trace("POV data size: " + pointOfViewData.length + " bytes");
-		log.trace("Scene data size: " + sceneData.length + " bytes");
+		log.trace("rendererId=" + rendererId);
+		log.trace("screenWidth=" + screenWidth);
+		log.trace("screenHeight=" + screenHeight);
+		log.trace("targetFPS: " + targetFPS);
+		log.trace("pointOfViewData.length=" + pointOfViewData.length);
+		log.trace("sceneData.length=" + sceneData.length);
 		
-		if (composerConnection == null || !composerConnection.isOpen()) {
-			if (composerConnection == null) {
-				log.info("Connecting to composer");
-			} else {
-				log.info("Re-connecting to composer");
-			}
+		if (!isConnectedToComposer()) {
+			log.debug("Connecting to composer...");
 			
 			try {
 				composerConnection = new NonBlockingConnection(RendererConfiguration.composerListeningAddress, RendererConfiguration.composerListeningPort);
@@ -91,32 +171,37 @@ public final class RendererNetworkManager implements Observer, Updatable {
 			}
 		}
 		
-		log.info("Sending composition order: " + RendererConfiguration.compositionOrder);
+		log.debug("Sending composition order: " + RendererConfiguration.compositionOrder);
 		
 		sendCompositionOrder();
 		
 		if (isParallelSceneDeserializationHappening()) {
-			log.info("Interrupting previous parallel scene deserialization");
+			log.debug("Interrupting previous parallel scene deserialization");
 			
 			interruptParallelSceneDeserialization();
 		}
 		
-		renderer.setId(id);
+		renderer.setId(rendererId);
 		renderer.setScreenSize(screenWidth, screenHeight);
 		
-		log.info("Starting parallel scene deserialization");
+		log.debug("Starting parallel scene deserialization");
 		
 		startParallelSceneDeserialization(pointOfViewData, sceneData);
 		
 		log.info("Session started successfully");
 	}
-	
+
 	private void sendCompositionOrder() {
 		try {
 			sendSetCompositionOrderMessage(RendererConfiguration.compositionOrder);
 		} catch (IOException e) {
-			log.error("Error notifying composer node the renderer's composition order", e);
+			// TODO:
+			throw new RuntimeException("Error notifying composer node the renderer's composition order", e);
 		}
+	}
+	
+	private boolean isParallelSceneDeserializationHappening() {
+		return sceneDeserializationThread != null;
 	}
 	
 	private void startParallelSceneDeserialization(byte[] pointOfViewData, byte[] sceneData) {
@@ -137,10 +222,6 @@ public final class RendererNetworkManager implements Observer, Updatable {
 		}
 	}
 	
-	private boolean isParallelSceneDeserializationHappening() {
-		return sceneDeserializationThread != null;
-	}
-	
 	private void sendSessionStartedMessage() throws BufferOverflowException, IOException {
 		masterConnection.write(MessageType.SESSION_STARTED.ordinal());
 		masterConnection.flush();
@@ -150,7 +231,7 @@ public final class RendererNetworkManager implements Observer, Updatable {
 		composerConnection.write(MessageType.NEW_IMAGE.ordinal());
 		composerConnection.flush();
 		
-		composerConnection.write(currentFrameIndex);
+		composerConnection.write(currentFrame);
 		composerConnection.write(RendererConfiguration.compressionMethod.ordinal());
 		composerConnection.write(colorAndAlphaBuffer.length);
 		composerConnection.write(colorAndAlphaBuffer);
@@ -174,37 +255,19 @@ public final class RendererNetworkManager implements Observer, Updatable {
 		}
 	}
 	
-	/*
-	 * ================================ 
-	 * Network messages processing loop
-	 * ================================
-	 */
 	@Override
 	public void update(long gameTime, long frameTime, TimingMode timingMode) {
-		Queue<Message> messages;
+		// TODO: API bridge
+		super.update();
+	}
+	
+	@Override
+	protected void processMessages(Queue<Message> messages) {
 		Message message;
-		Iterator<Message> iterator;
 		Message lastUpdateMessage;
-		Message lastStartFrameMessage;
+		Message firstStartFrameMessage;
 		Message lastStartSessionMessage;
-		byte[] updatesData;
-		byte[] colorAndAlphaBuffer;
-		int frameIndex;
-		int rendererId;
-		int screenWidth;
-		int screenHeight;
-		double targetFPS;
-		byte[] pointOfViewData;
-		byte[] sceneData;
-		
-		if (!masterConnection.isOpen()) {
-			log.info("Master node disconnected");
-			
-			// TODO:
-			System.exit(-1);
-		}
-		
-		messages = MessageQueue.startReadingMessages();
+		Iterator<Message> iterator;
 		
 		/*
 		 * Consider only the last start session message.
@@ -215,32 +278,17 @@ public final class RendererNetworkManager implements Observer, Updatable {
 			message = iterator.next();
 			if (message.getType() == MessageType.START_SESSION) {
 				lastStartSessionMessage = message;
-			} else {
-				continue;
+				iterator.remove();
 			}
-			
-			iterator.remove();
 		}
 		
 		if (lastStartSessionMessage != null) {
-			rendererId = (Integer) lastStartSessionMessage.getParameters()[0];
-			screenWidth = (Integer) lastStartSessionMessage.getParameters()[1];
-			screenHeight = (Integer) lastStartSessionMessage.getParameters()[2];
-			targetFPS = (Double) lastStartSessionMessage.getParameters()[3];
-			pointOfViewData = (byte[]) lastStartSessionMessage.getParameters()[4];
-			sceneData = (byte[]) lastStartSessionMessage.getParameters()[5];
-			
-			onStartSession(rendererId, screenWidth, screenHeight, targetFPS, pointOfViewData, sceneData);
+			onStartSession(lastStartSessionMessage);
 		}
 		
 		if (sessionState == SessionState.STARTED) {
 			if (!composerConnection.isOpen()) {
-				log.info("Current session was closed");
-				
-				sessionState = SessionState.CLOSED;
-				
-				MessageQueue.stopReadingMessages();
-				
+				closeCurrentSession();
 				return;
 			}
 			
@@ -261,80 +309,35 @@ public final class RendererNetworkManager implements Observer, Updatable {
 			}
 			
 			if (lastUpdateMessage != null) {
-				updatesData = (byte[]) lastUpdateMessage.getParameters()[0];
-				onUpdate(updatesData);
-				
-				log.info("Updating scene");
+				onUpdate(lastUpdateMessage);
 			}
 			
-			if (!startFrame) {
+			if (hasSentCurrentFrameCompositor) {
 				/*
-				 * Consider only the last start frame message received.
+				 * Consider only the first start frame message received.
 				 */
-				lastStartFrameMessage = null;
+				firstStartFrameMessage = null;
 				iterator = messages.iterator();
 				while (iterator.hasNext()) {
 					message = iterator.next();
 					if (message.getType() == MessageType.START_FRAME) {
-						lastStartFrameMessage = message;
-					} else {
-						continue;
+						firstStartFrameMessage = message;
+						iterator.remove();
+						break;
 					}
-					
-					iterator.remove();
 				}
 				
-				if (lastStartFrameMessage != null) {
-					frameIndex = (Integer) lastStartFrameMessage.getParameters()[0];
-					
-					startFrame = true;
-					currentFrameIndex = frameIndex;
-					
-					log.info("Starting new frame: " + frameIndex);
+				if (firstStartFrameMessage != null) {
+					onStartFrame(firstStartFrameMessage);
 				}
-				// startFrame == true
 			} else {
-				colorAndAlphaBuffer = renderer.getColorAndAlphaBuffer();
+				sendCurrentFrameToCompositor();
 				
-				switch (RendererConfiguration.compressionMethod) {
-				case PNG:
-					// TODO: Deflate!
-					break;
-				}
-				
-				try {
-					sendNewImageMessage(colorAndAlphaBuffer, renderer.getDepthBuffer());
-					
-					startFrame = false;
-				} catch (IOException e) {
-					log.error("Error sending image buffers to composer", e);
-				}
+				hasSentCurrentFrameCompositor = true;
 			}
-		} else if (sessionState == SessionState.STARTING && deserializationResult != null) {
-			/*
-			 * Scene rebuilding is an operation that should never cause "abends"
-			 * so we should never prevent the cluster session to be started
-			 * because of it.
-			 */
-			try {
-				sendSessionStartedMessage();
-			} catch (IOException e) {
-				// TODO:
-				throw new RuntimeException("Error notifying master node that session started successfully", e);
-			}
-			
-			sessionState = SessionState.STARTED;
-			
-			log.info("Session started successfully");
-			
-			renderer.updateScene(deserializationResult.getPointOfView(), deserializationResult.getScene());
-			
-			log.info("Scene updated with success");
-			
-			deserializationResult = null;
+		} else if (isSessionReadyToStart()) {
+			startNewSession();
 		}
-		
-		MessageQueue.stopReadingMessages();
 	}
-	
+
 }
