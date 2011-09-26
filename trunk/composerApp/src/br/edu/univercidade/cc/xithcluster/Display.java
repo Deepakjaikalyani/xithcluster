@@ -93,7 +93,7 @@ public class Display extends JFrame {
 		buffer = canvas.getBufferStrategy();
 	}
 	
-	private synchronized void createDataBuffer(int width, int height) {
+	private void createDataBuffer(int width, int height) {
 		WritableRaster raster;
 		DataBufferInt dataBuffer;
 		int bufferSize;
@@ -114,7 +114,7 @@ public class Display extends JFrame {
 		System.arraycopy(argbImageData, 0, argbDataBuffer, 0, argbDataBuffer.length);
 	}
 	
-	public synchronized void blit() {
+	public void blit() {
 		Graphics graphics = null;
 		
 		try {

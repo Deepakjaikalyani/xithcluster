@@ -5,7 +5,6 @@ import java.net.UnknownHostException;
 import java.nio.BufferOverflowException;
 import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -22,21 +21,21 @@ import br.edu.univercidade.cc.xithcluster.CompressionMethod;
 
 public final class ComposerNetworkManager extends NetworkManager {
 	
-	final Logger log = Logger.getLogger(ComposerNetworkManager.class);
+	private Logger log = Logger.getLogger(ComposerNetworkManager.class);
 	
-	private final ComposerMessageBroker composerMessageBroker = new ComposerMessageBroker();
+	private ComposerMessageBroker composerMessageBroker = new ComposerMessageBroker();
 	
-	List<INonBlockingConnection> renderersConnections = Collections.synchronizedList(new ArrayList<INonBlockingConnection>());
+	private List<INonBlockingConnection> renderersConnections = new ArrayList<INonBlockingConnection>();
 	
-	private final Composer composer;
+	private Composer composer;
 	
 	private IServer renderersServer;
 	
-	SessionState sessionState = SessionState.CLOSED;
+	private SessionState sessionState = SessionState.CLOSED;
 	
-	private final Map<Integer, RendererHandler> renderersHandlers = Collections.synchronizedMap(new HashMap<Integer, RendererHandler>());
+	private Map<Integer, RendererHandler> renderersHandlers = new HashMap<Integer, RendererHandler>();
 	
-	final BitSet newImageMask = new BitSet();
+	private BitSet newImageMask = new BitSet();
 	
 	private int currentFrame = -1;
 	
@@ -56,6 +55,7 @@ public final class ComposerNetworkManager extends NetworkManager {
 		byte[][] colorAndAlphaBuffers;
 		int i;
 		
+		// TODO: Optimize!
 		colorAndAlphaBuffers = new byte[renderersHandlers.size()][];
 		i = 0;
 		for (RendererHandler rendererHandler : renderersHandlers.values()) {
@@ -69,6 +69,7 @@ public final class ComposerNetworkManager extends NetworkManager {
 		byte[][] depthBuffers;
 		int i;
 		
+		// TODO: Optimize!
 		depthBuffers = new byte[renderersHandlers.size()][];
 		i = 0;
 		for (RendererHandler rendererHandler : renderersHandlers.values()) {
@@ -347,8 +348,6 @@ public final class ComposerNetworkManager extends NetworkManager {
 						onNewImage(message);
 						iterator.remove();
 					} else if (frameIndex < currentFrame) {
-						// TODO:
-						//throw new RuntimeException("Image from past frame received!");
 						iterator.remove();
 					}
 				}

@@ -18,7 +18,7 @@ public final class ComposerConfiguration {
 
 	private static final Boolean DEFAULT_DISPLAY_FPS_COUNTER = true;
 	
-	private static final String DEFAULT_COMPOSITION_STRATEGY_CLASSNAME = LinearCompositionStrategy.class.getName();
+	private static final String DEFAULT_COMPOSITION_STRATEGY_CLASSNAME = SimpleCompositionStrategy.class.getName();
 	
 	public static final String windowTitle;	
 
