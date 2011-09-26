@@ -7,10 +7,6 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
-import java.awt.image.DataBufferInt;
-import java.awt.image.Raster;
-import java.awt.image.WritableRaster;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
@@ -26,7 +22,7 @@ public class Display extends JFrame {
 	
 	private Canvas canvas;
 	
-	private int[] argbDataBuffer;
+	//private int[] argbDataBuffer;
 	
 	private BufferedImage backBuffer;
 	
@@ -94,7 +90,7 @@ public class Display extends JFrame {
 	}
 	
 	private void createDataBuffer(int width, int height) {
-		WritableRaster raster;
+		/*WritableRaster raster;
 		DataBufferInt dataBuffer;
 		int bufferSize;
 		
@@ -103,7 +99,9 @@ public class Display extends JFrame {
 		argbDataBuffer = new int[bufferSize];
 		dataBuffer = new DataBufferInt(argbDataBuffer, bufferSize);
 		raster = Raster.createPackedRaster(dataBuffer, width, height, width, new int[] { 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000}, null);
-		backBuffer = new BufferedImage(ColorModel.getRGBdefault(), raster, true, null);
+		backBuffer = new BufferedImage(ColorModel.getRGBdefault(), raster, true, null);*/
+		
+		backBuffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 	}
 	
 	public void updateFPSCounter(double framesPerSecond) {
@@ -111,7 +109,8 @@ public class Display extends JFrame {
 	}
 	
 	public void setARGBImageData(int[] argbImageData) {
-		System.arraycopy(argbImageData, 0, argbDataBuffer, 0, argbDataBuffer.length);
+		//System.arraycopy(argbImageData, 0, argbDataBuffer, 0, argbDataBuffer.length);
+		backBuffer.setRGB(0, 0, getWidth(), getHeight(), argbImageData, 0, getWidth());
 	}
 	
 	public void blit() {

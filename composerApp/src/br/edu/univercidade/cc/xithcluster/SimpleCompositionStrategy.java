@@ -4,7 +4,7 @@ public final class SimpleCompositionStrategy implements CompositionStrategy {
 	
 	@Override
 	public int[] compose(int width, int height, int numImages, byte[][] colorAndAlphaBuffer, byte[][] depthBuffer) {
-		int[] argbBuffer;
+		/*int[] argbBuffer;
 		int i;
 		int imageIndex;
 		int pixelIndex;
@@ -41,7 +41,27 @@ public final class SimpleCompositionStrategy implements CompositionStrategy {
 			}
 		}
 		
-		return argbBuffer;
+		return argbBuffer;*/
+		
+		int[] pixelInts = new int[width * height];
+		
+		int p = width * height * 4;
+		int q; // Index into ByteBuffer
+		int i = 0; // Index into target int[]
+		int w4 = width * 4; // Number of bytes in each row
+		for (int row = 0; row < height; row++) {
+			p -= w4;
+			q = p;
+			for (int col = 0; col < width; col++) {
+				int iR = colorAndAlphaBuffer[0][q++];
+				int iG = colorAndAlphaBuffer[0][q++];
+				int iB = colorAndAlphaBuffer[0][q++];
+				int iA = colorAndAlphaBuffer[0][q++];
+				pixelInts[i++] = ((iA & 0x000000FF) << 0xFF000000) | ((iR & 0x000000FF) << 16) | ((iG & 0x000000FF) << 8) | (iB & 0x000000FF);
+			}
+		}
+		
+		return pixelInts;
 	}
 	
 }

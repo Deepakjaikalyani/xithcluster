@@ -115,9 +115,6 @@ public class Renderer extends InputAdapterRenderLoop {
 		this.screenWidth = screenWidth;
 		this.screenHeight = screenHeight;
 		
-		// FIXME:
-		//buildTextureRenderTargets();
-		
 		canvas.setSize(screenWidth, screenHeight);
 	}
 	
