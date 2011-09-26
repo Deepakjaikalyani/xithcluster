@@ -34,23 +34,25 @@ import br.edu.univercidade.cc.xithcluster.serialization.packagers.UpdatesPackage
 
 public final class MasterNetworkManager implements Updatable {
 	
-	private Logger log = Logger.getLogger(MasterNetworkManager.class);
-	
 	private enum SessionState {
 		CLOSED, STARTING, STARTED
 	}
 	
-	private final MasterMessageBroker masterMessageBroker = new MasterMessageBroker();
+	private Logger log = Logger.getLogger(MasterNetworkManager.class);
 	
-	private final UpdatesPackager updatesPackager = new UpdatesPackager();
+	private boolean trace = log.isTraceEnabled();
 	
-	private final PointOfViewPackager pointOfViewPackager = new PointOfViewPackager();
+	private MasterMessageBroker masterMessageBroker = new MasterMessageBroker();
 	
-	private final ScenePackager scenePackager = new ScenePackager();
+	private UpdatesPackager updatesPackager = new UpdatesPackager();
 	
-	private final DistributedRenderLoop distributedRenderLoop;
+	private PointOfViewPackager pointOfViewPackager = new PointOfViewPackager();
 	
-	private final UpdateManager updateManager;
+	private ScenePackager scenePackager = new ScenePackager();
+	
+	private DistributedRenderLoop distributedRenderLoop;
+	
+	private UpdateManager updateManager;
 	
 	private DistributionStrategy distributionStrategy;
 	
@@ -88,7 +90,7 @@ public final class MasterNetworkManager implements Updatable {
 		composerServer.start();
 	}
 	
-	private boolean sendPendingUpdates() {
+	private void sendPendingUpdates() {
 		Map<INonBlockingConnection, List<PendingUpdate>> updatesPerRenderer;
 		INonBlockingConnection rendererConnection;
 		List<PendingUpdate> updates;
@@ -127,16 +129,13 @@ public final class MasterNetworkManager implements Updatable {
 					
 					log.info(updates.size() + " update(s) were sent to renderer " + getRendererIndex(rendererConnection));
 				} catch (IOException e) {
-					log.error("Error sending pending updates", e);
-					
-					return false;
+					// TODO:
+					throw new RuntimeException("Error sending pending updates", e);
 				}
 			}
 		}
 		
 		log.info("Pending updates sent successfully");
-		
-		return true;
 	}
 	
 	private void distributeScene() {
@@ -152,7 +151,10 @@ public final class MasterNetworkManager implements Updatable {
 		pointOfView = distributedRenderLoop.getPointOfView();
 		
 		log.info("Starting a new session");
-		log.info("Executing " + distributionStrategy.getClass().getSimpleName() + "...");
+		
+		if (trace) {
+			log.trace("Executing " + distributionStrategy.getClass().getSimpleName() + "...");
+		}
 		
 		distributedScenes = distributionStrategy.distribute(scene, renderersConnections.size());
 		
@@ -165,9 +167,11 @@ public final class MasterNetworkManager implements Updatable {
 			rendererIndex = getRendererIndex(rendererConnection);
 			rendererScene = distributedScenes.get(rendererIndex);
 			
-			log.debug("**************");
-			log.debug("Renderer " + rendererIndex);
-			log.debug("**************");
+			if (trace) {
+				log.trace("**************");
+				log.trace("Renderer " + rendererIndex);
+				log.trace("**************");
+			}
 			
 			ConnectionSetter.setConnection(rendererScene, rendererConnection);
 			
@@ -179,13 +183,16 @@ public final class MasterNetworkManager implements Updatable {
 				throw new RuntimeException("Error serializing the scene", e);
 			}
 			
-			log.trace("POV data size: " + pointOfViewData.length + " bytes");
-			log.trace("Scene data size: " + sceneData.length + " bytes");
+			if (trace) {
+				log.trace("pointOfViewData.length=" + pointOfViewData.length);
+				log.trace("sceneData.length=" + sceneData.length);
+			}
 			
 			try {
 				sendStartSessionMessageToRenderer(rendererConnection, pointOfViewData, sceneData);
 			} catch (IOException e) {
-				log.error("Error sending distributed scene", e);
+				// TODO:
+				throw new RuntimeException("Error sending distributed scene", e);
 			}
 		}
 		
@@ -253,14 +260,18 @@ public final class MasterNetworkManager implements Updatable {
 	}
 
 	private void startNewFrame() {
-		log.info("Starting new frame");
+		if (trace) {
+			log.trace("Starting new frame");
+		}
 		
 		finishedFrame = false;
 		forceFrameStart = false;
 		
 		currentFrame += 1;
 		
-		log.trace("currentFrame=" + currentFrame);
+		if (trace) {
+			log.trace("currentFrame=" + currentFrame);
+		}
 		
 		try {
 			sendStartFrameMessage(composerConnection, currentFrame);
@@ -277,18 +288,22 @@ public final class MasterNetworkManager implements Updatable {
 	private void onFinishedFrame(Message message) {
 		int frameIndex;
 		
-		log.info("Finished frame received");
+		if (trace) {
+			log.trace("Finished frame received");
+		}
 		
 		frameIndex = (Integer) message.getParameters()[0];
 		
 		if (currentFrame == frameIndex) {
-			log.info("Finished current frame");
-			log.trace("currentFrame=" + currentFrame);
+			if (trace) {
+				log.trace("Finished current frame: " + currentFrame);
+			}
 			
 			finishedFrame = true;
 		} else {
-			log.error("Out-of-sync finished frame received");
-			log.trace("frameIndex=" + frameIndex);
+			if (trace) {
+				log.trace("Out-of-sync finished frame received: " + frameIndex);
+			}
 		}
 	}
 	
@@ -337,7 +352,9 @@ public final class MasterNetworkManager implements Updatable {
 	private void onSessionStarted(Message message) {
 		INonBlockingConnection connection;
 		
-		log.info("Session started received");
+		if (trace) {
+			log.trace("Session started received");
+		}
 		
 		connection = message.getSource();
 		if (isRendererConnection(connection)) {

@@ -23,6 +23,8 @@ public final class ComposerNetworkManager extends NetworkManager {
 	
 	private Logger log = Logger.getLogger(ComposerNetworkManager.class);
 	
+	private boolean trace = log.isTraceEnabled();
+	
 	private ComposerMessageBroker composerMessageBroker = new ComposerMessageBroker();
 	
 	private List<INonBlockingConnection> renderersConnections = new ArrayList<INonBlockingConnection>();
@@ -110,8 +112,9 @@ public final class ComposerNetworkManager extends NetworkManager {
 	}
 	
 	private void finishCurrentFrame() {
-		log.info("Finishing current frame");
-		log.trace("currentFrame=" + currentFrame);
+		if (trace) {
+			log.trace("Finishing current frame: " + currentFrame);
+		}
 		
 		composer.setFrameData(renderersHandlers.size(), getColorAndAlphaBuffers(), getDepthBuffers());
 		
@@ -196,8 +199,10 @@ public final class ComposerNetworkManager extends NetworkManager {
 		colorAndAlphaBuffer = (byte[]) message.getParameters()[2];
 		depthBuffer = (byte[]) message.getParameters()[3];
 		
-		log.info("New image received");
-		log.trace("currentFrame=" + currentFrame);
+		if (trace) {
+			log.trace("New image received");
+			log.trace("currentFrame=" + currentFrame);
+		}
 		
 		rendererIndex = getRendererIndex(message.getSource());
 		rendererHandler = renderersHandlers.get(rendererIndex);
@@ -220,11 +225,15 @@ public final class ComposerNetworkManager extends NetworkManager {
 	}
 	
 	private void onStartFrame(Message message) {
-		log.info("Start frame received");
+		if (trace) {
+			log.trace("Start frame received");
+		}
 		
 		currentFrame = (Integer) message.getParameters()[0];
 		
-		log.trace("currentFrame=" + currentFrame);
+		if (trace) {
+			log.trace("currentFrame=" + currentFrame);
+		}
 		
 		newImageMask.clear();
 	}
@@ -234,19 +243,22 @@ public final class ComposerNetworkManager extends NetworkManager {
 		int screenHeight;
 		double targetFPS;
 		
-		log.info("Start session received");
+		if (trace) {
+			log.trace("Start session received");
+		}
 		
 		screenWidth = (Integer) message.getParameters()[0];
 		screenHeight = (Integer) message.getParameters()[1];
 		targetFPS = (Double) message.getParameters()[2];
 		
-		log.debug("****************");
-		log.debug("Session starting");
-		log.debug("****************");
-		
-		log.trace("Screen width: " + screenWidth);
-		log.trace("Screen height: " + screenHeight);
-		log.trace("Target FPS: " + targetFPS);
+		if (trace) {
+			log.trace("****************");
+			log.trace("Session starting");
+			log.trace("****************");
+			log.trace("screenWidth=" + screenWidth);
+			log.trace("screenHeight=" + screenHeight);
+			log.trace("targetFPS=" + targetFPS);
+		}
 		
 		composer.setScreenSize(screenWidth, screenHeight);
 		
@@ -261,7 +273,9 @@ public final class ComposerNetworkManager extends NetworkManager {
 		int compositionOrder;
 		int rendererIndex;
 		
-		log.info("Composition order received");
+		if (trace) {
+			log.trace("Composition order received");
+		}
 		
 		compositionOrder = (Integer) message.getParameters()[0];
 		
@@ -270,9 +284,11 @@ public final class ComposerNetworkManager extends NetworkManager {
 		if (!renderersHandlers.containsKey(rendererIndex)) {
 			renderersHandlers.put(rendererIndex, new RendererHandler(compositionOrder));
 			
-			log.info("Renderer " + rendererIndex + " has composition order " + compositionOrder);
+			if (trace) {
+				log.trace("Renderer " + rendererIndex + " has composition order " + compositionOrder);
+			}
 		} else {
-			log.info("Trying to set the composition order repeatedly for the same renderer: " + rendererIndex);
+			log.error("Trying to set the composition order repeatedly for the same renderer: " + rendererIndex);
 		}
 	}
 	

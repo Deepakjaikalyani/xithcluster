@@ -18,11 +18,13 @@ import br.edu.univercidade.cc.xithcluster.SceneDeserializer;
 
 public final class RendererNetworkManager extends NetworkManager implements Observer, Updatable {
 	
-	private Logger log = Logger.getLogger(RendererNetworkManager.class);
-	
 	private enum SessionState {
 		CLOSED, STARTING, STARTED
 	}
+	
+	private Logger log = Logger.getLogger(RendererNetworkManager.class);
+	
+	private boolean trace = log.isTraceEnabled();
 	
 	private RendererMessageBroker rendererMessageBroker = new RendererMessageBroker();
 	
@@ -90,8 +92,9 @@ public final class RendererNetworkManager extends NetworkManager implements Obse
 	private void sendCurrentFrameToCompositor() {
 		byte[] colorAndAlphaBuffer;
 		
-		log.info("Sending current frame to compositor");
-		log.trace("currentFrame=" + currentFrame);
+		if (trace) {
+			log.trace("Sending current frame to compositor: " + currentFrame);
+		}
 		
 		colorAndAlphaBuffer = renderer.getColorAndAlphaBuffer();
 		
@@ -110,17 +113,23 @@ public final class RendererNetworkManager extends NetworkManager implements Obse
 	}
 
 	private void onStartFrame(Message message) {
-		log.info("Start frame received");
+		if (trace) {
+			log.trace("Start frame received");
+		}
 		
 		currentFrame = (Integer) message.getParameters()[0];
 		
-		log.trace("currentFrame=" + currentFrame);
+		if (trace) {
+			log.trace("currentFrame=" + currentFrame);
+		}
 		
 		hasSentCurrentFrameCompositor = false;
 	}
 	
 	private void onUpdate(Message message) {
-		log.info("Update received");
+		if (trace) {
+			log.trace("Update received");
+		}
 		
 		// TODO:
 	}
@@ -133,7 +142,9 @@ public final class RendererNetworkManager extends NetworkManager implements Obse
 		byte[] pointOfViewData;
 		byte[] sceneData;
 		
-		log.info("Start session received");
+		if (trace) {
+			log.trace("Start session received");
+		}
 		
 		try {
 			rendererId = (Integer) message.getParameters()[0];
@@ -149,19 +160,20 @@ public final class RendererNetworkManager extends NetworkManager implements Obse
 		
 		sessionState = SessionState.STARTING;
 		
-		log.debug("****************");
-		log.debug("Session starting");
-		log.debug("****************");
-		
-		log.trace("rendererId=" + rendererId);
-		log.trace("screenWidth=" + screenWidth);
-		log.trace("screenHeight=" + screenHeight);
-		log.trace("targetFPS: " + targetFPS);
-		log.trace("pointOfViewData.length=" + pointOfViewData.length);
-		log.trace("sceneData.length=" + sceneData.length);
+		if (trace) {
+			log.trace("****************");
+			log.trace("Session starting");
+			log.trace("****************");
+			log.trace("rendererId=" + rendererId);
+			log.trace("screenWidth=" + screenWidth);
+			log.trace("screenHeight=" + screenHeight);
+			log.trace("targetFPS: " + targetFPS);
+			log.trace("pointOfViewData.length=" + pointOfViewData.length);
+			log.trace("sceneData.length=" + sceneData.length);
+		}
 		
 		if (!isConnectedToComposer()) {
-			log.debug("Connecting to composer...");
+			log.info("Connecting to composer...");
 			
 			try {
 				composerConnection = new NonBlockingConnection(RendererConfiguration.composerListeningAddress, RendererConfiguration.composerListeningPort);
@@ -172,7 +184,7 @@ public final class RendererNetworkManager extends NetworkManager implements Obse
 			}
 		}
 		
-		log.debug("Sending composition order: " + RendererConfiguration.compositionOrder);
+		log.info("Sending composition order: " + RendererConfiguration.compositionOrder);
 		
 		sendCompositionOrder();
 		
