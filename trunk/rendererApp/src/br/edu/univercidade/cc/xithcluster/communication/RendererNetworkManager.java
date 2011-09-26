@@ -11,10 +11,10 @@ import org.xith3d.loop.Updatable;
 import org.xith3d.loop.UpdatingThread.TimingMode;
 import org.xsocket.connection.INonBlockingConnection;
 import org.xsocket.connection.NonBlockingConnection;
+import br.edu.univercidade.cc.xithcluster.DeserializationResult;
 import br.edu.univercidade.cc.xithcluster.Renderer;
 import br.edu.univercidade.cc.xithcluster.RendererConfiguration;
 import br.edu.univercidade.cc.xithcluster.SceneDeserializer;
-import br.edu.univercidade.cc.xithcluster.SceneDeserializer.DeserializationResult;
 
 public final class RendererNetworkManager extends NetworkManager implements Observer, Updatable {
 	
@@ -26,15 +26,17 @@ public final class RendererNetworkManager extends NetworkManager implements Obse
 	
 	private RendererMessageBroker rendererMessageBroker = new RendererMessageBroker();
 	
-	private SceneDeserializer sceneDeserializer = new SceneDeserializer();
-	
 	private Renderer renderer;
 	
 	private INonBlockingConnection composerConnection;
 	
 	// private UpdatesPackager updatesPackager = new UpdatesPackager();
 	
+	private SceneDeserializer sceneDeserializer;
+	
 	private Thread sceneDeserializationThread;
+	
+	private DeserializationResult deserializationResult;
 	
 	private SessionState sessionState = SessionState.CLOSED;
 	
@@ -42,11 +44,8 @@ public final class RendererNetworkManager extends NetworkManager implements Obse
 	
 	private int currentFrame = -1;
 	
-	private DeserializationResult deserializationResult;
-	
 	public RendererNetworkManager(Renderer renderer) {
 		this.renderer = renderer;
-		this.sceneDeserializer.addObserver(this);
 	}
 	
 	public void initialize() throws IOException {
@@ -72,6 +71,8 @@ public final class RendererNetworkManager extends NetworkManager implements Obse
 		
 		renderer.updateScene(deserializationResult.getPointOfView(), deserializationResult.getScene());
 		
+		deserializationResult = null;
+		sceneDeserializationThread = null;
 		
 		log.info("Scene deserialized with success");
 		
@@ -205,7 +206,8 @@ public final class RendererNetworkManager extends NetworkManager implements Obse
 	}
 	
 	private void startParallelSceneDeserialization(byte[] pointOfViewData, byte[] sceneData) {
-		sceneDeserializer.setSceneData(pointOfViewData, sceneData);
+		sceneDeserializer = new SceneDeserializer(pointOfViewData, sceneData); 
+		sceneDeserializer.addObserver(this);;
 		
 		sceneDeserializationThread = new Thread(sceneDeserializer);
 		sceneDeserializationThread.start();
@@ -213,13 +215,6 @@ public final class RendererNetworkManager extends NetworkManager implements Obse
 	
 	private void interruptParallelSceneDeserialization() {
 		sceneDeserializationThread.interrupt();
-		
-		while (sceneDeserializationThread.isInterrupted()) {
-			try {
-				Thread.sleep(100L);
-			} catch (InterruptedException e) {
-			}
-		}
 	}
 	
 	private void sendSessionStartedMessage() throws BufferOverflowException, IOException {
