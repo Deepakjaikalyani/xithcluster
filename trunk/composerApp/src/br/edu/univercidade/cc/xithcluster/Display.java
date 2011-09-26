@@ -22,8 +22,6 @@ public class Display extends JFrame {
 	
 	private Canvas canvas;
 	
-	//private int[] argbDataBuffer;
-	
 	private BufferedImage backBuffer;
 	
 	private BufferStrategy buffer;
@@ -90,17 +88,6 @@ public class Display extends JFrame {
 	}
 	
 	private void createDataBuffer(int width, int height) {
-		/*WritableRaster raster;
-		DataBufferInt dataBuffer;
-		int bufferSize;
-		
-		bufferSize = width * height;
-		
-		argbDataBuffer = new int[bufferSize];
-		dataBuffer = new DataBufferInt(argbDataBuffer, bufferSize);
-		raster = Raster.createPackedRaster(dataBuffer, width, height, width, new int[] { 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000}, null);
-		backBuffer = new BufferedImage(ColorModel.getRGBdefault(), raster, true, null);*/
-		
 		backBuffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 	}
 	
@@ -109,7 +96,6 @@ public class Display extends JFrame {
 	}
 	
 	public void setARGBImageData(int[] argbImageData) {
-		//System.arraycopy(argbImageData, 0, argbDataBuffer, 0, argbDataBuffer.length);
 		backBuffer.setRGB(0, 0, getWidth(), getHeight(), argbImageData, 0, getWidth());
 	}
 	
