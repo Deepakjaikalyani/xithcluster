@@ -4,64 +4,47 @@ public final class SimpleCompositionStrategy implements CompositionStrategy {
 	
 	@Override
 	public int[] compose(int width, int height, int numImages, byte[][] colorAndAlphaBuffer, byte[][] depthBuffer) {
-		/*int[] argbBuffer;
-		int i;
-		int imageIndex;
+		int[] pixels;
+		int lastPixelRead;
 		int pixelIndex;
-		int offset;
-		byte z;
-		byte greaterZ;
-		byte red, green, blue, alpha;
+		int i;
+		int rowOffset;
+		int red;
+		int green;
+		int blue;
+		int alpha;
+		int selectedImage;
+		int z;
+		int greaterZ;
 		
-		argbBuffer = new int[width * height];
+		pixels = new int[width * height];
+		lastPixelRead = width * height * 4;
+		rowOffset = width * 4;
 		i = 0;
-		// mirroring
-		for (int y = height - 1; y >= 0; y--) {
-			offset = y * width;
-			for (int x = 0; x < width; x++) {
-				pixelIndex = offset + x;
-				greaterZ = Byte.MIN_VALUE;
-				imageIndex = -1;
-				for (int j = 0; j < numImages; j++) {
-					z = depthBuffer[j][pixelIndex];
+		for (int row = 0; row < height; row++) {
+			lastPixelRead -= rowOffset;
+			pixelIndex = lastPixelRead;
+			for (int column = 0; column < width; column++) {
+				greaterZ = Integer.MIN_VALUE;
+				selectedImage = -1;
+				for (int image = 0; image < numImages; image++) {
+					z = depthBuffer[image][i];
 					if (z > greaterZ) {
-						imageIndex = j;
+						selectedImage = image;
 						greaterZ = z;
 					}
 				}
 				
-				red = colorAndAlphaBuffer[imageIndex][i];
-				green = colorAndAlphaBuffer[imageIndex][i + 1];
-				blue = colorAndAlphaBuffer[imageIndex][i + 2];
-				alpha = colorAndAlphaBuffer[imageIndex][i + 3];
+				red = colorAndAlphaBuffer[selectedImage][pixelIndex++];
+				green = colorAndAlphaBuffer[selectedImage][pixelIndex++];
+				blue = colorAndAlphaBuffer[selectedImage][pixelIndex++];
+				alpha = colorAndAlphaBuffer[selectedImage][pixelIndex++];
 				
-				argbBuffer[pixelIndex] = (255 << alpha) | (red << 16) | (green << 8) | blue;
-				
-				i += 4;
+				pixels[i++] = 0xff000000 | ((red & 0x000000ff) << 16) | ((green & 0x000000ff) << 8) | (blue & 0x000000ff);
 			}
 		}
 		
-		return argbBuffer;*/
-		
-		int[] pixelInts = new int[width * height];
-		
-		int p = width * height * 4;
-		int q; // Index into ByteBuffer
-		int i = 0; // Index into target int[]
-		int w4 = width * 4; // Number of bytes in each row
-		for (int row = 0; row < height; row++) {
-			p -= w4;
-			q = p;
-			for (int col = 0; col < width; col++) {
-				int iR = colorAndAlphaBuffer[0][q++];
-				int iG = colorAndAlphaBuffer[0][q++];
-				int iB = colorAndAlphaBuffer[0][q++];
-				int iA = colorAndAlphaBuffer[0][q++];
-				pixelInts[i++] = ((iA & 0x000000FF) << 0xFF000000) | ((iR & 0x000000FF) << 16) | ((iG & 0x000000FF) << 8) | (iB & 0x000000FF);
-			}
-		}
-		
-		return pixelInts;
+		return pixels;
 	}
 	
 }
