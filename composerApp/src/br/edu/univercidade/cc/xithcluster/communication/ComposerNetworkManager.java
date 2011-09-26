@@ -348,7 +348,8 @@ public final class ComposerNetworkManager extends NetworkManager {
 						iterator.remove();
 					} else if (frameIndex < currentFrame) {
 						// TODO:
-						throw new RuntimeException("Image from past frame received!");
+						//throw new RuntimeException("Image from past frame received!");
+						iterator.remove();
 					}
 				}
 			}

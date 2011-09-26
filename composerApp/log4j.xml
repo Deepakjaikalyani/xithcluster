@@ -7,16 +7,16 @@
 		</layout>
 	</appender>
 	
-	<appender name="file" class="org.apache.log4j.FileAppender">
+	<!-- <appender name="file" class="org.apache.log4j.FileAppender">
 		<param name="File" value="composerApp.log" />
 		<layout class="org.apache.log4j.PatternLayout">
 			<param name="ConversionPattern" value="[%d{dd/MM/yy hh:mm:ss:sss z}] %5p %c{2}: %m%n" />
 		</layout>
-	</appender>
+	</appender> -->
 	
 	<root>
 		<level value="TRACE" />
 		<appender-ref ref="console" />
-		<appender-ref ref="file" />
+		<!-- <appender-ref ref="file" /> -->
 	</root>
 </log4j:configuration>

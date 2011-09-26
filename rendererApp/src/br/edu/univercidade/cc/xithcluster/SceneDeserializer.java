@@ -9,27 +9,6 @@ import br.edu.univercidade.cc.xithcluster.serialization.packagers.ScenePackager;
 
 public class SceneDeserializer extends Observable implements Runnable {
 	
-	public static class DeserializationResult {
-		
-		private View pointOfView;
-		
-		private BranchGroup scene;
-
-		DeserializationResult(View pointOfView, BranchGroup scene) {
-			this.pointOfView = pointOfView;
-			this.scene = scene;
-		}
-		
-		public View getPointOfView() {
-			return pointOfView;
-		}
-		
-		public BranchGroup getScene() {
-			return scene;
-		}
-		
-	}
-	
 	private PointOfViewPackager pointOfViewPackager = new PointOfViewPackager();
 	
 	private ScenePackager scenePackager = new ScenePackager();
@@ -38,11 +17,11 @@ public class SceneDeserializer extends Observable implements Runnable {
 	
 	private byte[] sceneData;
 	
-	public void setSceneData(byte[] pointOfViewData, byte[] sceneData) {
+	public SceneDeserializer(byte[] pointOfViewData, byte[] sceneData) {
 		this.pointOfViewData = pointOfViewData;
 		this.sceneData = sceneData;
 	}
-	
+
 	@Override
 	public void run() {
 		View view;
