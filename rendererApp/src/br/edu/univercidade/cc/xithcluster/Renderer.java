@@ -49,6 +49,8 @@ public class Renderer extends InputAdapterRenderLoop {
 
 	private int screenHeight = DEFAULT_HEIGHT;
 
+	private BranchGroup currentRoot;
+
 	public Renderer(float maxFPS) {
 		super(maxFPS);
 	}
@@ -59,7 +61,8 @@ public class Renderer extends InputAdapterRenderLoop {
 		
 		new Xith3DEnvironment(this);
 		
-		getXith3DEnvironment().addPerspectiveBranch(new BranchGroup());
+		currentRoot = new BranchGroup();
+		getXith3DEnvironment().addPerspectiveBranch(currentRoot);
 		
 		buildTextureRenderTargets();
 		
@@ -104,14 +107,15 @@ public class Renderer extends InputAdapterRenderLoop {
 		
 		renderer = getXith3DEnvironment().getRenderer();
 		
-		renderer.addRenderTarget(new TextureRenderTarget(getXith3DEnvironment().getBranchGroup(), colorAndAlphaTexture, Colorf.BLACK, true), new BaseRenderPassConfig(ProjectionPolicy.PERSPECTIVE_PROJECTION));
-		renderer.addRenderTarget(new TextureRenderTarget(getXith3DEnvironment().getBranchGroup(), depthTexture, true), new BaseRenderPassConfig(ProjectionPolicy.PERSPECTIVE_PROJECTION));
+		renderer.addRenderTarget(new TextureRenderTarget(currentRoot, colorAndAlphaTexture, Colorf.BLACK, true), new BaseRenderPassConfig(ProjectionPolicy.PERSPECTIVE_PROJECTION));
+		renderer.addRenderTarget(new TextureRenderTarget(currentRoot, depthTexture, true), new BaseRenderPassConfig(ProjectionPolicy.PERSPECTIVE_PROJECTION));
 	}
 	
 	public void setScreenSize(int screenWidth, int screenHeight) {
 		this.screenWidth = screenWidth;
 		this.screenHeight = screenHeight;
 		
+		// FIXME:
 		//buildTextureRenderTargets();
 		
 		canvas.setSize(screenWidth, screenHeight);
@@ -145,10 +149,8 @@ public class Renderer extends InputAdapterRenderLoop {
 	public void updateScene(View view, BranchGroup newRoot) {
 		SceneBuilder.copy(getXith3DEnvironment().getView(), view);
 		
-		getXith3DEnvironment().removeAllBranchGraphs();
-		getXith3DEnvironment().addPerspectiveBranch(newRoot);
-		
-		buildTextureRenderTargets();
+		currentRoot.removeAllChildren();
+		SceneBuilder.copyAndInvalidateSource(currentRoot, newRoot);
 	}
 	
 	/*
