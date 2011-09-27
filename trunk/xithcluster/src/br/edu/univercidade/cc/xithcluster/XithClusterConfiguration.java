@@ -1,5 +1,7 @@
 package br.edu.univercidade.cc.xithcluster;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -38,26 +40,25 @@ public final class XithClusterConfiguration {
 		
 		in = XithClusterConfiguration.class.getResourceAsStream("/xithcluster.properties");
 		
-		if (in != null) {
+		if (in == null) {
 			try {
-				properties.load(XithClusterConfiguration.class.getResourceAsStream("/xithcluster.properties"));
-				listeningAddress = properties.getProperty("listening.address", DEFAULT_LISTENING_ADDRESS);
-				renderersConnectionPort = Integer.parseInt(properties.getProperty("renderers.connection.port", DEFAULT_RENDERERS_CONNECTION_PORT.toString()));
-				composerConnectionPort = Integer.parseInt(properties.getProperty("composer.connection.port", DEFAULT_COMPOSER_CONNECTION_PORT.toString()));
-				screenWidth = Integer.parseInt(properties.getProperty("screen.width", DEFAULT_SCREEN_WIDTH.toString()));
-				screenHeight = Integer.parseInt(properties.getProperty("screen.height", DEFAULT_SCREEN_HEIGHT.toString()));
-				targetFPS = Float.parseFloat(properties.getProperty("target.fps", DEFAULT_TARGET_FPS.toString()));
-			} catch (IOException e) {
-				// TODO:
-				throw new RuntimeException("Error loading configuration file");
+				in = new FileInputStream("xithcluster.properties");
+			} catch (FileNotFoundException e) {
+				throw new RuntimeException("Error reading properties file", e);
 			}
-		} else {
-			listeningAddress = DEFAULT_LISTENING_ADDRESS;
-			renderersConnectionPort = DEFAULT_RENDERERS_CONNECTION_PORT;
-			composerConnectionPort = DEFAULT_COMPOSER_CONNECTION_PORT;
-			screenWidth = DEFAULT_SCREEN_WIDTH;
-			screenHeight = DEFAULT_SCREEN_HEIGHT;
-			targetFPS = DEFAULT_TARGET_FPS;
+		}
+		
+		try {
+			properties.load(XithClusterConfiguration.class.getResourceAsStream("/xithcluster.properties"));
+			listeningAddress = properties.getProperty("listening.address", DEFAULT_LISTENING_ADDRESS);
+			renderersConnectionPort = Integer.parseInt(properties.getProperty("renderers.connection.port", DEFAULT_RENDERERS_CONNECTION_PORT.toString()));
+			composerConnectionPort = Integer.parseInt(properties.getProperty("composer.connection.port", DEFAULT_COMPOSER_CONNECTION_PORT.toString()));
+			screenWidth = Integer.parseInt(properties.getProperty("screen.width", DEFAULT_SCREEN_WIDTH.toString()));
+			screenHeight = Integer.parseInt(properties.getProperty("screen.height", DEFAULT_SCREEN_HEIGHT.toString()));
+			targetFPS = Float.parseFloat(properties.getProperty("target.fps", DEFAULT_TARGET_FPS.toString()));
+		} catch (IOException e) {
+			// TODO:
+			throw new RuntimeException("Error loading configuration file");
 		}
 	}
 	
