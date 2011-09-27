@@ -234,7 +234,7 @@ public final class MasterNetworkManager implements Updatable {
 			log.info("Starting a new session");
 		} catch (Throwable t) {
 			sessionState = SessionState.CLOSED;
-			log.error("Error starting session");
+			log.error("Error starting session", t);
 		}
 	}
 	

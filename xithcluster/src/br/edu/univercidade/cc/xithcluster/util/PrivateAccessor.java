@@ -3,7 +3,6 @@ package br.edu.univercidade.cc.xithcluster.util;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import junit.framework.Assert;
 
 public class PrivateAccessor {
 	
@@ -86,9 +85,9 @@ public class PrivateAccessor {
 	}
 	
 	public static Object invokePrivateMethod(Object o, String methodName, Object... params) {
-		Assert.assertNotNull(o);
-		Assert.assertNotNull(methodName);
-		Assert.assertNotNull(params);
+		if (o == null || methodName == null || params == null) {
+			throw new IllegalArgumentException();
+		}
 		
 		final Method methods[] = o.getClass().getDeclaredMethods();
 		for (int i = 0; i < methods.length; ++i) {
@@ -97,14 +96,12 @@ public class PrivateAccessor {
 					methods[i].setAccessible(true);
 					return methods[i].invoke(o, params);
 				} catch (IllegalAccessException ex) {
-					Assert.fail("IllegalAccessException accessing " + methodName);
+					throw new RuntimeException("IllegalAccessException accessing " + methodName);
 				} catch (InvocationTargetException ite) {
-					Assert.fail("InvocationTargetException accessing " + methodName);
+					throw new RuntimeException("InvocationTargetException accessing " + methodName);
 				}
 			}
 		}
-		
-		Assert.fail("Method '" + methodName + "' not found");
 		
 		return null;
 	}
