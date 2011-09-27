@@ -8,7 +8,7 @@ public class RendererHandler implements Comparable<RendererHandler> {
 	
 	private byte[] colorAndAlphaBuffer;
 	
-	private byte[] depthBuffer;
+	private float[] depthBuffer;
 	
 	public RendererHandler(int order) {
 		creationTime = System.currentTimeMillis();
@@ -23,11 +23,11 @@ public class RendererHandler implements Comparable<RendererHandler> {
 		this.colorAndAlphaBuffer = colorAndAlphaBuffer;
 	}
 	
-	public byte[] getDepthBuffer() {
+	public float[] getDepthBuffer() {
 		return depthBuffer;
 	}
 	
-	public void setDepthBuffer(byte[] depthBuffer) {
+	public void setDepthBuffer(float[] depthBuffer) {
 		this.depthBuffer = depthBuffer;
 	}
 

@@ -28,8 +28,9 @@ public final class BufferUtils {
 	public static ByteBuffer createByteBuffer(int size) {
 		if (useDirectBuffers) {
 			return ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
+		} else {
+			return ByteBuffer.allocate(size).order(ByteOrder.nativeOrder());
 		}
-		return ByteBuffer.allocate(size).order(ByteOrder.nativeOrder());
 	}
 	
 	public static ByteBuffer createByteBuffer(byte[] values) {
@@ -40,6 +41,7 @@ public final class BufferUtils {
 		}
 		
 		buffer = createByteBuffer(values.length);
+		buffer.put(values);
 		buffer.flip();
 		
 		return buffer;

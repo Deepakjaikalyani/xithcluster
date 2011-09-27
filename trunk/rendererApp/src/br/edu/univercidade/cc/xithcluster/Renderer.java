@@ -15,6 +15,7 @@ import org.xith3d.loop.InputAdapterRenderLoop;
 import org.xith3d.render.BaseRenderPassConfig;
 import org.xith3d.render.Canvas3D;
 import org.xith3d.render.Canvas3DFactory;
+import org.xith3d.render.DepthBufferRenderTarget;
 import org.xith3d.render.TextureRenderTarget;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Texture2D;
@@ -41,8 +42,6 @@ public class Renderer extends InputAdapterRenderLoop {
 	
 	private Texture2D colorAndAlphaTexture;
 	
-	private Texture2D depthTexture;
-	
 	private Canvas3D canvas;
 
 	private int screenWidth = DEFAULT_WIDTH;
@@ -50,6 +49,8 @@ public class Renderer extends InputAdapterRenderLoop {
 	private int screenHeight = DEFAULT_HEIGHT;
 
 	private BranchGroup currentRoot;
+
+	private DepthBufferRenderTarget depthBufferRenderTarget;
 
 	public Renderer(float maxFPS) {
 		super(maxFPS);
@@ -64,7 +65,7 @@ public class Renderer extends InputAdapterRenderLoop {
 		currentRoot = new BranchGroup();
 		getXith3DEnvironment().addPerspectiveBranch(currentRoot);
 		
-		buildTextureRenderTargets();
+		buildRenderTargets();
 		
 		canvas = Canvas3DFactory.createWindowed(screenWidth, screenHeight, APP_TITLE);
 		canvas.setBackgroundColor(Colorf.BLACK);
@@ -99,18 +100,22 @@ public class Renderer extends InputAdapterRenderLoop {
 		}
 	}
 	
-	private void buildTextureRenderTargets() {
+	private void buildRenderTargets() {
 		org.xith3d.render.Renderer renderer;
+		TextureRenderTarget colorAndAlphaRenderTarget;
 		BaseRenderPassConfig passConfig;
 		
 		colorAndAlphaTexture = TextureCreator.createTexture(TextureFormat.RGBA, screenWidth, screenHeight, Colorf.BLACK);
-		depthTexture = TextureCreator.createTexture(TextureFormat.DEPTH, screenWidth, screenHeight);
 		
 		renderer = getXith3DEnvironment().getRenderer();
 		
 		passConfig = new BaseRenderPassConfig(ProjectionPolicy.PERSPECTIVE_PROJECTION);
-		renderer.addRenderTarget(new TextureRenderTarget(currentRoot, colorAndAlphaTexture, Colorf.BLACK, true), passConfig);
-		renderer.addRenderTarget(new TextureRenderTarget(currentRoot, depthTexture, true), passConfig);
+		
+		colorAndAlphaRenderTarget = new TextureRenderTarget(currentRoot, colorAndAlphaTexture, Colorf.BLACK, true);
+		renderer.addRenderTarget(colorAndAlphaRenderTarget, passConfig);
+		
+		depthBufferRenderTarget = new DepthBufferRenderTarget(currentRoot, screenWidth, screenHeight);
+		renderer.addRenderTarget(depthBufferRenderTarget, passConfig);
 	}
 	
 	public void setScreenSize(int screenWidth, int screenHeight) {
@@ -120,16 +125,12 @@ public class Renderer extends InputAdapterRenderLoop {
 		canvas.setSize(screenWidth, screenHeight);
 	}
 	
-	private byte[] readBytesFromTexture(Texture2D texture) {
-		return BufferUtils.safeBufferRead(texture.getTextureCanvas().getImage().getDataBuffer());
-	}
-	
 	public byte[] getColorAndAlphaBuffer() {
-		return readBytesFromTexture(colorAndAlphaTexture);
+		return BufferUtils.safeBufferRead(colorAndAlphaTexture.getTextureCanvas().getImage().getDataBuffer());
 	}
 	
 	public byte[] getDepthBuffer() {
-		return readBytesFromTexture(depthTexture);
+		return depthBufferRenderTarget.getDepthBufferAsByteArray();
 	}
 	
 	@Override
