@@ -101,14 +101,16 @@ public class Renderer extends InputAdapterRenderLoop {
 	
 	private void buildTextureRenderTargets() {
 		org.xith3d.render.Renderer renderer;
+		BaseRenderPassConfig passConfig;
 		
 		colorAndAlphaTexture = TextureCreator.createTexture(TextureFormat.RGBA, screenWidth, screenHeight, Colorf.BLACK);
 		depthTexture = TextureCreator.createTexture(TextureFormat.DEPTH, screenWidth, screenHeight);
 		
 		renderer = getXith3DEnvironment().getRenderer();
 		
-		renderer.addRenderTarget(new TextureRenderTarget(currentRoot, colorAndAlphaTexture, Colorf.BLACK, true), new BaseRenderPassConfig(ProjectionPolicy.PERSPECTIVE_PROJECTION));
-		renderer.addRenderTarget(new TextureRenderTarget(currentRoot, depthTexture, true), new BaseRenderPassConfig(ProjectionPolicy.PERSPECTIVE_PROJECTION));
+		passConfig = new BaseRenderPassConfig(ProjectionPolicy.PERSPECTIVE_PROJECTION);
+		renderer.addRenderTarget(new TextureRenderTarget(currentRoot, colorAndAlphaTexture, Colorf.BLACK, true), passConfig);
+		renderer.addRenderTarget(new TextureRenderTarget(currentRoot, depthTexture, true), passConfig);
 	}
 	
 	public void setScreenSize(int screenWidth, int screenHeight) {

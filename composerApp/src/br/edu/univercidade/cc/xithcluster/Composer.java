@@ -29,8 +29,6 @@ public class Composer implements Runnable, WindowListener {
 
 	private byte[][] depthBuffers;
 
-	private int numSubImages;
-	
 	public Composer() {
 		// TODO:
 		secondsPerFrame = 1000L / 60L;
@@ -129,7 +127,7 @@ public class Composer implements Runnable, WindowListener {
 		display.updateFPSCounter(framesPerSecond);
 	
 		if (colorAndAlphaBuffers != null && depthBuffers != null) {
-			argbImageData = compositionStrategy.compose(screenWidth, screenHeight, numSubImages, colorAndAlphaBuffers, depthBuffers);
+			argbImageData = compositionStrategy.compose(screenWidth, screenHeight, colorAndAlphaBuffers, depthBuffers);
 			
 			display.setARGBImageData(argbImageData);
 			
@@ -142,8 +140,7 @@ public class Composer implements Runnable, WindowListener {
 		networkManager.update();
 	}
 	
-	public void setFrameData(int numSubImages, byte[][] colorAndAlphaBuffers, byte[][] depthBuffers) {
-		this.numSubImages = numSubImages;
+	public void setColorAlphaAndDepthBuffers(byte[][] colorAndAlphaBuffers, byte[][] depthBuffers) {
 		this.colorAndAlphaBuffers = colorAndAlphaBuffers;
 		this.depthBuffers = depthBuffers;
 	}
