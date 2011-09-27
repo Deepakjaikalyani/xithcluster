@@ -27,7 +27,7 @@ public class Composer implements Runnable, WindowListener {
 
 	private byte[][] colorAndAlphaBuffers;
 
-	private byte[][] depthBuffers;
+	private float[][] depthBuffers;
 
 	public Composer() {
 		// TODO:
@@ -140,7 +140,7 @@ public class Composer implements Runnable, WindowListener {
 		networkManager.update();
 	}
 	
-	public void setColorAlphaAndDepthBuffers(byte[][] colorAndAlphaBuffers, byte[][] depthBuffers) {
+	public void setColorAlphaAndDepthBuffers(byte[][] colorAndAlphaBuffers, float[][] depthBuffers) {
 		this.colorAndAlphaBuffers = colorAndAlphaBuffers;
 		this.depthBuffers = depthBuffers;
 	}

@@ -67,12 +67,12 @@ public final class ComposerNetworkManager extends NetworkManager {
 		return colorAndAlphaBuffers;
 	}
 	
-	private byte[][] getDepthBuffers() {
-		byte[][] depthBuffers;
+	private float[][] getDepthBuffers() {
+		float[][] depthBuffers;
 		int i;
 		
 		// TODO: Optimize!
-		depthBuffers = new byte[renderersHandlers.size()][];
+		depthBuffers = new float[renderersHandlers.size()][];
 		i = 0;
 		for (RendererHandler rendererHandler : renderersHandlers.values()) {
 			depthBuffers[i++] = rendererHandler.getDepthBuffer();
@@ -193,11 +193,11 @@ public final class ComposerNetworkManager extends NetworkManager {
 		int rendererIndex;
 		CompressionMethod compressionMethod;
 		byte[] colorAndAlphaBuffer;
-		byte[] depthBuffer;
+		float[] depthBuffer;
 		
 		compressionMethod = (CompressionMethod) message.getParameters()[1];
 		colorAndAlphaBuffer = (byte[]) message.getParameters()[2];
-		depthBuffer = (byte[]) message.getParameters()[3];
+		depthBuffer = (float[]) message.getParameters()[3];
 		
 		if (trace) {
 			log.trace("New image received: " + currentFrame);

@@ -74,7 +74,7 @@ public class ComposerMessageBroker implements IConnectHandler, IDataHandler, IDi
 		MessageQueue.postMessage(new Message(MessageType.START_SESSION, connection, screenWidth, screenHeight, targetFPS));
 	}
 	
-	void onNewImageCompleted(INonBlockingConnection connection, int frameIndex, CompressionMethod compressionMethod, byte[] colorAndAlphaBuffer, byte[] depthBuffer) {
+	void onNewImageCompleted(INonBlockingConnection connection, int frameIndex, CompressionMethod compressionMethod, byte[] colorAndAlphaBuffer, float[] depthBuffer) {
 		MessageQueue.postMessage(new Message(MessageType.NEW_IMAGE, connection, frameIndex, compressionMethod, colorAndAlphaBuffer, depthBuffer));
 	}
 
