@@ -200,8 +200,7 @@ public final class ComposerNetworkManager extends NetworkManager {
 		depthBuffer = (byte[]) message.getParameters()[3];
 		
 		if (trace) {
-			log.trace("New image received");
-			log.trace("currentFrame=" + currentFrame);
+			log.trace("New image received: " + currentFrame);
 		}
 		
 		rendererIndex = getRendererIndex(message.getSource());
