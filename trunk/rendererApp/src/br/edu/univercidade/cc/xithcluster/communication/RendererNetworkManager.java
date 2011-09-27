@@ -113,14 +113,10 @@ public final class RendererNetworkManager extends NetworkManager implements Obse
 	}
 
 	private void onStartFrame(Message message) {
-		if (trace) {
-			log.trace("Start frame received");
-		}
-		
 		currentFrame = (Integer) message.getParameters()[0];
 		
 		if (trace) {
-			log.trace("currentFrame=" + currentFrame);
+			log.trace("Start frame received: " + currentFrame);
 		}
 		
 		hasSentCurrentFrameCompositor = false;
@@ -161,9 +157,6 @@ public final class RendererNetworkManager extends NetworkManager implements Obse
 		sessionState = SessionState.STARTING;
 		
 		if (trace) {
-			log.trace("****************");
-			log.trace("Session starting");
-			log.trace("****************");
 			log.trace("rendererId=" + rendererId);
 			log.trace("screenWidth=" + screenWidth);
 			log.trace("screenHeight=" + screenHeight);
@@ -219,7 +212,7 @@ public final class RendererNetworkManager extends NetworkManager implements Obse
 	
 	private void startParallelSceneDeserialization(byte[] pointOfViewData, byte[] sceneData) {
 		sceneDeserializer = new SceneDeserializer(pointOfViewData, sceneData); 
-		sceneDeserializer.addObserver(this);;
+		sceneDeserializer.addObserver(this);
 		
 		sceneDeserializationThread = new Thread(sceneDeserializer);
 		sceneDeserializationThread.start();

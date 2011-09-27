@@ -3,8 +3,9 @@ package br.edu.univercidade.cc.xithcluster;
 public final class SimpleCompositionStrategy implements CompositionStrategy {
 	
 	@Override
-	public int[] compose(int width, int height, int numImages, byte[][] colorAndAlphaBuffer, byte[][] depthBuffer) {
-		int[] pixels;
+	public int[] compose(int width, int height, byte[][] colorAndAlphaBuffer, byte[][] depthBuffer) {
+		int numberOfImages;
+		int[] argbBuffer;
 		int lastPixelRead;
 		int pixelIndex;
 		int i;
@@ -13,11 +14,16 @@ public final class SimpleCompositionStrategy implements CompositionStrategy {
 		int green;
 		int blue;
 		int alpha;
-		int selectedImage;
+		int selectedImageIndex;
 		int z;
 		int greaterZ;
 		
-		pixels = new int[width * height];
+		if (colorAndAlphaBuffer.length != depthBuffer.length) {
+			throw new IllegalArgumentException();
+		}
+		
+		numberOfImages = colorAndAlphaBuffer.length;
+		argbBuffer = new int[width * height];
 		lastPixelRead = width * height * 4;
 		rowOffset = width * 4;
 		i = 0;
@@ -26,25 +32,25 @@ public final class SimpleCompositionStrategy implements CompositionStrategy {
 			pixelIndex = lastPixelRead;
 			for (int column = 0; column < width; column++) {
 				greaterZ = Integer.MIN_VALUE;
-				selectedImage = -1;
-				for (int image = 0; image < numImages; image++) {
-					z = depthBuffer[image][i];
+				selectedImageIndex = -1;
+				for (int imageIndex = 0; imageIndex < numberOfImages; imageIndex++) {
+					z = depthBuffer[imageIndex][i];
 					if (z > greaterZ) {
-						selectedImage = image;
+						selectedImageIndex = imageIndex;
 						greaterZ = z;
 					}
 				}
 				
-				red = colorAndAlphaBuffer[selectedImage][pixelIndex++];
-				green = colorAndAlphaBuffer[selectedImage][pixelIndex++];
-				blue = colorAndAlphaBuffer[selectedImage][pixelIndex++];
-				alpha = colorAndAlphaBuffer[selectedImage][pixelIndex++];
+				red = colorAndAlphaBuffer[selectedImageIndex][pixelIndex++];
+				green = colorAndAlphaBuffer[selectedImageIndex][pixelIndex++];
+				blue = colorAndAlphaBuffer[selectedImageIndex][pixelIndex++];
+				alpha = colorAndAlphaBuffer[selectedImageIndex][pixelIndex++];
 				
-				pixels[i++] = 0xff000000 | ((red & 0x000000ff) << 16) | ((green & 0x000000ff) << 8) | (blue & 0x000000ff);
+				argbBuffer[i++] = 0xff000000 | ((red & 0x000000ff) << 16) | ((green & 0x000000ff) << 8) | (blue & 0x000000ff);
 			}
 		}
 		
-		return pixels;
+		return argbBuffer;
 	}
 	
 }

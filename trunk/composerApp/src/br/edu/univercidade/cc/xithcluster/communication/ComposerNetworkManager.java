@@ -116,7 +116,7 @@ public final class ComposerNetworkManager extends NetworkManager {
 			log.trace("Finishing current frame: " + currentFrame);
 		}
 		
-		composer.setFrameData(renderersHandlers.size(), getColorAndAlphaBuffers(), getDepthBuffers());
+		composer.setColorAlphaAndDepthBuffers(getColorAndAlphaBuffers(), getDepthBuffers());
 		
 		try {
 			sendFinishedFrameMessage();
@@ -224,14 +224,10 @@ public final class ComposerNetworkManager extends NetworkManager {
 	}
 	
 	private void onStartFrame(Message message) {
-		if (trace) {
-			log.trace("Start frame received");
-		}
-		
 		currentFrame = (Integer) message.getParameters()[0];
 		
 		if (trace) {
-			log.trace("currentFrame=" + currentFrame);
+			log.trace("Start frame received: " + currentFrame);
 		}
 		
 		newImageMask.clear();
@@ -251,9 +247,6 @@ public final class ComposerNetworkManager extends NetworkManager {
 		targetFPS = (Double) message.getParameters()[2];
 		
 		if (trace) {
-			log.trace("****************");
-			log.trace("Session starting");
-			log.trace("****************");
 			log.trace("screenWidth=" + screenWidth);
 			log.trace("screenHeight=" + screenHeight);
 			log.trace("targetFPS=" + targetFPS);
