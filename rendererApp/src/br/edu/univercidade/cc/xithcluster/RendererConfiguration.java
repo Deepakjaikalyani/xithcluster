@@ -1,5 +1,7 @@
 package br.edu.univercidade.cc.xithcluster;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -38,26 +40,25 @@ public final class RendererConfiguration {
 		
 		in = RendererConfiguration.class.getResourceAsStream("/rendererApp.properties");
 		
-		if (in != null) {
+		if (in == null) {
 			try {
-				properties.load(in);
-				masterListeningAddress = properties.getProperty("master.listening.address", DEFAULT_MASTER_LISTENING_ADDRESS);
-				masterListeningPort = Integer.parseInt(properties.getProperty("master.listening.port", DEFAULT_MASTER_LISTENING_PORT.toString()));
-				composerListeningAddress = properties.getProperty("composer.listening.address", DEFAULT_COMPOSER_LISTENING_ADDRESS);
-				composerListeningPort = Integer.parseInt(properties.getProperty("composer.listening.port", DEFAULT_COMPOSER_LISTENING_PORT.toString()));
-				compositionOrder = Integer.parseInt(properties.getProperty("composition.order", DEFAULT_COMPOSITION_ORDER.toString()));
-				compressionMethod = CompressionMethod.valueOf(properties.getProperty("compression.method", DEFAULT_COMPRESSION_METHOD.toString()));
-			} catch (IOException e) {
-				// TODO:
-				throw new RuntimeException("Error loading configuration file");
+				in = new FileInputStream("rendererApp.properties");
+			} catch (FileNotFoundException e) {
+				throw new RuntimeException("Error reading properties file", e);
 			}
-		} else {
-			masterListeningAddress = DEFAULT_MASTER_LISTENING_ADDRESS;
-			masterListeningPort = DEFAULT_MASTER_LISTENING_PORT;
-			composerListeningAddress = DEFAULT_COMPOSER_LISTENING_ADDRESS;
-			composerListeningPort = DEFAULT_COMPOSER_LISTENING_PORT;
-			compositionOrder = DEFAULT_COMPOSITION_ORDER;
-			compressionMethod = DEFAULT_COMPRESSION_METHOD;
+		}
+		
+		try {
+			properties.load(in);
+			masterListeningAddress = properties.getProperty("master.listening.address", DEFAULT_MASTER_LISTENING_ADDRESS);
+			masterListeningPort = Integer.parseInt(properties.getProperty("master.listening.port", DEFAULT_MASTER_LISTENING_PORT.toString()));
+			composerListeningAddress = properties.getProperty("composer.listening.address", DEFAULT_COMPOSER_LISTENING_ADDRESS);
+			composerListeningPort = Integer.parseInt(properties.getProperty("composer.listening.port", DEFAULT_COMPOSER_LISTENING_PORT.toString()));
+			compositionOrder = Integer.parseInt(properties.getProperty("composition.order", DEFAULT_COMPOSITION_ORDER.toString()));
+			compressionMethod = CompressionMethod.valueOf(properties.getProperty("compression.method", DEFAULT_COMPRESSION_METHOD.toString()));
+		} catch (IOException e) {
+			// TODO:
+			throw new RuntimeException("Error loading configuration file");
 		}
 	}
 	
