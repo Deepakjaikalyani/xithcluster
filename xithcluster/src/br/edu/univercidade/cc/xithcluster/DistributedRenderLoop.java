@@ -10,7 +10,6 @@ import org.jagatoo.input.InputSystemException;
 import org.jagatoo.input.devices.components.Key;
 import org.jagatoo.input.events.KeyPressedEvent;
 import org.openmali.vecmath2.Colorf;
-import org.xith3d.base.Xith3DEnvironment;
 import org.xith3d.loop.InputAdapterRenderLoop;
 import org.xith3d.render.Canvas3D;
 import org.xith3d.render.Canvas3DFactory;
@@ -29,39 +28,21 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop {
 	
 	private MasterNetworkManager networkManager;
 	
-	private DistributionStrategy distributionStrategy;
+	private GeometryDistributionStrategy geometryDistributionStrategy;
 
 	private Canvas3D canvas;
 	
-	public DistributedRenderLoop() {
-		super();
-	}
-	
-	public DistributedRenderLoop(Xith3DEnvironment x3dEnv, float maxFPS) {
-		super(x3dEnv, maxFPS);
-	}
-	
-	public DistributedRenderLoop(Xith3DEnvironment x3dEnv) {
-		super(x3dEnv);
-	}
-	
-	public DistributedRenderLoop(float maxFPS) {
-		super(maxFPS);
-	}
-	
-	public DistributionStrategy getDistributionStrategy() {
-		return distributionStrategy;
-	}
-	
-	public void setDistributionStrategy(DistributionStrategy distributionStrategy) {
-		this.distributionStrategy = distributionStrategy;
+	public DistributedRenderLoop(GeometryDistributionStrategy geometryDistributionStrategy) {
+		super(XithClusterConfiguration.targetFPS);
+		
+		this.geometryDistributionStrategy = geometryDistributionStrategy;
 	}
 	
 	@Override
 	public void begin(RunMode runMode, TimingMode timingMode) {
 		initializeLog4j();
 		
-		if (distributionStrategy == null) {
+		if (geometryDistributionStrategy == null) {
 			// TODO:
 			throw new RuntimeException("You must set a distribution strategy");
 		}
@@ -81,7 +62,7 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop {
 		updateManager = new UpdateManager();
 		getXith3DEnvironment().addScenegraphModificationListener(updateManager);
 		
-		networkManager = new MasterNetworkManager(this, updateManager, distributionStrategy);
+		networkManager = new MasterNetworkManager(this, updateManager, geometryDistributionStrategy);
 		try {
 			networkManager.initialize();
 		} catch (UnknownHostException e) {
