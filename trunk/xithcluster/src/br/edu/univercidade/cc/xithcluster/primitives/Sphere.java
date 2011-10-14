@@ -1,5 +1,6 @@
 package br.edu.univercidade.cc.xithcluster.primitives;
 
+import org.xith3d.scenegraph.Appearance;
 import org.xith3d.scenegraph.Node;
 import org.xith3d.scenegraph.Shape3D;
 
@@ -11,6 +12,7 @@ public class Sphere extends org.xith3d.scenegraph.primitives.Sphere {
 	
 	private float centerZ;
 	
+	
 	private int slices;
 	
 	private int stacks;
@@ -21,13 +23,10 @@ public class Sphere extends org.xith3d.scenegraph.primitives.Sphere {
 	
 	private int texCoordsSize;
 	
-	public Sphere() {
-		this(0.0f, 0.0f, 0.0f, 1.0f, 5, 5, 11, false, 2);
-	}
-	
-	public Sphere(float centerX, float centerY, float centerZ, float radius, int slices, int stacks, int features, boolean colorAlpha, int texCoordsSize) {
+	public Sphere(String name, float centerX, float centerY, float centerZ, float radius, int slices, int stacks, int features, boolean colorAlpha, int texCoordsSize, Appearance appearance) {
 		super(centerX, centerY, centerZ, radius, slices, stacks, features, colorAlpha, texCoordsSize);
-		
+
+		this.setName(name);
 		this.centerX = centerX;
 		this.centerY = centerY;
 		this.centerZ = centerZ;
@@ -36,14 +35,7 @@ public class Sphere extends org.xith3d.scenegraph.primitives.Sphere {
 		this.features = features;
 		this.colorAlpha = colorAlpha;
 		this.texCoordsSize = texCoordsSize;
-	}
-	
-	public Sphere(float radius, int slices, int stacks, int features, boolean colorAlpha, int texCoordsSize) {
-		this(0.0f, 0.0f, 0.0f, radius, slices, stacks, features, colorAlpha, texCoordsSize);
-	}
-	
-	public Sphere(int slices, int stacks, int features, boolean colorAlpha, int texCoordsSize) {
-		this(0.0F, 0.0F, 0.0F, 1.0F, slices, stacks, features, colorAlpha, texCoordsSize);
+		this.setAppearance(appearance);
 	}
 	
 	public float getCenterX() {
@@ -79,6 +71,32 @@ public class Sphere extends org.xith3d.scenegraph.primitives.Sphere {
 	}
 	
 	@Override
+	protected void copy(Shape3D arg0) {
+		Sphere sphere;
+		
+		sphere = (Sphere) arg0;
+		
+		sphere.setRadius(getRadius());
+		sphere.setName(getName());
+		sphere.centerX = centerX;
+		sphere.centerY = centerY;
+		sphere.centerZ = centerZ;
+		sphere.slices = slices;
+		sphere.stacks = stacks;
+		sphere.features = features;
+		sphere.colorAlpha = colorAlpha;
+		sphere.texCoordsSize = texCoordsSize;
+        sphere.setAppearance(getAppearance());
+        
+        sphere.setBoundsAutoCompute(false);
+        sphere.setBounds(getBounds());
+        sphere.boundsDirty = true;
+        sphere.updateBounds(false);
+        sphere.setPickable(isPickable());
+        sphere.setRenderable(isRenderable());
+	}
+	
+	@Override
 	protected Shape3D newInstance() {
 		Sphere newSphere;
 		boolean globalIgnoreBounds;
@@ -86,8 +104,7 @@ public class Sphere extends org.xith3d.scenegraph.primitives.Sphere {
 		globalIgnoreBounds = Node.globalIgnoreBounds;
 		
 		Node.globalIgnoreBounds = isIgnoreBounds();
-		newSphere = new Sphere(centerX, centerY, centerZ, getRadius(), slices, stacks, features, colorAlpha, texCoordsSize);
-		newSphere.setAppearance(getAppearance().cloneNodeComponent(true));
+		newSphere = new Sphere(null, 0.0f, 0.0f, 0.0f, 1.0f, 5, 5, 11, false, 2, null);
 		Node.globalIgnoreBounds = globalIgnoreBounds;
 		
 		return newSphere;

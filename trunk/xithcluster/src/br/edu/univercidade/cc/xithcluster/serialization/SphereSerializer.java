@@ -10,6 +10,7 @@ public class SphereSerializer extends Serializer<Sphere> {
 	
 	@Override
 	protected void doSerialization(Sphere sphere, DataOutputStream out) throws IOException {
+		SerializationHelper.writeString(out, sphere.getName());
 		out.writeFloat(sphere.getCenterX());
 		out.writeFloat(sphere.getCenterY());
 		out.writeFloat(sphere.getCenterZ());
@@ -24,6 +25,7 @@ public class SphereSerializer extends Serializer<Sphere> {
 	
 	@Override
 	protected Sphere doDeserialization(DataInputStream in) throws IOException {
+		String name;
 		float centerX;
 		float centerY;
 		float centerZ;
@@ -35,6 +37,7 @@ public class SphereSerializer extends Serializer<Sphere> {
 		int texCoordsSize;
 		Appearance appearance;
 		
+		name = SerializationHelper.readString(in);
 		centerX = in.readFloat();
 		centerY = in.readFloat();
 		centerZ = in.readFloat();
@@ -46,8 +49,7 @@ public class SphereSerializer extends Serializer<Sphere> {
 		texCoordsSize = in.readInt();
 		appearance = SerializationHelper.readAppearance(in);
 		
-		Sphere newSphere = new Sphere(centerX, centerY, centerZ, radius, slices, stacks, features, colorAlpha, texCoordsSize);
-		newSphere.setAppearance(appearance);
+		Sphere newSphere = new Sphere(name, centerX, centerY, centerZ, radius, slices, stacks, features, colorAlpha, texCoordsSize, appearance);
 		
 		return newSphere;
 	}
