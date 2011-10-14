@@ -11,9 +11,9 @@ import org.xith3d.scenegraph.Node;
 import org.xith3d.scenegraph.Shape3D;
 import org.xith3d.scenegraph.traversal.TraversalCallback;
 
-public class SimpleDistribution implements DistributionStrategy {
+public class RoundRobinGeometryDistribution implements GeometryDistributionStrategy {
 	
-	private Logger log = Logger.getLogger(SimpleDistribution.class);
+	private Logger log = Logger.getLogger(RoundRobinGeometryDistribution.class);
 	
 	private List<Light> lights = new ArrayList<Light>();
 	

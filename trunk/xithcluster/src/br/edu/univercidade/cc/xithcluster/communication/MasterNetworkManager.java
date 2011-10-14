@@ -23,7 +23,7 @@ import org.xsocket.connection.INonBlockingConnection;
 import org.xsocket.connection.IServer;
 import org.xsocket.connection.Server;
 import br.edu.univercidade.cc.xithcluster.DistributedRenderLoop;
-import br.edu.univercidade.cc.xithcluster.DistributionStrategy;
+import br.edu.univercidade.cc.xithcluster.GeometryDistributionStrategy;
 import br.edu.univercidade.cc.xithcluster.PendingUpdate;
 import br.edu.univercidade.cc.xithcluster.PendingUpdate.Type;
 import br.edu.univercidade.cc.xithcluster.UpdateManager;
@@ -54,7 +54,7 @@ public final class MasterNetworkManager implements Updatable {
 	
 	private UpdateManager updateManager;
 	
-	private DistributionStrategy distributionStrategy;
+	private GeometryDistributionStrategy geometryDistributionStrategy;
 	
 	private IServer composerServer;
 	
@@ -76,10 +76,10 @@ public final class MasterNetworkManager implements Updatable {
 	
 	private boolean forceFrameStart = false;
 	
-	public MasterNetworkManager(DistributedRenderLoop distributedRenderLoop, UpdateManager updateManager, DistributionStrategy distributionStrategy) {
+	public MasterNetworkManager(DistributedRenderLoop distributedRenderLoop, UpdateManager updateManager, GeometryDistributionStrategy geometryDistributionStrategy) {
 		this.distributedRenderLoop = distributedRenderLoop;
 		this.updateManager = updateManager;
-		this.distributionStrategy = distributionStrategy;
+		this.geometryDistributionStrategy = geometryDistributionStrategy;
 	}
 	
 	public void initialize() throws UnknownHostException, IOException {
@@ -153,10 +153,10 @@ public final class MasterNetworkManager implements Updatable {
 		log.info("Starting a new session");
 		
 		if (trace) {
-			log.trace("Executing " + distributionStrategy.getClass().getSimpleName() + "...");
+			log.trace("Executing " + geometryDistributionStrategy.getClass().getSimpleName() + "...");
 		}
 		
-		distributedScenes = distributionStrategy.distribute(scene, renderersConnections.size());
+		distributedScenes = geometryDistributionStrategy.distribute(scene, renderersConnections.size());
 		
 		if (distributedScenes.size() != renderersConnections.size()) {
 			// TODO:

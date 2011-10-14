@@ -18,13 +18,11 @@ import br.edu.univercidade.cc.xithcluster.primitives.Sphere;
 public class SampleApp extends DistributedRenderLoop {
 	
 	public SampleApp() {
-		super(120f);
+		super(new RoundRobinGeometryDistribution());
 		
 		new Xith3DEnvironment(0f, 0f, 3f, 0f, 0f, 0f, 0f, 1f, 0f, this);
 		
 		getXith3DEnvironment().addPerspectiveBranch(createTestScene());
-		
-		setDistributionStrategy(new SimpleDistribution());
 	}
 	
 	private BranchGroup createTestScene() {
