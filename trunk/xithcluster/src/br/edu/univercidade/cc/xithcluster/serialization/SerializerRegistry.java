@@ -5,6 +5,7 @@ import java.util.Map;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Group;
 import org.xith3d.scenegraph.TransformGroup;
+import org.xith3d.schedops.movement.AnimatableGroup;
 import br.edu.univercidade.cc.xithcluster.DirectionalLight;
 import br.edu.univercidade.cc.xithcluster.primitives.Cube;
 import br.edu.univercidade.cc.xithcluster.primitives.Rectangle;
@@ -23,6 +24,7 @@ public final class SerializerRegistry {
 		register(Rectangle.class, RectangleSerializer.class);
 		register(DirectionalLight.class, LightSerializer.class);
 		register(TransformGroup.class, TransformGroupSerializer.class);
+		register(AnimatableGroup.class, AnimatableGroupSerializer.class);
 		register(BranchGroup.class, BranchGroupSerializer.class);
 		register(Group.class, GroupSerializer.class);
 	}
