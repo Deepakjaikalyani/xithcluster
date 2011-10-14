@@ -8,6 +8,8 @@ import java.util.Properties;
 
 public final class XithClusterConfiguration {
 
+	private static final String DEFAULT_WINDOW_TITLE = "XithCluster Application";
+	
 	private static final String DEFAULT_LISTENING_ADDRESS = "localhost";
 
 	private static final Integer DEFAULT_RENDERERS_CONNECTION_PORT = 11111;
@@ -19,6 +21,8 @@ public final class XithClusterConfiguration {
 	private static final Integer DEFAULT_SCREEN_HEIGHT = 600;
 	
 	private static final Float DEFAULT_TARGET_FPS = 80.0f;
+	
+	public static final String windowTitle;
 
 	public static String listeningAddress;
 	
@@ -50,6 +54,7 @@ public final class XithClusterConfiguration {
 		
 		try {
 			properties.load(XithClusterConfiguration.class.getResourceAsStream("/xithcluster.properties"));
+			windowTitle = properties.getProperty("window.title", DEFAULT_WINDOW_TITLE);
 			listeningAddress = properties.getProperty("listening.address", DEFAULT_LISTENING_ADDRESS);
 			renderersConnectionPort = Integer.parseInt(properties.getProperty("renderers.connection.port", DEFAULT_RENDERERS_CONNECTION_PORT.toString()));
 			composerConnectionPort = Integer.parseInt(properties.getProperty("composer.connection.port", DEFAULT_COMPOSER_CONNECTION_PORT.toString()));

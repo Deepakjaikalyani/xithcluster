@@ -3,18 +3,19 @@ package br.edu.univercidade.cc.xithcluster;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
-public class Display extends JFrame {
+public class Displayer extends JFrame {
 	
 	private static final long serialVersionUID = 1L;
 	
-	private static final Font defaultFont = new Font("Courier New", Font.PLAIN, 12);
+	private static final int ARGB_PIXEL_PACKAGING = BufferedImage.TYPE_INT_ARGB;
+	
+	private static final int NUMBER_OF_BUFFERS = 2;
 	
 	private static final int DEFAULT_WIDTH = 800;
 	
@@ -26,10 +27,19 @@ public class Display extends JFrame {
 	
 	private BufferStrategy buffer;
 	
-	private double framesPerSecond;
+	private FPSCounter fpsCounter = new FPSCounter(100);
 	
 	public void initializeAndShow() {
-		decorate();
+		setTitle(ComposerConfiguration.windowTitle);
+		
+		super.setSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+		
+		setResizable(false);
+		setIgnoreRepaint(true);
+		setLocationRelativeTo(null);
+		
+		setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+		
 		setVisible(true);
 		setupBufferStrategy();
 		createDataBuffer(DEFAULT_WIDTH, DEFAULT_HEIGHT);
@@ -68,31 +78,24 @@ public class Display extends JFrame {
 		createDataBuffer(width, height);
 	}
 	
-	private void decorate() {
-		setTitle(ComposerConfiguration.windowTitle);
-		super.setSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
-		setResizable(false);
-		setIgnoreRepaint(true);
-		setLocationRelativeTo(null);
-		setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-	}
-	
 	private void setupBufferStrategy() {
 		canvas = new Canvas();
 		canvas.setIgnoreRepaint(true);
 		
 		add(canvas);
 		
-		canvas.createBufferStrategy(2);
+		canvas.createBufferStrategy(NUMBER_OF_BUFFERS);
 		buffer = canvas.getBufferStrategy();
 	}
 	
 	private void createDataBuffer(int width, int height) {
-		backBuffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		backBuffer = new BufferedImage(width, height, ARGB_PIXEL_PACKAGING);
 	}
 	
 	public void updateFPSCounter(double framesPerSecond) {
-		this.framesPerSecond = framesPerSecond;
+		if (ComposerConfiguration.displayFPSCounter) {
+			fpsCounter.update(framesPerSecond);
+		}
 	}
 	
 	public void setARGBImageData(int[] argbImageData) {
@@ -105,24 +108,34 @@ public class Display extends JFrame {
 		try {
 			graphics = buffer.getDrawGraphics();
 			
-			graphics.setColor(Color.BLACK);
-			graphics.fillRect(0, 0, getWidth(), getHeight());
+			clear(graphics);
 			
-			graphics.drawImage(backBuffer, 0, 0, null);
+			drawBackBuffer(graphics);
 			
 			if (ComposerConfiguration.displayFPSCounter) {
-				graphics.setFont(defaultFont);
-				graphics.setColor(Color.GREEN);
-				graphics.drawString(String.format("FPS: %s", framesPerSecond), 20, 20);
+				fpsCounter.print(graphics, 20, 20);
 			}
 			
-			if (!buffer.contentsLost()) {
-				buffer.show();
-			}
+			swapBuffers();
 		} finally {
 			if (graphics != null) {
 				graphics.dispose();
 			}
+		}
+	}
+	
+	private void clear(Graphics graphics) {
+		graphics.setColor(Color.BLACK);
+		graphics.fillRect(0, 0, getWidth(), getHeight());
+	}
+	
+	private void drawBackBuffer(Graphics graphics) {
+		graphics.drawImage(backBuffer, 0, 0, null);
+	}
+	
+	private void swapBuffers() {
+		if (!buffer.contentsLost()) {
+			buffer.show();
 		}
 	}
 	

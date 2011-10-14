@@ -22,8 +22,6 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop {
 	
 	private static final String LOG4J_CONFIGURATION_FILE = "xithcluster-log4j.xml";
 
-	private static final String APP_TITLE = "Application";
-	
 	private UpdateManager updateManager;
 	
 	private MasterNetworkManager networkManager;
@@ -47,7 +45,7 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop {
 			throw new RuntimeException("You must set a distribution strategy");
 		}
 		
-		canvas = Canvas3DFactory.createWindowed(XithClusterConfiguration.screenWidth, XithClusterConfiguration.screenHeight, APP_TITLE);
+		canvas = Canvas3DFactory.createWindowed(XithClusterConfiguration.screenWidth, XithClusterConfiguration.screenHeight, XithClusterConfiguration.windowTitle);
 		canvas.setBackgroundColor(Colorf.BLACK);
 		canvas.addWindowClosingListener(new WindowClosingRenderLoopEnder(this));
 		getXith3DEnvironment().addCanvas(canvas);

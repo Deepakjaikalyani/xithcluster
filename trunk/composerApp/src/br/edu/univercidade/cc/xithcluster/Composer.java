@@ -19,7 +19,7 @@ public class Composer implements Runnable, WindowListener {
 	
 	private CompositionStrategy compositionStrategy;
 	
-	private Display display;
+	private Displayer displayer;
 
 	private int screenWidth;
 
@@ -67,7 +67,7 @@ public class Composer implements Runnable, WindowListener {
 		this.screenWidth = screenWidth;
 		this.screenHeight = screenHeight;
 		
-		display.setSize(new Dimension(screenWidth, screenHeight));
+		displayer.setSize(new Dimension(screenWidth, screenHeight));
 	}
 
 	@Override
@@ -75,15 +75,15 @@ public class Composer implements Runnable, WindowListener {
 		long elapsedTime;
 	    long currentTime;
 	    long lastTime; 
-	    double framesPerSecond;
+	    double fps;
 		
 		initializeLog4j();
 		
 		compositionStrategy = createCompositionStrategy(ComposerConfiguration.compositionStrategyClassName);
 		
-		display = new Display();
-		display.addWindowListener(Composer.this);
-		display.initializeAndShow();
+		displayer = new Displayer();
+		displayer.addWindowListener(Composer.this);
+		displayer.initializeAndShow();
 		
 		try {
 			networkManager.initialize();
@@ -95,7 +95,7 @@ public class Composer implements Runnable, WindowListener {
 			throw new RuntimeException("Error starting network manager", e);
 		}
 		
-		framesPerSecond = 0L;
+		fps = 0L;
 		elapsedTime = 0L;
 	    currentTime = System.currentTimeMillis();
 		while (true) {
@@ -103,10 +103,10 @@ public class Composer implements Runnable, WindowListener {
 			currentTime = System.currentTimeMillis();
 			elapsedTime = currentTime - lastTime;
 			if (elapsedTime != 0) {
-				framesPerSecond = 1000.0 / elapsedTime;
+				fps = 1000L / elapsedTime;
 			}
 			
-			loopIteration(framesPerSecond);
+			loopIteration(fps);
 			
 			if (elapsedTime < secondsPerFrame) {
 				try {
@@ -117,25 +117,25 @@ public class Composer implements Runnable, WindowListener {
 		}
 	}
 
-	private void loopIteration(double framesPerSecond) {
+	private void loopIteration(double fps) {
 		int[] argbImageData;
 		
-		if (display == null) {
+		if (displayer == null) {
 			return;
 		}
 		
-		display.updateFPSCounter(framesPerSecond);
+		displayer.updateFPSCounter(fps);
 	
 		if (colorAndAlphaBuffers != null && depthBuffers != null) {
 			argbImageData = compositionStrategy.compose(screenWidth, screenHeight, colorAndAlphaBuffers, depthBuffers);
 			
-			display.setARGBImageData(argbImageData);
+			displayer.setARGBImageData(argbImageData);
 			
 			colorAndAlphaBuffers = null;
 			depthBuffers = null;
 		}
 		
-		display.blit();
+		displayer.blit();
 		
 		networkManager.update();
 	}
@@ -151,7 +151,7 @@ public class Composer implements Runnable, WindowListener {
 
 	@Override
 	public void windowClosing(WindowEvent e) {
-		display.setVisible(false);
+		displayer.setVisible(false);
 		
 		// TODO: Do soft-disconnect
 		
