@@ -83,6 +83,7 @@ import org.xith3d.scenegraph.TransparencyAttributes;
 import org.xith3d.scenegraph.TriangleArray;
 import org.xith3d.scenegraph.TriangleFanArray;
 import org.xith3d.scenegraph.TriangleStripArray;
+import org.xith3d.schedops.movement.GroupAnimator;
 import br.edu.univercidade.cc.xithcluster.util.BufferUtils;
 import br.edu.univercidade.cc.xithcluster.util.PrivateAccessor;
 
@@ -1551,5 +1552,12 @@ public class SerializationHelper {
 		} else {
 			return null;
 		}
+	}
+
+	public static void writeGroupAnimator(DataOutputStream out, GroupAnimator groupAnimator) {
+	}
+
+	public static GroupAnimator readGroupAnimator(DataInputStream in) {
+		return null;
 	}
 }

@@ -883,4 +883,13 @@ public class SerializationHelperTest {
 		Assert.assertEquals(BoundsType.POLYTOPE, SerializationHelper.readBounds(getInputStream()).getType());
 	}
 	
+	@Test
+	public void testWriteReadGroupAnimator() throws IOException {
+		// testing null check implementation
+		SerializationHelper.writeGroupAnimator(getOutputStream(), null);
+		Assert.assertNull(SerializationHelper.readGroupAnimator(getInputStream()));
+		
+		// TODO:
+	}
+	
 }
