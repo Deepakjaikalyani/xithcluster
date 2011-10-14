@@ -22,6 +22,8 @@ public final class XithClusterConfiguration {
 	
 	private static final Float DEFAULT_TARGET_FPS = 80.0f;
 	
+	private static final Boolean DEFAULT_DISPLAY_FPS_COUNTER = true;
+	
 	public static final String windowTitle;
 
 	public static String listeningAddress;
@@ -35,6 +37,8 @@ public final class XithClusterConfiguration {
 	public static int screenHeight;
 	
 	public static float targetFPS;
+	
+	public static final boolean displayFPSCounter;
 	
 	static {
 		Properties properties;
@@ -61,6 +65,7 @@ public final class XithClusterConfiguration {
 			screenWidth = Integer.parseInt(properties.getProperty("screen.width", DEFAULT_SCREEN_WIDTH.toString()));
 			screenHeight = Integer.parseInt(properties.getProperty("screen.height", DEFAULT_SCREEN_HEIGHT.toString()));
 			targetFPS = Float.parseFloat(properties.getProperty("target.fps", DEFAULT_TARGET_FPS.toString()));
+			displayFPSCounter = Boolean.parseBoolean(properties.getProperty("display.fps.counter", DEFAULT_DISPLAY_FPS_COUNTER.toString()));
 		} catch (IOException e) {
 			// TODO:
 			throw new RuntimeException("Error loading configuration file");

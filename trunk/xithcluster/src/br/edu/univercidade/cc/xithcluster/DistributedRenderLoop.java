@@ -13,21 +13,22 @@ import org.openmali.vecmath2.Colorf;
 import org.xith3d.loop.InputAdapterRenderLoop;
 import org.xith3d.render.Canvas3D;
 import org.xith3d.render.Canvas3DFactory;
-import org.xith3d.scenegraph.BranchGroup;
-import org.xith3d.scenegraph.View;
+import org.xith3d.ui.hud.HUD;
 import org.xith3d.utility.events.WindowClosingRenderLoopEnder;
 import br.edu.univercidade.cc.xithcluster.communication.MasterNetworkManager;
 
-public class DistributedRenderLoop extends InputAdapterRenderLoop {
-	
-	private static final String LOG4J_CONFIGURATION_FILE = "xithcluster-log4j.xml";
+public class DistributedRenderLoop extends InputAdapterRenderLoop implements SceneHolder {
 
+	private static final String LOG4J_CONFIGURATION_FILE = "xithcluster-log4j.xml";
+	
+	private static final int FPS_SAMPLES = 100;
+	
 	private UpdateManager updateManager;
 	
 	private MasterNetworkManager networkManager;
 	
 	private GeometryDistributionStrategy geometryDistributionStrategy;
-
+	
 	private Canvas3D canvas;
 	
 	public DistributedRenderLoop(GeometryDistributionStrategy geometryDistributionStrategy) {
@@ -38,6 +39,9 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop {
 	
 	@Override
 	public void begin(RunMode runMode, TimingMode timingMode) {
+		HUD hud;
+		HUDFPSCounter fpsCounter;
+		
 		initializeLog4j();
 		
 		if (geometryDistributionStrategy == null) {
@@ -71,7 +75,19 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop {
 			throw new RuntimeException("Error starting network manager", e);
 		}
 		
-		getXith3DEnvironment().getOperationScheduler().addUpdatable(networkManager);
+		setOperationScheduler(networkManager);
+		setUpdater(networkManager);
+		
+		if (XithClusterConfiguration.displayFPSCounter) {
+			hud = new HUD(canvas, XithClusterConfiguration.screenHeight);
+			
+			fpsCounter = new HUDFPSCounter(FPS_SAMPLES);
+			fpsCounter.registerTo(hud);
+			
+			networkManager.setFpsCounter(fpsCounter);
+			
+			getXith3DEnvironment().addHUD(hud);
+		}
 		
 		super.begin(runMode, timingMode);
 	}
@@ -93,12 +109,9 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop {
 		}
 	}
 	
-	public BranchGroup getScene() {
-		return getXith3DEnvironment().getBranchGroup();
-	}
-	
-	public View getPointOfView() {
-		return getXith3DEnvironment().getView();
+	@Override
+	public SceneInfo getSceneInfo() {
+		return new SceneInfo(getXith3DEnvironment().getBranchGroup(), getXith3DEnvironment().getView());
 	}
 	
 }
