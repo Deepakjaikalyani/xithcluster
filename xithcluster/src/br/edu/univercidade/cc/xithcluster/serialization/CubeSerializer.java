@@ -10,6 +10,7 @@ public class CubeSerializer extends Serializer<Cube> {
 	
 	@Override
 	protected void doSerialization(Cube cube, DataOutputStream out) throws IOException {
+		SerializationHelper.writeString(out, cube.getName());
 		out.writeFloat(cube.getSize());
 		out.writeInt(cube.getFeatures());
 		out.writeBoolean(cube.isColorAlpha());
@@ -19,20 +20,21 @@ public class CubeSerializer extends Serializer<Cube> {
 	
 	@Override
 	protected Cube doDeserialization(DataInputStream in) throws IOException {
+		String name;
 		float size;
 		int features;
 		boolean colorAlpha;
 		int texCoordsSize;
 		Appearance appearance;
 		
+		name = SerializationHelper.readString(in);
 		size = in.readFloat();
 		features = in.readInt();
 		colorAlpha = in.readBoolean();
 		texCoordsSize = in.readInt();
 		appearance = SerializationHelper.readAppearance(in);
 		
-		Cube newCube = new Cube(size, features, colorAlpha, texCoordsSize);
-		newCube.setAppearance(appearance);
+		Cube newCube = new Cube(name, size, features, colorAlpha, texCoordsSize, appearance);
 		
 		return newCube;
 	}

@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Group;
-import org.xith3d.scenegraph.Switch;
 import org.xith3d.scenegraph.TransformGroup;
 import br.edu.univercidade.cc.xithcluster.DirectionalLight;
 import br.edu.univercidade.cc.xithcluster.primitives.Cube;
@@ -23,7 +22,6 @@ public final class SerializerRegistry {
 		register(Sphere.class, SphereSerializer.class);
 		register(Rectangle.class, RectangleSerializer.class);
 		register(DirectionalLight.class, LightSerializer.class);
-		register(Switch.class, SwitchSerializer.class);
 		register(TransformGroup.class, TransformGroupSerializer.class);
 		register(BranchGroup.class, BranchGroupSerializer.class);
 		register(Group.class, GroupSerializer.class);
