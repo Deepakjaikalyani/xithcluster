@@ -27,8 +27,8 @@ public class Displayer extends JFrame {
 	
 	private BufferStrategy buffer;
 	
-	private FPSCounter fpsCounter = new FPSCounter(100);
-	
+	private AWTFPSCounter fpsCounter;
+
 	public void initializeAndShow() {
 		setTitle(ComposerConfiguration.windowTitle);
 		
@@ -92,12 +92,6 @@ public class Displayer extends JFrame {
 		backBuffer = new BufferedImage(width, height, ARGB_PIXEL_PACKAGING);
 	}
 	
-	public void updateFPSCounter(double framesPerSecond) {
-		if (ComposerConfiguration.displayFPSCounter) {
-			fpsCounter.update(framesPerSecond);
-		}
-	}
-	
 	public void setARGBImageData(int[] argbImageData) {
 		backBuffer.setRGB(0, 0, getWidth(), getHeight(), argbImageData, 0, getWidth());
 	}
@@ -137,6 +131,10 @@ public class Displayer extends JFrame {
 		if (!buffer.contentsLost()) {
 			buffer.show();
 		}
+	}
+	
+	public void setFpsCounter(AWTFPSCounter fpsCounter) {
+		this.fpsCounter = fpsCounter;
 	}
 	
 }

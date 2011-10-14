@@ -13,6 +13,8 @@ public class Composer implements Runnable, WindowListener {
 	
 	private static final String LOG4J_CONFIGURATION_FILE = "log4j.xml";
 	
+	private static final int FPS_SAMPLES = 100;
+	
 	private final ComposerNetworkManager networkManager;
 	
 	private final long secondsPerFrame;
@@ -20,6 +22,8 @@ public class Composer implements Runnable, WindowListener {
 	private CompositionStrategy compositionStrategy;
 	
 	private Displayer displayer;
+	
+	private FPSCounter fpsCounter;
 
 	private int screenWidth;
 
@@ -34,6 +38,10 @@ public class Composer implements Runnable, WindowListener {
 		secondsPerFrame = 1000L / 60L;
 		
 		networkManager = new ComposerNetworkManager(this);
+		
+		if (ComposerConfiguration.displayFPSCounter) {
+			fpsCounter = new AWTFPSCounter(FPS_SAMPLES);
+		}
 	}
 
 	private void initializeLog4j() {
@@ -123,8 +131,10 @@ public class Composer implements Runnable, WindowListener {
 		if (displayer == null) {
 			return;
 		}
-		
-		displayer.updateFPSCounter(fps);
+
+		if (ComposerConfiguration.displayFPSCounter) {
+			fpsCounter.update(fps);
+		}
 	
 		if (colorAndAlphaBuffers != null && depthBuffers != null) {
 			argbImageData = compositionStrategy.compose(screenWidth, screenHeight, colorAndAlphaBuffers, depthBuffers);

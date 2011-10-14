@@ -14,25 +14,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import org.apache.log4j.Logger;
-import org.xith3d.loop.Updatable;
-import org.xith3d.loop.UpdatingThread.TimingMode;
+import org.xith3d.loop.opscheduler.impl.OperationSchedulerImpl;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Node;
-import org.xith3d.scenegraph.View;
 import org.xsocket.connection.INonBlockingConnection;
 import org.xsocket.connection.IServer;
 import org.xsocket.connection.Server;
-import br.edu.univercidade.cc.xithcluster.DistributedRenderLoop;
+import br.edu.univercidade.cc.xithcluster.FPSCounter;
 import br.edu.univercidade.cc.xithcluster.GeometryDistributionStrategy;
 import br.edu.univercidade.cc.xithcluster.PendingUpdate;
 import br.edu.univercidade.cc.xithcluster.PendingUpdate.Type;
+import br.edu.univercidade.cc.xithcluster.SceneHolder;
+import br.edu.univercidade.cc.xithcluster.SceneInfo;
 import br.edu.univercidade.cc.xithcluster.UpdateManager;
 import br.edu.univercidade.cc.xithcluster.XithClusterConfiguration;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.PointOfViewPackager;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.ScenePackager;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.UpdatesPackager;
 
-public final class MasterNetworkManager implements Updatable {
+public final class MasterNetworkManager extends OperationSchedulerImpl {
 	
 	private enum SessionState {
 		CLOSED, STARTING, STARTED
@@ -50,7 +50,7 @@ public final class MasterNetworkManager implements Updatable {
 	
 	private ScenePackager scenePackager = new ScenePackager();
 	
-	private DistributedRenderLoop distributedRenderLoop;
+	private SceneHolder sceneHolder;
 	
 	private UpdateManager updateManager;
 	
@@ -76,8 +76,12 @@ public final class MasterNetworkManager implements Updatable {
 	
 	private boolean forceFrameStart = false;
 	
-	public MasterNetworkManager(DistributedRenderLoop distributedRenderLoop, UpdateManager updateManager, GeometryDistributionStrategy geometryDistributionStrategy) {
-		this.distributedRenderLoop = distributedRenderLoop;
+	private FPSCounter fpsCounter;
+	
+	private long lastGameTime = 0L;
+	
+	public MasterNetworkManager(SceneHolder sceneHolder, UpdateManager updateManager, GeometryDistributionStrategy geometryDistributionStrategy) {
+		this.sceneHolder = sceneHolder;
 		this.updateManager = updateManager;
 		this.geometryDistributionStrategy = geometryDistributionStrategy;
 	}
@@ -139,16 +143,14 @@ public final class MasterNetworkManager implements Updatable {
 	}
 	
 	private void distributeScene() {
-		BranchGroup scene;
-		View pointOfView;
+		SceneInfo sceneInfo;
 		List<BranchGroup> distributedScenes;
 		BranchGroup rendererScene;
 		byte[] pointOfViewData;
 		byte[] sceneData;
 		int rendererIndex;
 		
-		scene = distributedRenderLoop.getScene();
-		pointOfView = distributedRenderLoop.getPointOfView();
+		sceneInfo = sceneHolder.getSceneInfo();
 		
 		log.info("Starting a new session");
 		
@@ -156,7 +158,7 @@ public final class MasterNetworkManager implements Updatable {
 			log.trace("Executing " + geometryDistributionStrategy.getClass().getSimpleName() + "...");
 		}
 		
-		distributedScenes = geometryDistributionStrategy.distribute(scene, renderersConnections.size());
+		distributedScenes = geometryDistributionStrategy.distribute(sceneInfo.getRoot(), renderersConnections.size());
 		
 		if (distributedScenes.size() != renderersConnections.size()) {
 			// TODO:
@@ -176,7 +178,7 @@ public final class MasterNetworkManager implements Updatable {
 			ConnectionSetter.setConnection(rendererScene, rendererConnection);
 			
 			try {
-				pointOfViewData = pointOfViewPackager.serialize(pointOfView);
+				pointOfViewData = pointOfViewPackager.serialize(sceneInfo.getPointOfView());
 				sceneData = scenePackager.serialize(rendererScene);
 			} catch (IOException e) {
 				// TODO:
@@ -241,7 +243,7 @@ public final class MasterNetworkManager implements Updatable {
 	private boolean isSessionReadyToStart() {
 		return composerSessionStarted && renderersSessionStartedMask.cardinality() == renderersConnections.size();
 	}
-
+	
 	private void startNewSession() {
 		sessionState = SessionState.STARTED;
 		
@@ -258,7 +260,7 @@ public final class MasterNetworkManager implements Updatable {
 		
 		log.info("Current session closed");
 	}
-
+	
 	private void startNewFrame() {
 		if (trace) {
 			log.trace("Starting new frame");
@@ -284,7 +286,7 @@ public final class MasterNetworkManager implements Updatable {
 			throw new RuntimeException("Error sending start new frame notification: " + currentFrame, e);
 		}
 	}
-
+	
 	private void onFinishedFrame(Message message) {
 		int frameIndex;
 		
@@ -471,7 +473,7 @@ public final class MasterNetworkManager implements Updatable {
 			if (clusterConfigurationChanged) {
 				if (sessionState == SessionState.STARTED) {
 					closeCurrentSession();
-				} 
+				}
 				
 				if (sessionState == SessionState.CLOSED && isThereAtLeastOneRendererAndOneComposer()) {
 					tryToDistributeTheScene();
@@ -488,6 +490,10 @@ public final class MasterNetworkManager implements Updatable {
 				
 				if (finishedFrame || forceFrameStart) {
 					startNewFrame();
+					
+					updateOperationsSchedule(gameTime, frameTime, timingMode);
+					
+					updateFpsCounter(gameTime, frameTime, timingMode);
 				}
 				
 				if (updateManager.hasPendingUpdates()) {
@@ -511,5 +517,30 @@ public final class MasterNetworkManager implements Updatable {
 		
 		MessageQueue.stopReadingMessages();
 	}
-
+	
+	private void updateFpsCounter(long gameTime, long frameTime, TimingMode timingMode) {
+		long elapsedTime;
+		double fps;
+		
+		if (XithClusterConfiguration.displayFPSCounter) {
+			if (lastGameTime > 0) {
+				elapsedTime = gameTime - lastGameTime;
+				
+				fps = timingMode.getDivisor() / elapsedTime;
+				
+				fpsCounter.update(fps);
+			}
+			
+			lastGameTime = gameTime;
+		}
+	}
+	
+	private void updateOperationsSchedule(long gameTime, long frameTime, TimingMode timingMode) {
+		super.update(gameTime, frameTime, timingMode);
+	}
+	
+	public void setFpsCounter(FPSCounter fpsCounter) {
+		this.fpsCounter = fpsCounter;
+	}
+	
 }

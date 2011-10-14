@@ -257,7 +257,7 @@ public final class RendererNetworkManager extends NetworkManager implements Obse
 	
 	@Override
 	public void update(long gameTime, long frameTime, TimingMode timingMode) {
-		// TODO: API bridge
+		// API bridge
 		super.update();
 	}
 	
