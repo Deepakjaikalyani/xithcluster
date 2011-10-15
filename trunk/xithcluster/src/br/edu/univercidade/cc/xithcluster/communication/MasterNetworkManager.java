@@ -439,19 +439,26 @@ public final class MasterNetworkManager extends OperationSchedulerImpl {
 		connection.flush();
 	}
 	
+	@Override
+	public void update(long gameTime, long frameTime, TimingMode timingMode) {
+		Queue<Message> messages;
+		
+		messages = MessageQueue.startReadingMessages();
+		
+		processMessages(gameTime, frameTime, timingMode, messages);
+		
+		MessageQueue.stopReadingMessages();
+	}
+
 	/*
 	 * ================================ 
 	 * Network messages processing loop
 	 * ================================
 	 */
-	@Override
-	public void update(long gameTime, long frameTime, TimingMode timingMode) {
-		Queue<Message> messages;
+	private void processMessages(long gameTime, long frameTime, TimingMode timingMode, Queue<Message> messages) {
 		Message message;
 		Iterator<Message> iterator;
 		boolean clusterConfigurationChanged;
-		
-		messages = MessageQueue.startReadingMessages();
 		
 		if (sessionState == SessionState.STARTED || sessionState == SessionState.CLOSED) {
 			clusterConfigurationChanged = false;
@@ -491,6 +498,7 @@ public final class MasterNetworkManager extends OperationSchedulerImpl {
 				if (finishedFrame || forceFrameStart) {
 					startNewFrame();
 					
+					// Update animations and other scheduled operations
 					updateOperationsSchedule(gameTime, frameTime, timingMode);
 					
 					updateFpsCounter(gameTime, frameTime, timingMode);
@@ -514,8 +522,6 @@ public final class MasterNetworkManager extends OperationSchedulerImpl {
 				startNewSession();
 			}
 		}
-		
-		MessageQueue.stopReadingMessages();
 	}
 	
 	private void updateFpsCounter(long gameTime, long frameTime, TimingMode timingMode) {

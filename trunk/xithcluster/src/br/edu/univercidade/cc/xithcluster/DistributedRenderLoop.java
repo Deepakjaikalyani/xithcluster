@@ -13,15 +13,16 @@ import org.openmali.vecmath2.Colorf;
 import org.xith3d.loop.InputAdapterRenderLoop;
 import org.xith3d.render.Canvas3D;
 import org.xith3d.render.Canvas3DFactory;
+import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.ui.hud.HUD;
 import org.xith3d.utility.events.WindowClosingRenderLoopEnder;
 import br.edu.univercidade.cc.xithcluster.communication.MasterNetworkManager;
 
-public class DistributedRenderLoop extends InputAdapterRenderLoop implements SceneHolder {
-
+public abstract class DistributedRenderLoop extends InputAdapterRenderLoop implements SceneHolder {
+	
 	private static final String LOG4J_CONFIGURATION_FILE = "xithcluster-log4j.xml";
 	
-	private static final int FPS_SAMPLES = 100;
+	private static final int FPS_SAMPLES = 10;
 	
 	private UpdateManager updateManager;
 	
@@ -34,35 +35,45 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 	public DistributedRenderLoop(GeometryDistributionStrategy geometryDistributionStrategy) {
 		super(XithClusterConfiguration.targetFPS);
 		
-		this.geometryDistributionStrategy = geometryDistributionStrategy;
-	}
-	
-	@Override
-	public void begin(RunMode runMode, TimingMode timingMode) {
-		HUD hud;
-		HUDFPSCounter fpsCounter;
-		
-		initializeLog4j();
-		
 		if (geometryDistributionStrategy == null) {
 			// TODO:
 			throw new RuntimeException("You must set a distribution strategy");
 		}
 		
-		canvas = Canvas3DFactory.createWindowed(XithClusterConfiguration.screenWidth, XithClusterConfiguration.screenHeight, XithClusterConfiguration.windowTitle);
-		canvas.setBackgroundColor(Colorf.BLACK);
-		canvas.addWindowClosingListener(new WindowClosingRenderLoopEnder(this));
-		getXith3DEnvironment().addCanvas(canvas);
-		
-		try {
-			InputSystem.getInstance().registerNewKeyboardAndMouse(canvas.getPeer());
-		} catch (InputSystemException e) {
+		this.geometryDistributionStrategy = geometryDistributionStrategy;
+	}
+	
+	@Override
+	public void begin(RunMode runMode, TimingMode timingMode) {
+		if (x3dEnvironment == null) {
 			// TODO:
-			throw new RuntimeException("Error registering new keyboard and mouse", e);
+			throw new RuntimeException("Xith3d environment must be initialized");
 		}
 		
-		updateManager = new UpdateManager();
-		getXith3DEnvironment().addScenegraphModificationListener(updateManager);
+		if (!isRunning()) {
+			initializeLog4j();
+			
+			createCanvas();
+			
+			createUpdateManager();
+			
+			createNetworkManager();
+			
+			registerDistributedScene();
+		}
+		
+		super.begin(runMode, timingMode);
+	}
+
+	private void registerDistributedScene() {
+		x3dEnvironment.addPerspectiveBranch(createSceneRoot());
+	}
+	
+	protected abstract BranchGroup createSceneRoot();
+	
+	private void createNetworkManager() {
+		HUD hud;
+		HUDFPSCounter fpsCounter;
 		
 		networkManager = new MasterNetworkManager(this, updateManager, geometryDistributionStrategy);
 		try {
@@ -86,12 +97,30 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 			
 			networkManager.setFpsCounter(fpsCounter);
 			
-			getXith3DEnvironment().addHUD(hud);
+			x3dEnvironment.addHUD(hud);
+		}
+	}
+	
+	private void createUpdateManager() {
+		try {
+			InputSystem.getInstance().registerNewKeyboardAndMouse(canvas.getPeer());
+		} catch (InputSystemException e) {
+			// TODO:
+			throw new RuntimeException("Error registering new keyboard and mouse", e);
 		}
 		
-		super.begin(runMode, timingMode);
+		updateManager = new UpdateManager();
+		x3dEnvironment.addScenegraphModificationListener(updateManager);
 	}
-
+	
+	private void createCanvas() {
+		canvas = Canvas3DFactory.createWindowed(XithClusterConfiguration.screenWidth, XithClusterConfiguration.screenHeight, XithClusterConfiguration.windowTitle);
+		canvas.setBackgroundColor(Colorf.BLACK);
+		canvas.addWindowClosingListener(new WindowClosingRenderLoopEnder(this));
+		
+		x3dEnvironment.addCanvas(canvas);
+	}
+	
 	private void initializeLog4j() throws FactoryConfigurationError {
 		if (new File(LOG4J_CONFIGURATION_FILE).exists()) {
 			DOMConfigurator.configure(LOG4J_CONFIGURATION_FILE);
@@ -111,7 +140,36 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 	
 	@Override
 	public SceneInfo getSceneInfo() {
-		return new SceneInfo(getXith3DEnvironment().getBranchGroup(), getXith3DEnvironment().getView());
+		BranchGroup branchGroup;
+
+		if (XithClusterConfiguration.displayFPSCounter) {
+			branchGroup = getFirstBranchGroupThatDoesntBelongToHUD();
+		} else {
+			branchGroup = x3dEnvironment.getBranchGroup();
+		}
+		
+		if (branchGroup == null) {
+			// TODO:
+			throw new RuntimeException("There's no suitable branch group");
+		}
+		
+		return new SceneInfo(branchGroup, x3dEnvironment.getView());
+	}
+
+	private BranchGroup getFirstBranchGroupThatDoesntBelongToHUD() {
+		BranchGroup hudBranchGroup;
+		BranchGroup currentBranchGroup;
+		
+		hudBranchGroup = x3dEnvironment.getHUD().getSGGroup();
+		for (int i = 0; i < x3dEnvironment.getNumberOfBranchGroups(); i++) {
+			currentBranchGroup = x3dEnvironment.getBranchGroup(i);
+			
+			if (!currentBranchGroup.equals(hudBranchGroup)) {
+				return currentBranchGroup;
+			}
+		}
+		
+		return null;
 	}
 	
 }

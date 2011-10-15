@@ -7,36 +7,40 @@ import org.xith3d.scenegraph.Node;
 import org.xith3d.scenegraph.View;
 
 public final class SceneBuilder {
-
+	
 	private SceneBuilder() {
 	}
 	
-	public static void copy(View destination, View source) {
-		destination.setPosition(source.getPosition());
-		destination.setCenterOfView(source.getCenterOfView());
-		destination.setFacingDirection(source.getFacingDirection());
-		destination.setFieldOfView(source.getFieldOfView());
-		destination.setBackClipDistance(source.getBackClipDistance());
-		destination.setFrontClipDistance(source.getFrontClipDistance());
-	}
-
-	public static void copyAndInvalidateSource(BranchGroup destination, BranchGroup source) {
-		List<Node> children;
-		
-		if (source == null || destination == null) {
+	public static void copyView(View dest, View src) {
+		if (dest == null || src == null) {
 			throw new IllegalArgumentException();
 		}
 		
-		int numChildren = source.numChildren();
-		children = new ArrayList<Node>();
-		for (int i = 0; i < numChildren; i++) {
-			children.add(source.getChild(i));
+		dest.setPosition(src.getPosition());
+		dest.setCenterOfView(src.getCenterOfView());
+		dest.setFacingDirection(src.getFacingDirection());
+		dest.setFieldOfView(src.getFieldOfView());
+		dest.setBackClipDistance(src.getBackClipDistance());
+		dest.setFrontClipDistance(src.getFrontClipDistance());
+	}
+	
+	public static void copyAndInvalidateSource(BranchGroup dest, BranchGroup src) {
+		List<Node> children;
+		
+		if (src == null || dest == null) {
+			throw new IllegalArgumentException();
 		}
 		
-		source.removeAllChildren();
+		int numChildren = src.numChildren();
+		children = new ArrayList<Node>();
+		for (int i = 0; i < numChildren; i++) {
+			children.add(src.getChild(i));
+		}
+		
+		src.removeAllChildren();
 		
 		for (Node child : children) {
-			destination.addChild(child);
+			dest.addChild(child);
 		}
 	}
 	

@@ -48,15 +48,31 @@ public class NodePathReplicator extends PathBuilder {
 		Node replica;
 		
 		if (arg0 instanceof GroupNode) {
-			replica = (Node) PrivateAccessor.invokePrivateMethod(arg0, "newInstance");
-			replica.setIsOccluder(arg0.isOccluder());
-			PrivateAccessor.setPrivateField(replica, "boundsDirty", true);
-			replica.setPickable(arg0.isPickable());
-			replica.setRenderable(replica.isRenderable());
+			replica = replicateGroupNode((GroupNode) arg0);
 		} else {
-			replica = arg0.sharedCopy();
+			replica = replicateNode(arg0);
 		}
 		
+		return replica;
+	}
+
+	private static Node replicateNode(Node arg0) {
+		Node replica;
+		
+		replica = arg0.sharedCopy();
+		replica.setName(arg0.getName() + "_" + System.nanoTime());
+		
+		return replica;
+	}
+
+	private static Node replicateGroupNode(GroupNode arg0) {
+		Node replica;
+		
+		replica = (Node) PrivateAccessor.invokePrivateMethod(arg0, "newInstance");
+		replica.setIsOccluder(arg0.isOccluder());
+		PrivateAccessor.setPrivateField(replica, "boundsDirty", true);
+		replica.setPickable(arg0.isPickable());
+		replica.setRenderable(replica.isRenderable());
 		replica.setName(arg0.getName() + "_" + System.nanoTime());
 		
 		return replica;

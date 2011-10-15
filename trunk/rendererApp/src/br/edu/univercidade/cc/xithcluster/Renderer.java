@@ -2,6 +2,8 @@ package br.edu.univercidade.cc.xithcluster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.jagatoo.input.InputSystem;
 import org.jagatoo.input.InputSystemException;
@@ -12,25 +14,27 @@ import org.openmali.vecmath2.Colorf;
 import org.xith3d.base.Xith3DEnvironment;
 import org.xith3d.loaders.texture.TextureCreator;
 import org.xith3d.loop.InputAdapterRenderLoop;
+import org.xith3d.loop.opscheduler.Animatable;
 import org.xith3d.render.BaseRenderPassConfig;
 import org.xith3d.render.Canvas3D;
 import org.xith3d.render.Canvas3DFactory;
 import org.xith3d.render.DepthBufferRenderTarget;
 import org.xith3d.render.TextureRenderTarget;
 import org.xith3d.scenegraph.BranchGroup;
+import org.xith3d.scenegraph.GroupNode;
+import org.xith3d.scenegraph.Node;
 import org.xith3d.scenegraph.Texture2D;
 import org.xith3d.scenegraph.View;
 import org.xith3d.scenegraph.View.ProjectionPolicy;
 import org.xith3d.utility.events.WindowClosingRenderLoopEnder;
 import br.edu.univercidade.cc.xithcluster.communication.RendererNetworkManager;
 import br.edu.univercidade.cc.xithcluster.util.BufferUtils;
-import br.edu.univercidade.cc.xithcluster.util.SceneBuilder;
 
 public class Renderer extends InputAdapterRenderLoop {
 	
-	private static final float FRAMES_PER_SECOND = 60.0f;
-	
 	private static final String LOG4J_CONFIGURATION_FILE = "log4j.xml";
+	
+	private static final float DEFAULT_TARGET_FPS = 80.0f;
 	
 	private static final String APP_TITLE = "Renderer";
 	
@@ -52,33 +56,50 @@ public class Renderer extends InputAdapterRenderLoop {
 
 	private DepthBufferRenderTarget depthBufferRenderTarget;
 
-	public Renderer(float maxFPS) {
-		super(maxFPS);
+	public Renderer() {
+		super(DEFAULT_TARGET_FPS);
+		
+		initialize();
 	}
 	
-	@Override
-	public void begin(RunMode runMode, TimingMode timingMode) {
+	/**
+	 * The following startup sequence must be strictly obeyed:
+	 * 
+	 * 1). Initialize logging system (log4j).
+	 * 
+	 * 2). Create the Xith3D scene graph.
+	 * 
+	 * 3). Create an empty scene.
+	 * 
+	 * 4). Create the render targets for capturing the color and depth buffers.
+	 * 
+	 * 5). Create the canvas (screen).
+	 * 
+	 * 6). Register input system.
+	 * 
+	 * 7). Create network manager.
+	 */
+	private void initialize() {
 		initializeLog4j();
 		
+		createXith3DSceneGraph();
+		
+		createEmptyScene();
+		
+		createRenderTargets();
+		
+		createCanvas();
+		
+		registerInputSystem();
+		
+		createNetworkManager();
+	}
+
+	private void createXith3DSceneGraph() {
 		new Xith3DEnvironment(this);
-		
-		currentRoot = new BranchGroup();
-		getXith3DEnvironment().addPerspectiveBranch(currentRoot);
-		
-		buildRenderTargets();
-		
-		canvas = Canvas3DFactory.createWindowed(screenWidth, screenHeight, APP_TITLE);
-		canvas.setBackgroundColor(Colorf.BLACK);
-		canvas.addWindowClosingListener(new WindowClosingRenderLoopEnder(this));
-		getXith3DEnvironment().addCanvas(canvas);
-		
-		try {
-			InputSystem.getInstance().registerNewKeyboardAndMouse(canvas.getPeer());
-		} catch (InputSystemException e) {
-			// TODO:
-			throw new RuntimeException("Error registering new keyboard and mouse", e);
-		}
-		
+	}
+
+	private void createNetworkManager() {
 		networkManager = new RendererNetworkManager(this);
 		try {
 			networkManager.initialize();
@@ -87,9 +108,30 @@ public class Renderer extends InputAdapterRenderLoop {
 			throw new RuntimeException("Error starting network manager", e);
 		}
 		
-		getXith3DEnvironment().getOperationScheduler().addUpdatable(networkManager);
+		setOperationScheduler(networkManager);
+		setUpdater(networkManager);
+	}
+
+	private void registerInputSystem() {
+		try {
+			InputSystem.getInstance().registerNewKeyboardAndMouse(canvas.getPeer());
+		} catch (InputSystemException e) {
+			// TODO:
+			throw new RuntimeException("Error registering new keyboard and mouse", e);
+		}
+	}
+
+	private void createCanvas() {
+		canvas = Canvas3DFactory.createWindowed(screenWidth, screenHeight, APP_TITLE);
+		canvas.setBackgroundColor(Colorf.BLACK);
+		canvas.addWindowClosingListener(new WindowClosingRenderLoopEnder(this));
 		
-		super.begin(runMode, timingMode);
+		x3dEnvironment.addCanvas(canvas);
+	}
+
+	private void createEmptyScene() {
+		currentRoot = new BranchGroup();
+		x3dEnvironment.addPerspectiveBranch(currentRoot);
 	}
 
 	private void initializeLog4j() {
@@ -100,14 +142,14 @@ public class Renderer extends InputAdapterRenderLoop {
 		}
 	}
 	
-	private void buildRenderTargets() {
+	private void createRenderTargets() {
 		org.xith3d.render.Renderer renderer;
 		TextureRenderTarget colorAndAlphaRenderTarget;
 		BaseRenderPassConfig passConfig;
 		
 		colorAndAlphaTexture = TextureCreator.createTexture(TextureFormat.RGBA, screenWidth, screenHeight, Colorf.BLACK);
 		
-		renderer = getXith3DEnvironment().getRenderer();
+		renderer = x3dEnvironment.getRenderer();
 		
 		passConfig = new BaseRenderPassConfig(ProjectionPolicy.PERSPECTIVE_PROJECTION);
 		
@@ -143,14 +185,68 @@ public class Renderer extends InputAdapterRenderLoop {
 	}
 	
 	public void setId(int id) {
-		getXith3DEnvironment().getCanvas().setTitle(APP_TITLE + "[id=" + id + "]");
+		x3dEnvironment.getCanvas().setTitle(APP_TITLE + "[id=" + id + "]");
 	}
 	
 	public void updateScene(View view, BranchGroup newRoot) {
-		SceneBuilder.copy(getXith3DEnvironment().getView(), view);
+		copyView(x3dEnvironment.getView(), view);
+		
+		copyRootAndInvalidateSource(currentRoot, newRoot);
+		
+		registerAllAnimatables(currentRoot);
+	}
+	
+	public static void copyView(View dest, View src) {
+		if (dest == null || src == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		dest.setPosition(src.getPosition());
+		dest.setCenterOfView(src.getCenterOfView());
+		dest.setFacingDirection(src.getFacingDirection());
+		dest.setFieldOfView(src.getFieldOfView());
+		dest.setBackClipDistance(src.getBackClipDistance());
+		dest.setFrontClipDistance(src.getFrontClipDistance());
+	}
+
+	public void copyRootAndInvalidateSource(BranchGroup dest, BranchGroup src) {
+		List<Node> children;
+		
+		if (src == null || dest == null) {
+			throw new IllegalArgumentException();
+		}
 		
 		currentRoot.removeAllChildren();
-		SceneBuilder.copyAndInvalidateSource(currentRoot, newRoot);
+		
+		int numChildren = src.numChildren();
+		children = new ArrayList<Node>();
+		for (int i = 0; i < numChildren; i++) {
+			children.add(src.getChild(i));
+		}
+		
+		src.removeAllChildren();
+		
+		for (Node child : children) {
+			dest.addChild(child);
+		}
+	}
+
+	public void registerAllAnimatables(GroupNode parent) {
+		Node child;
+		
+		if (parent == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		int numChildren = parent.numChildren();
+		for (int i = 0; i < numChildren; i++) {
+			child = parent.getChild(i);
+			if (child instanceof Animatable) {
+				x3dEnvironment.getOperationScheduler().addAnimatableObject((Animatable) child);
+			} else if (child instanceof GroupNode) {
+				registerAllAnimatables((GroupNode) child);
+			}
+		}
 	}
 	
 	/*
@@ -159,7 +255,7 @@ public class Renderer extends InputAdapterRenderLoop {
 	 * ===============
 	 */
 	public static void main(String[] args) throws InputSystemException {
-		new Renderer(FRAMES_PER_SECOND).begin();
+		new Renderer().begin();
 	}
 
 }

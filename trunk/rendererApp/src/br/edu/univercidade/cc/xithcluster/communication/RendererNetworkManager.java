@@ -8,7 +8,7 @@ import java.util.Observer;
 import java.util.Queue;
 import org.apache.log4j.Logger;
 import org.xith3d.loop.Updatable;
-import org.xith3d.loop.UpdatingThread.TimingMode;
+import org.xith3d.loop.opscheduler.impl.OperationSchedulerImpl;
 import org.xsocket.connection.INonBlockingConnection;
 import org.xsocket.connection.NonBlockingConnection;
 import br.edu.univercidade.cc.xithcluster.DeserializationResult;
@@ -16,11 +16,7 @@ import br.edu.univercidade.cc.xithcluster.Renderer;
 import br.edu.univercidade.cc.xithcluster.RendererConfiguration;
 import br.edu.univercidade.cc.xithcluster.SceneDeserializer;
 
-public final class RendererNetworkManager extends NetworkManager implements Observer, Updatable {
-	
-	private enum SessionState {
-		CLOSED, STARTING, STARTED
-	}
+public final class RendererNetworkManager extends OperationSchedulerImpl implements Observer, Updatable {
 	
 	private Logger log = Logger.getLogger(RendererNetworkManager.class);
 	
@@ -29,6 +25,8 @@ public final class RendererNetworkManager extends NetworkManager implements Obse
 	private RendererMessageBroker rendererMessageBroker = new RendererMessageBroker();
 	
 	private Renderer renderer;
+	
+	protected INonBlockingConnection masterConnection;
 	
 	private INonBlockingConnection composerConnection;
 	
@@ -257,12 +255,32 @@ public final class RendererNetworkManager extends NetworkManager implements Obse
 	
 	@Override
 	public void update(long gameTime, long frameTime, TimingMode timingMode) {
-		// API bridge
-		super.update();
+		Queue<Message> messages;
+		
+		checkMasterNodeConnection();
+		
+		messages = MessageQueue.startReadingMessages();
+		
+		processMessages(gameTime, frameTime, timingMode, messages);
+		
+		MessageQueue.stopReadingMessages();
 	}
 	
-	@Override
-	protected void processMessages(Queue<Message> messages) {
+	private void checkMasterNodeConnection() {
+		if (!masterConnection.isOpen()) {
+			System.err.println("Master node disconnected");
+			
+			// TODO:
+			System.exit(-1);
+		}
+	}
+	
+	/*
+	 * ================================ 
+	 * Network messages processing loop
+	 * ================================
+	 */
+	protected void processMessages(long gameTime, long frameTime, TimingMode timingMode, Queue<Message> messages) {
 		Message message;
 		Message lastUpdateMessage;
 		Message firstStartFrameMessage;
@@ -329,6 +347,9 @@ public final class RendererNetworkManager extends NetworkManager implements Obse
 				
 				if (firstStartFrameMessage != null) {
 					onStartFrame(firstStartFrameMessage);
+					
+					// Update animations and other scheduled operations
+					updateOperationsSchedule(gameTime, frameTime, timingMode);
 				}
 			} else {
 				sendCurrentFrameToCompositor();
@@ -338,6 +359,10 @@ public final class RendererNetworkManager extends NetworkManager implements Obse
 		} else if (isSessionReadyToStart()) {
 			startNewSession();
 		}
+	}
+	
+	private void updateOperationsSchedule(long gameTime, long frameTime, TimingMode timingMode) {
+		super.update(gameTime, frameTime, timingMode);
 	}
 
 }

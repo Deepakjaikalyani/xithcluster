@@ -8,24 +8,24 @@ import org.openmali.vecmath2.Vector3f;
 import org.xith3d.base.Xith3DEnvironment;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Group;
+import org.xith3d.schedops.movement.AnimatableGroup;
+import org.xith3d.schedops.movement.GroupRotator;
+import org.xith3d.schedops.movement.TransformationDirectives;
 
 public class SampleApp extends DistributedRenderLoop {
 	
 	public SampleApp() {
 		super(new RoundRobinGeometryDistribution());
 		
-		Tuple3f eyePosition = new Tuple3f(0.0f, 0.0f, 3.0f);
-		Tuple3f viewFocus = new Tuple3f(0.0f, 0.0f, 0.0f);
-		Tuple3f upVector = new Tuple3f(0.0f, 1.0f, 0.0f);
-		
-		Xith3DEnvironment xith3dEnvironment = new Xith3DEnvironment(eyePosition, viewFocus, upVector, this);
-		
-		xith3dEnvironment.addPerspectiveBranch(createScene());
+		new Xith3DEnvironment(new Tuple3f(0.0f, 0.0f, 3.0f), new Tuple3f(0.0f, 0.0f, 0.0f), new Tuple3f(0.0f, 1.0f, 0.0f), this);
 	}
 	
-	private BranchGroup createScene() {
+	@Override
+	protected BranchGroup createSceneRoot() {
 		BranchGroup root;
 		Group group;
+		AnimatableGroup animatableGroup;
+		GroupRotator groupRotator;
 		DirectionalLight directionalLight;
 		
 		root = new BranchGroup();
@@ -33,11 +33,17 @@ public class SampleApp extends DistributedRenderLoop {
 		group = new Group();
 		group.setName("allShapesGrouper");
 		root.addChild(group);
-
+		
+		groupRotator = new GroupRotator(new TransformationDirectives(new Vector3f(0.0f, 1.0f, 0.0f), 0.0f, 1.0f));
+		animatableGroup = new AnimatableGroup(groupRotator);
+		group.addChild(animatableGroup);
+		
+		getAnimator().addAnimatableObject(animatableGroup);
+		
 		// Shapes
 		
 		SceneUtils.addCube(group, "cube1", 0.75f, new Tuple3f(0.0f, 0.3f, -0.5f), new Tuple3f(-35.0f, 20.0f, 0.0f), Colorf.RED);
-		SceneUtils.addCube(group, "cube2", 0.4f, new Tuple3f(-1.0f, 0.3f, -0.5f), new Tuple3f(25.0f, 0.0f, 0.0f), SceneUtils.loadTexture2D("resources/textures/crate.png"));
+		SceneUtils.addCube(animatableGroup, "cube2", 0.4f, new Tuple3f(-1.0f, 0.3f, -0.5f), new Tuple3f(25.0f, 0.0f, 0.0f), SceneUtils.loadTexture2D("resources/textures/crate.png"));
 		
 		SceneUtils.addSphere(group, "sphere1", 0.2f, new Tuple3f(0.7f, 0.2f, 0.3f), Colorf.GREEN);
 		SceneUtils.addSphere(group, "sphere2", 0.1f, new Tuple3f(0.55f, -0.2f, 0.2f), Colorf.BLUE);
@@ -60,7 +66,11 @@ public class SampleApp extends DistributedRenderLoop {
 		}
 	}
 	
+	/*
+	 * ================ MAIN ================
+	 */
 	public static void main(String[] args) {
 		new SampleApp().begin();
 	}
+	
 }
