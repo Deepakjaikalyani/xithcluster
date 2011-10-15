@@ -1,7 +1,7 @@
 package br.edu.univercidade.cc.xithcluster.serial;
 
-import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -12,7 +12,8 @@ import java.nio.IntBuffer;
 import java.util.Arrays;
 import java.util.BitSet;
 import javax.imageio.ImageIO;
-import junit.framework.Assert;
+import static junit.framework.Assert.*;
+import static br.edu.univercidade.cc.xithcluster.util.AssertExtention.*;
 import org.jagatoo.opengl.enums.BlendFunction;
 import org.jagatoo.opengl.enums.BlendMode;
 import org.jagatoo.opengl.enums.ColorTarget;
@@ -73,6 +74,12 @@ import org.xith3d.scenegraph.TextureUnit;
 import org.xith3d.scenegraph.Transform3D;
 import org.xith3d.scenegraph.TransparencyAttributes;
 import org.xith3d.scenegraph.TriangleStripArray;
+import org.xith3d.schedops.movement.GroupAnimator;
+import org.xith3d.schedops.movement.GroupRotator;
+import org.xith3d.schedops.movement.GroupTranslator;
+import org.xith3d.schedops.movement.TransformationDirectives;
+import org.xith3d.schedops.movement.TransformationDirectives.AxisOrder;
+import br.edu.univercidade.cc.xithcluster.comparators.TransformationDirectivesComparator;
 import br.edu.univercidade.cc.xithcluster.serialization.SerializationHelper;
 import br.edu.univercidade.cc.xithcluster.util.BufferUtils;
 import br.edu.univercidade.cc.xithcluster.util.PrivateAccessor;
@@ -138,6 +145,14 @@ public class SerializationHelperTest {
 	private static final TexCoordGeneration TEX_COORD_GENERATION;
 	
 	private static final Geometry GEOMETRY1;
+
+	private static final TransformationDirectives TRANSFORMATION_DIRECTIVES1 = new TransformationDirectives(1.0f, 2.0f, 3.0f, 5.0f, 7.0f, 9.0f, AxisOrder.ZYX);
+	
+	private static final TransformationDirectives TRANSFORMATION_DIRECTIVES2 = new TransformationDirectives(new Vector3f(1.0f, 2.0f, 3.0f), 5.0f, 9.0f);
+	
+	private static final GroupRotator GROUP_ROTATOR1 = new GroupRotator(TRANSFORMATION_DIRECTIVES1);
+	
+	private static final GroupTranslator GROUP_TRANSLATOR1 = new GroupTranslator(TRANSFORMATION_DIRECTIVES2);
 
 	static {
 		BIT_SET = new BitSet();
@@ -290,160 +305,160 @@ public class SerializationHelperTest {
 	public void testWriteReadEnum() throws IOException {
 		// testing null check implementation
 		SerializationHelper.writeEnum(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readEnum(getInputStream(), FaceCullMode.values()));
+		assertNull(SerializationHelper.readEnum(getInputStream(), FaceCullMode.values()));
 		
 		SerializationHelper.writeEnum(getOutputStream(), FaceCullMode.BACK);
-		Assert.assertEquals(FaceCullMode.BACK, SerializationHelper.readEnum(getInputStream(), FaceCullMode.values()));
+		assertEquals(FaceCullMode.BACK, SerializationHelper.readEnum(getInputStream(), FaceCullMode.values()));
 	}
 	
 	@Test
 	public void testWriteReadVector3f() throws IOException {
 		// testing null check implementation
 		SerializationHelper.writeVector3f(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readVector3f(getInputStream()));
+		assertNull(SerializationHelper.readVector3f(getInputStream()));
 		
 		SerializationHelper.writeVector3f(getOutputStream(), VECTOR_3F);
-		Assert.assertEquals(VECTOR_3F, SerializationHelper.readVector3f(getInputStream()));
+		assertEquals(VECTOR_3F, SerializationHelper.readVector3f(getInputStream()));
 	}
 	
 	@Test
 	public void testWriteReadPoint() throws IOException {
 		// testing null check implementation
 		SerializationHelper.writePoint3f(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readPoint3f(getInputStream()));
+		assertNull(SerializationHelper.readPoint3f(getInputStream()));
 		
 		SerializationHelper.writePoint3f(getOutputStream(), POINT_3F);
-		Assert.assertEquals(POINT_3F, SerializationHelper.readPoint3f(getInputStream()));
+		assertEquals(POINT_3F, SerializationHelper.readPoint3f(getInputStream()));
 	}
 	
 	@Test
 	public void testWriteReadTuple3f() throws IOException {
 		// testing null check implementation
 		SerializationHelper.writeTuple3f(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readTuple3f(getInputStream()));
+		assertNull(SerializationHelper.readTuple3f(getInputStream()));
 		
 		SerializationHelper.writeTuple3f(getOutputStream(), TUPLE_3F);
-		Assert.assertEquals(TUPLE_3F, SerializationHelper.readTuple3f(getInputStream()));
+		assertEquals(TUPLE_3F, SerializationHelper.readTuple3f(getInputStream()));
 	}
 	
 	@Test
 	public void testWriteReadColor() throws IOException {
 		// testing null check implementation
 		SerializationHelper.writeColorf(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readColorf(getInputStream()));
+		assertNull(SerializationHelper.readColorf(getInputStream()));
 		
 		SerializationHelper.writeColorf(getOutputStream(), COLOR_F);
-		Assert.assertEquals(COLOR_F, SerializationHelper.readColorf(getInputStream()));
+		assertEquals(COLOR_F, SerializationHelper.readColorf(getInputStream()));
 	}
 	
 	@Test
 	public void testWriteReadTransform3D() throws IOException {
 		// testing null check implementation
 		SerializationHelper.writeTransform3D(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readTransform3D(getInputStream()));
+		assertNull(SerializationHelper.readTransform3D(getInputStream()));
 		
 		SerializationHelper.writeTransform3D(getOutputStream(), TRANSFORM_3D);
-		Assert.assertEquals(TRANSFORM_3D, SerializationHelper.readTransform3D(getInputStream()));
+		assertEquals(TRANSFORM_3D, SerializationHelper.readTransform3D(getInputStream()));
 	}
 	
 	@Test
 	public void testWriteReadMatrix4f() throws IOException {
 		// testing null check implementation
 		SerializationHelper.writeMatrix4f(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readMatrix4f(getInputStream()));
+		assertNull(SerializationHelper.readMatrix4f(getInputStream()));
 		
 		SerializationHelper.writeMatrix4f(getOutputStream(), MATRIX_4F);
-		Assert.assertEquals(MATRIX_4F, SerializationHelper.readMatrix4f(getInputStream()));
+		assertEquals(MATRIX_4F, SerializationHelper.readMatrix4f(getInputStream()));
 	}
 	
 	@Test
 	public void testWriteReadString() throws IOException {
 		// testing null check implementation
 		SerializationHelper.writeString(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readString(getInputStream()));
+		assertNull(SerializationHelper.readString(getInputStream()));
 		
 		SerializationHelper.writeString(getOutputStream(), "something");
-		Assert.assertEquals(SerializationHelper.readString(getInputStream()), "something");
+		assertEquals(SerializationHelper.readString(getInputStream()), "something");
 	}
 	
 	@Test
 	public void testWriteReadVector4f() throws IOException {
 		// testing null check implementation
 		SerializationHelper.writeVector4f(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readVector4f(getInputStream()));
+		assertNull(SerializationHelper.readVector4f(getInputStream()));
 		
 		SerializationHelper.writeVector4f(getOutputStream(), VECTOR_4F);
-		Assert.assertEquals(VECTOR_4F, SerializationHelper.readVector4f(getInputStream()));
+		assertEquals(VECTOR_4F, SerializationHelper.readVector4f(getInputStream()));
 	}
 	
 	@Test
 	public void testWriteReadClass() throws IOException {
 		// testing null check implementation
 		SerializationHelper.writeClass(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readClass(getInputStream()));
+		assertNull(SerializationHelper.readClass(getInputStream()));
 		
 		SerializationHelper.writeClass(getOutputStream(), Node.class);
-		Assert.assertEquals(Node.class, SerializationHelper.readClass(getInputStream()));
+		assertEquals(Node.class, SerializationHelper.readClass(getInputStream()));
 	}
 	
 	@Test
 	public void testWriteReadClassByType() throws IOException {
 		// testing null check implementation
 		SerializationHelper.writeClass(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readClass(getInputStream(), Node.class));
+		assertNull(SerializationHelper.readClass(getInputStream(), Node.class));
 		
 		SerializationHelper.writeClass(getOutputStream(), GroupNode.class);
-		Assert.assertEquals(GroupNode.class, SerializationHelper.readClass(getInputStream(), Node.class));
+		assertEquals(GroupNode.class, SerializationHelper.readClass(getInputStream(), Node.class));
 	}
 	
 	@Test
 	public void testWriteReadGeomNioFloatData() throws IOException {
 		// testing null check implementation
 		SerializationHelper.writeGeomNioFloatData(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readGeomNioFloatData(getInputStream()));
+		assertNull(SerializationHelper.readGeomNioFloatData(getInputStream()));
 		
 		SerializationHelper.writeGeomNioFloatData(getOutputStream(), GEOM_NIO_FLOAT_DATA);
-		Assert.assertTrue(BufferUtils.equals(GEOM_NIO_FLOAT_DATA.getBuffer(), SerializationHelper.readGeomNioFloatData(getInputStream()).getBuffer()));
+		assertTrue(BufferUtils.equals(GEOM_NIO_FLOAT_DATA.getBuffer(), SerializationHelper.readGeomNioFloatData(getInputStream()).getBuffer()));
 	}
 	
 	@Test
 	public void testWriteReadFloatArray() throws IOException {
 		// testing null check implementation
 		SerializationHelper.writeFloatArray(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readFloatArray(getInputStream()));
+		assertNull(SerializationHelper.readFloatArray(getInputStream()));
 		
 		SerializationHelper.writeFloatArray(getOutputStream(), FLOAT_ARRAY);
-		Assert.assertTrue(Arrays.equals(SerializationHelper.readFloatArray(getInputStream()), FLOAT_ARRAY));
+		assertTrue(Arrays.equals(SerializationHelper.readFloatArray(getInputStream()), FLOAT_ARRAY));
 	}
 	
 	@Test
 	public void testWriteReadByteArray() throws IOException {
 		// testing null check implementation
 		SerializationHelper.writeByteArray(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readByteArray(getInputStream()));
+		assertNull(SerializationHelper.readByteArray(getInputStream()));
 		
 		SerializationHelper.writeByteArray(getOutputStream(), BYTE_ARRAY);
-		Assert.assertTrue(Arrays.equals(BYTE_ARRAY, SerializationHelper.readByteArray(getInputStream())));
+		assertTrue(Arrays.equals(BYTE_ARRAY, SerializationHelper.readByteArray(getInputStream())));
 	}
 	
 	@Test
 	public void testWriteReadGeomNioIntData() throws IOException {
 		// testing null check implementation
 		SerializationHelper.writeGeomNioIntData(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readGeomNioIntData(getInputStream()));
+		assertNull(SerializationHelper.readGeomNioIntData(getInputStream()));
 		
 		SerializationHelper.writeGeomNioIntData(getOutputStream(), GEOM_NIO_INT_DATA);
-		Assert.assertTrue(BufferUtils.equals(GEOM_NIO_INT_DATA.getBuffer(), SerializationHelper.readGeomNioIntData(getInputStream()).getBuffer()));
+		assertTrue(BufferUtils.equals(GEOM_NIO_INT_DATA.getBuffer(), SerializationHelper.readGeomNioIntData(getInputStream()).getBuffer()));
 	}
 	
 	@Test
 	public void testWriteReadIntArray() throws IOException {
 		// testing null check implementation
 		SerializationHelper.writeIntArray(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readIntArray(getInputStream()));
+		assertNull(SerializationHelper.readIntArray(getInputStream()));
 		
 		SerializationHelper.writeIntArray(getOutputStream(), INT_ARRAY);
-		Assert.assertTrue(Arrays.equals(INT_ARRAY, SerializationHelper.readIntArray(getInputStream())));
+		assertTrue(Arrays.equals(INT_ARRAY, SerializationHelper.readIntArray(getInputStream())));
 	}
 	
 	@Test
@@ -452,7 +467,7 @@ public class SerializationHelperTest {
 		
 		// testing null check implementation
 		SerializationHelper.writeMaterial(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readMaterial(getInputStream()));
+		assertNull(SerializationHelper.readMaterial(getInputStream()));
 		
 		material = new Material(COLOR_F, COLOR_F, COLOR_F, COLOR_F, 11.0f, ColorTarget.AMBIENT_AND_DIFFUSE, false, true);
 		material.setName("material1");
@@ -460,15 +475,15 @@ public class SerializationHelperTest {
 		SerializationHelper.writeMaterial(getOutputStream(), material);
 		material = SerializationHelper.readMaterial(getInputStream());
 		
-		Assert.assertEquals("material1", material.getName());
-		Assert.assertEquals(COLOR_F, material.getAmbientColor());
-		Assert.assertEquals(COLOR_F, material.getEmissiveColor());
-		Assert.assertEquals(COLOR_F, material.getDiffuseColor());
-		Assert.assertEquals(COLOR_F, material.getSpecularColor());
-		Assert.assertEquals(11.0f, material.getShininess());
-		Assert.assertEquals(ColorTarget.AMBIENT_AND_DIFFUSE, material.getColorTarget());
-		Assert.assertFalse(material.getNormalizeNormals());
-		Assert.assertTrue(material.isLightingEnabled());
+		assertEquals("material1", material.getName());
+		assertEquals(COLOR_F, material.getAmbientColor());
+		assertEquals(COLOR_F, material.getEmissiveColor());
+		assertEquals(COLOR_F, material.getDiffuseColor());
+		assertEquals(COLOR_F, material.getSpecularColor());
+		assertEquals(11.0f, material.getShininess());
+		assertEquals(ColorTarget.AMBIENT_AND_DIFFUSE, material.getColorTarget());
+		assertFalse(material.getNormalizeNormals());
+		assertTrue(material.isLightingEnabled());
 	}
 	
 	@Test
@@ -477,7 +492,7 @@ public class SerializationHelperTest {
 		
 		// testing null check implementation
 		SerializationHelper.writeTransparencyAttributes(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readTransparencyAttributes(getInputStream()));
+		assertNull(SerializationHelper.readTransparencyAttributes(getInputStream()));
 		
 		transparencyAttributes = new TransparencyAttributes(BlendMode.NICEST, 0.17f, BlendFunction.DST_ALPHA, BlendFunction.DST_COLOR, true, true);
 		transparencyAttributes.setName("transparencyAttributes1");
@@ -485,13 +500,13 @@ public class SerializationHelperTest {
 		SerializationHelper.writeTransparencyAttributes(getOutputStream(), transparencyAttributes);
 		transparencyAttributes = SerializationHelper.readTransparencyAttributes(getInputStream());
 		
-		Assert.assertEquals("transparencyAttributes1", transparencyAttributes.getName());
-		Assert.assertEquals(BlendMode.NICEST, transparencyAttributes.getMode());
-		Assert.assertEquals(0.17f, transparencyAttributes.getTransparency());
-		Assert.assertEquals(BlendFunction.DST_ALPHA, transparencyAttributes.getSrcBlendFunction());
-		Assert.assertEquals(BlendFunction.DST_COLOR, transparencyAttributes.getDstBlendFunction());
-		Assert.assertTrue(transparencyAttributes.isSortEnabled());
-		Assert.assertTrue(transparencyAttributes.isEnabled());
+		assertEquals("transparencyAttributes1", transparencyAttributes.getName());
+		assertEquals(BlendMode.NICEST, transparencyAttributes.getMode());
+		assertEquals(0.17f, transparencyAttributes.getTransparency());
+		assertEquals(BlendFunction.DST_ALPHA, transparencyAttributes.getSrcBlendFunction());
+		assertEquals(BlendFunction.DST_COLOR, transparencyAttributes.getDstBlendFunction());
+		assertTrue(transparencyAttributes.isSortEnabled());
+		assertTrue(transparencyAttributes.isEnabled());
 	}
 	
 	@Test
@@ -500,7 +515,7 @@ public class SerializationHelperTest {
 		
 		// testing null check implementation
 		SerializationHelper.writeColoringAttributes(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readColoringAttributes(getInputStream()));
+		assertNull(SerializationHelper.readColoringAttributes(getInputStream()));
 		
 		coloringAttributes = new ColoringAttributes(1.0f, 1.0f, 1.0f, ShadeModel.NICEST);
 		coloringAttributes.setName("coloringAttributes1");
@@ -508,9 +523,9 @@ public class SerializationHelperTest {
 		SerializationHelper.writeColoringAttributes(getOutputStream(), coloringAttributes);
 		coloringAttributes = SerializationHelper.readColoringAttributes(getInputStream());
 		
-		Assert.assertEquals("coloringAttributes1", coloringAttributes.getName());
-		Assert.assertEquals(new Colorf(1.0f, 1.0f, 1.0f), coloringAttributes.getColor());
-		Assert.assertEquals(ShadeModel.NICEST, coloringAttributes.getShadeModel());
+		assertEquals("coloringAttributes1", coloringAttributes.getName());
+		assertEquals(new Colorf(1.0f, 1.0f, 1.0f), coloringAttributes.getColor());
+		assertEquals(ShadeModel.NICEST, coloringAttributes.getShadeModel());
 	}
 	
 	@Test
@@ -519,7 +534,7 @@ public class SerializationHelperTest {
 		
 		// testing null check implementation
 		SerializationHelper.writeLineAttributes(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readLineAttributes(getInputStream()));
+		assertNull(SerializationHelper.readLineAttributes(getInputStream()));
 		
 		lineAttributes = new LineAttributes(5.0f, LinePattern.DASHED_DOTTED, 3, 7, true);
 		lineAttributes.setName("lineAttributes1");
@@ -528,13 +543,13 @@ public class SerializationHelperTest {
 		SerializationHelper.writeLineAttributes(getOutputStream(), lineAttributes);
 		lineAttributes = SerializationHelper.readLineAttributes(getInputStream());
 		
-		Assert.assertEquals("lineAttributes1", lineAttributes.getName());
-		Assert.assertEquals(5.0f, lineAttributes.getLineWidth());
-		Assert.assertEquals(LinePattern.DASHED_DOTTED, lineAttributes.getLinePattern());
-		Assert.assertEquals(3, lineAttributes.getPatternScaleFactor());
-		Assert.assertEquals(7, lineAttributes.getPatternMask());
-		Assert.assertTrue(lineAttributes.isLineAntialiasingEnabled());
-		Assert.assertTrue(lineAttributes.isSortEnabled());
+		assertEquals("lineAttributes1", lineAttributes.getName());
+		assertEquals(5.0f, lineAttributes.getLineWidth());
+		assertEquals(LinePattern.DASHED_DOTTED, lineAttributes.getLinePattern());
+		assertEquals(3, lineAttributes.getPatternScaleFactor());
+		assertEquals(7, lineAttributes.getPatternMask());
+		assertTrue(lineAttributes.isLineAntialiasingEnabled());
+		assertTrue(lineAttributes.isSortEnabled());
 	}
 	
 	@Test
@@ -543,7 +558,7 @@ public class SerializationHelperTest {
 		
 		// testing null check implementation
 		SerializationHelper.writePointAttributes(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readPointAttributes(getInputStream()));
+		assertNull(SerializationHelper.readPointAttributes(getInputStream()));
 		
 		pointAttributes = new PointAttributes(3.0f, true);
 		pointAttributes.setName("pointAttributes1");
@@ -552,10 +567,10 @@ public class SerializationHelperTest {
 		SerializationHelper.writePointAttributes(getOutputStream(), pointAttributes);
 		pointAttributes = SerializationHelper.readPointAttributes(getInputStream());
 		
-		Assert.assertEquals("pointAttributes1", pointAttributes.getName());
-		Assert.assertEquals(3.0f, pointAttributes.getPointSize());
-		Assert.assertTrue(pointAttributes.isPointAntialiasingEnabled());
-		Assert.assertTrue(pointAttributes.isSortEnabled());
+		assertEquals("pointAttributes1", pointAttributes.getName());
+		assertEquals(3.0f, pointAttributes.getPointSize());
+		assertTrue(pointAttributes.isPointAntialiasingEnabled());
+		assertTrue(pointAttributes.isSortEnabled());
 	}
 	
 	@Test
@@ -564,7 +579,7 @@ public class SerializationHelperTest {
 		
 		// testing null check implementation
 		SerializationHelper.writePolygonAttributes(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readPolygonAttributes(getInputStream()));
+		assertNull(SerializationHelper.readPolygonAttributes(getInputStream()));
 		
 		polygonAttributes = new PolygonAttributes(DrawMode.LINE, FaceCullMode.SWITCH, 3.0f, 7.0f, true, true, true);
 		polygonAttributes.setName("polygonAttributes1");
@@ -572,14 +587,14 @@ public class SerializationHelperTest {
 		SerializationHelper.writePolygonAttributes(getOutputStream(), polygonAttributes);
 		polygonAttributes = SerializationHelper.readPolygonAttributes(getInputStream());
 		
-		Assert.assertEquals("polygonAttributes1", polygonAttributes.getName());
-		Assert.assertEquals(DrawMode.LINE, polygonAttributes.getDrawMode());
-		Assert.assertEquals(FaceCullMode.SWITCH, polygonAttributes.getFaceCullMode());
-		Assert.assertEquals(3.0f, polygonAttributes.getPolygonOffset());
-		Assert.assertEquals(7.0f, polygonAttributes.getPolygonOffsetFactor());
-		Assert.assertTrue(polygonAttributes.getBackFaceNormalFlip());
-		Assert.assertTrue(polygonAttributes.isPolygonAntialiasingEnabled());
-		Assert.assertTrue(polygonAttributes.isSortEnabled());
+		assertEquals("polygonAttributes1", polygonAttributes.getName());
+		assertEquals(DrawMode.LINE, polygonAttributes.getDrawMode());
+		assertEquals(FaceCullMode.SWITCH, polygonAttributes.getFaceCullMode());
+		assertEquals(3.0f, polygonAttributes.getPolygonOffset());
+		assertEquals(7.0f, polygonAttributes.getPolygonOffsetFactor());
+		assertTrue(polygonAttributes.getBackFaceNormalFlip());
+		assertTrue(polygonAttributes.isPolygonAntialiasingEnabled());
+		assertTrue(polygonAttributes.isSortEnabled());
 	}
 	
 	@Test
@@ -588,7 +603,7 @@ public class SerializationHelperTest {
 		
 		// testing null check implementation
 		SerializationHelper.writeRenderingAttributes(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readRenderingAttributes(getInputStream()));
+		assertNull(SerializationHelper.readRenderingAttributes(getInputStream()));
 		
 		renderingAttributes = new RenderingAttributes(true, true, TestFunction.GREATER_OR_EQUAL, 3.0f, TestFunction.LESS_OR_EQUAL, true, true, StencilOperation.REPLACE, StencilOperation.INVERT, StencilOperation.ZERO, TestFunction.NEVER, 11, 13, true, true, true, true);
 		renderingAttributes.setName("renderingAttributes1");
@@ -596,24 +611,24 @@ public class SerializationHelperTest {
 		SerializationHelper.writeRenderingAttributes(getOutputStream(), renderingAttributes);
 		renderingAttributes = SerializationHelper.readRenderingAttributes(getInputStream());
 		
-		Assert.assertEquals("renderingAttributes1", renderingAttributes.getName());
-		Assert.assertTrue(renderingAttributes.isDepthBufferEnabled());
-		Assert.assertTrue(renderingAttributes.isDepthBufferWriteEnabled());
-		Assert.assertEquals(TestFunction.GREATER_OR_EQUAL, renderingAttributes.getDepthTestFunction());
-		Assert.assertEquals(3.0f, renderingAttributes.getAlphaTestValue());
-		Assert.assertEquals(TestFunction.LESS_OR_EQUAL, renderingAttributes.getAlphaTestFunction());
-		Assert.assertTrue(renderingAttributes.getIgnoreVertexColors());
-		Assert.assertTrue(renderingAttributes.isStencilEnabled());
-		Assert.assertEquals(StencilOperation.REPLACE, renderingAttributes.getStencilOpFail());
-		Assert.assertEquals(StencilOperation.INVERT, renderingAttributes.getStencilOpZFail());
-		Assert.assertEquals(StencilOperation.ZERO, renderingAttributes.getStencilOpZPass());
-		Assert.assertEquals(TestFunction.NEVER, renderingAttributes.getStencilTestFunction());
-		Assert.assertEquals(11, renderingAttributes.getStencilRef());
-		Assert.assertEquals(13, renderingAttributes.getStencilMask());
-		Assert.assertTrue(renderingAttributes.isRedWriteEnabled());
-		Assert.assertTrue(renderingAttributes.isGreenWriteEnabled());
-		Assert.assertTrue(renderingAttributes.isBlueWriteEnabled());
-		Assert.assertTrue(renderingAttributes.isAlphaWriteEnabled());
+		assertEquals("renderingAttributes1", renderingAttributes.getName());
+		assertTrue(renderingAttributes.isDepthBufferEnabled());
+		assertTrue(renderingAttributes.isDepthBufferWriteEnabled());
+		assertEquals(TestFunction.GREATER_OR_EQUAL, renderingAttributes.getDepthTestFunction());
+		assertEquals(3.0f, renderingAttributes.getAlphaTestValue());
+		assertEquals(TestFunction.LESS_OR_EQUAL, renderingAttributes.getAlphaTestFunction());
+		assertTrue(renderingAttributes.getIgnoreVertexColors());
+		assertTrue(renderingAttributes.isStencilEnabled());
+		assertEquals(StencilOperation.REPLACE, renderingAttributes.getStencilOpFail());
+		assertEquals(StencilOperation.INVERT, renderingAttributes.getStencilOpZFail());
+		assertEquals(StencilOperation.ZERO, renderingAttributes.getStencilOpZPass());
+		assertEquals(TestFunction.NEVER, renderingAttributes.getStencilTestFunction());
+		assertEquals(11, renderingAttributes.getStencilRef());
+		assertEquals(13, renderingAttributes.getStencilMask());
+		assertTrue(renderingAttributes.isRedWriteEnabled());
+		assertTrue(renderingAttributes.isGreenWriteEnabled());
+		assertTrue(renderingAttributes.isBlueWriteEnabled());
+		assertTrue(renderingAttributes.isAlphaWriteEnabled());
 	}
 	
 	@Test
@@ -622,7 +637,7 @@ public class SerializationHelperTest {
 		
 		// testing null check implementation
 		SerializationHelper.writeStencilFunctionSeparate(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readStencilFunctionSeparate(getInputStream()));
+		assertNull(SerializationHelper.readStencilFunctionSeparate(getInputStream()));
 		
 		stencilFuncSeparate = new StencilFuncSeparate(StencilFace.FRONT_AND_BACK, TestFunction.GREATER_OR_EQUAL);
 		stencilFuncSeparate.setRef(3);
@@ -631,10 +646,10 @@ public class SerializationHelperTest {
 		SerializationHelper.writeStencilFunctionSeparate(getOutputStream(), stencilFuncSeparate);
 		stencilFuncSeparate = SerializationHelper.readStencilFunctionSeparate(getInputStream());
 		
-		Assert.assertEquals(StencilFace.FRONT_AND_BACK, stencilFuncSeparate.getFace());
-		Assert.assertEquals(TestFunction.GREATER_OR_EQUAL, stencilFuncSeparate.getTestFunction());
-		Assert.assertEquals(3, stencilFuncSeparate.getRef());
-		Assert.assertEquals(7, stencilFuncSeparate.getMask());
+		assertEquals(StencilFace.FRONT_AND_BACK, stencilFuncSeparate.getFace());
+		assertEquals(TestFunction.GREATER_OR_EQUAL, stencilFuncSeparate.getTestFunction());
+		assertEquals(3, stencilFuncSeparate.getRef());
+		assertEquals(7, stencilFuncSeparate.getMask());
 	}
 	
 	@Test
@@ -643,17 +658,17 @@ public class SerializationHelperTest {
 		
 		// testing null check implementation
 		SerializationHelper.writeStencilOperationSeparate(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readStencilOperationSeparate(getInputStream()));
+		assertNull(SerializationHelper.readStencilOperationSeparate(getInputStream()));
 		
 		stencilOpSeparate = new StencilOpSeparate(StencilFace.FRONT_AND_BACK, StencilOperation.DECREMENT, StencilOperation.INCREMENT, StencilOperation.INVERT);
 		
 		SerializationHelper.writeStencilOperationSeparate(getOutputStream(), stencilOpSeparate);
 		stencilOpSeparate = SerializationHelper.readStencilOperationSeparate(getInputStream());
 		
-		Assert.assertEquals(StencilFace.FRONT_AND_BACK, stencilOpSeparate.getFace());
-		Assert.assertEquals(StencilOperation.DECREMENT, stencilOpSeparate.getSFail());
-		Assert.assertEquals(StencilOperation.INCREMENT, stencilOpSeparate.getDPFail());
-		Assert.assertEquals(StencilOperation.INVERT, stencilOpSeparate.getDPPass());
+		assertEquals(StencilFace.FRONT_AND_BACK, stencilOpSeparate.getFace());
+		assertEquals(StencilOperation.DECREMENT, stencilOpSeparate.getSFail());
+		assertEquals(StencilOperation.INCREMENT, stencilOpSeparate.getDPFail());
+		assertEquals(StencilOperation.INVERT, stencilOpSeparate.getDPPass());
 	}
 	
 	@Test
@@ -662,15 +677,15 @@ public class SerializationHelperTest {
 		
 		// testing null check implementation
 		SerializationHelper.writeStencilMaskSeparate(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readStencilMaskSeparate(getInputStream()));
+		assertNull(SerializationHelper.readStencilMaskSeparate(getInputStream()));
 		
 		stencilMaskSeparate = new StencilMaskSeparate(StencilFace.FRONT_AND_BACK, 7);
 		
 		SerializationHelper.writeStencilMaskSeparate(getOutputStream(), stencilMaskSeparate);
 		stencilMaskSeparate = SerializationHelper.readStencilMaskSeparate(getInputStream());
 		
-		Assert.assertEquals(StencilFace.FRONT_AND_BACK, stencilMaskSeparate.getFace());
-		Assert.assertEquals(7, stencilMaskSeparate.getMask());
+		assertEquals(StencilFace.FRONT_AND_BACK, stencilMaskSeparate.getFace());
+		assertEquals(7, stencilMaskSeparate.getMask());
 	}
 	
 	@Test
@@ -679,7 +694,7 @@ public class SerializationHelperTest {
 		
 		// testing null check implementation
 		SerializationHelper.writeTextureUnit(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readTextureUnit(getInputStream()));
+		assertNull(SerializationHelper.readTextureUnit(getInputStream()));
 		
 		textureUnit = new TextureUnit(TEXTURE, TEXTURE_ATTRIBUTES, TEX_COORD_GENERATION);
 		textureUnit.setName("textureUnit1");
@@ -687,11 +702,11 @@ public class SerializationHelperTest {
 		SerializationHelper.writeTextureUnit(getOutputStream(), textureUnit);
 		textureUnit = SerializationHelper.readTextureUnit(getInputStream());
 		
-		Assert.assertEquals("textureUnit1", textureUnit.getName());
+		assertEquals("textureUnit1", textureUnit.getName());
 		// TODO:
-		//Assert.assertEquals(TEXTURE, textureUnit.getTexture());
-		Assert.assertEquals(TEXTURE_ATTRIBUTES, textureUnit.getTextureAttributes());
-		Assert.assertEquals(TEX_COORD_GENERATION, textureUnit.getTexCoordGeneration());
+		//assertEquals(TEXTURE, textureUnit.getTexture());
+		assertEquals(TEXTURE_ATTRIBUTES, textureUnit.getTextureAttributes());
+		assertEquals(TEX_COORD_GENERATION, textureUnit.getTexCoordGeneration());
 	}
 	
 	@Test
@@ -700,17 +715,17 @@ public class SerializationHelperTest {
 		
 		// testing null check implementation
 		SerializationHelper.writeTexture(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readTexture(getInputStream()));
+		assertNull(SerializationHelper.readTexture(getInputStream()));
 		
 		SerializationHelper.writeTexture(getOutputStream(), TEXTURE);
 		texture = SerializationHelper.readTexture(getInputStream());
 		
-		Assert.assertEquals(TEXTURE.getName(), texture.getName());
-        Assert.assertEquals(TEXTURE.getBoundaryModeS(), texture.getBoundaryModeS());
-        Assert.assertEquals(TEXTURE.getBoundaryModeT(), texture.getBoundaryModeT());
-        Assert.assertEquals(TEXTURE.getBoundaryColor(), texture.getBoundaryColor());
-        Assert.assertEquals(TEXTURE.getBoundaryWidth(), texture.getBoundaryWidth());
-        Assert.assertEquals(TEXTURE.getFilter(), texture.getFilter());
+		assertEquals(TEXTURE.getName(), texture.getName());
+        assertEquals(TEXTURE.getBoundaryModeS(), texture.getBoundaryModeS());
+        assertEquals(TEXTURE.getBoundaryModeT(), texture.getBoundaryModeT());
+        assertEquals(TEXTURE.getBoundaryColor(), texture.getBoundaryColor());
+        assertEquals(TEXTURE.getBoundaryWidth(), texture.getBoundaryWidth());
+        assertEquals(TEXTURE.getFilter(), texture.getFilter());
 	}
 	
 	@Test
@@ -719,34 +734,34 @@ public class SerializationHelperTest {
 		
 		// testing null check implementation
 		SerializationHelper.writeTextureAttributes(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readTextureAttributes(getInputStream()));
+		assertNull(SerializationHelper.readTextureAttributes(getInputStream()));
 		
 		SerializationHelper.writeTextureAttributes(getOutputStream(), TEXTURE_ATTRIBUTES);
 		textureAttributes = SerializationHelper.readTextureAttributes(getInputStream());
 		
-		Assert.assertEquals(TEXTURE_ATTRIBUTES.getName(), textureAttributes.getName());
-		Assert.assertEquals(TEXTURE_ATTRIBUTES.getTextureMode(), textureAttributes.getTextureMode());
-		Assert.assertEquals(TEXTURE_ATTRIBUTES.getTextureBlendColor(), textureAttributes.getTextureBlendColor());
-		Assert.assertEquals(TEXTURE_ATTRIBUTES.getPerspectiveCorrectionMode(), textureAttributes.getPerspectiveCorrectionMode());
-		Assert.assertEquals(TEXTURE_ATTRIBUTES.getTextureTransform(), textureAttributes.getTextureTransform());
-		Assert.assertEquals(TEXTURE_ATTRIBUTES.getCombineRGBMode(), textureAttributes.getCombineRGBMode());
-		Assert.assertEquals(TEXTURE_ATTRIBUTES.getCombineAlphaMode(), textureAttributes.getCombineAlphaMode());
-		Assert.assertEquals(TEXTURE_ATTRIBUTES.getCombineRGBSource(0), textureAttributes.getCombineRGBSource(0));
-		Assert.assertEquals(TEXTURE_ATTRIBUTES.getCombineRGBSource(1), textureAttributes.getCombineRGBSource(1));
-		Assert.assertEquals(TEXTURE_ATTRIBUTES.getCombineRGBSource(2), textureAttributes.getCombineRGBSource(2));
-		Assert.assertEquals(TEXTURE_ATTRIBUTES.getCombineAlphaSource(0), textureAttributes.getCombineAlphaSource(0));
-		Assert.assertEquals(TEXTURE_ATTRIBUTES.getCombineAlphaSource(1), textureAttributes.getCombineAlphaSource(1));
-		Assert.assertEquals(TEXTURE_ATTRIBUTES.getCombineAlphaSource(2), textureAttributes.getCombineAlphaSource(2));
-		Assert.assertEquals(TEXTURE_ATTRIBUTES.getCombineRGBFunction(0), textureAttributes.getCombineRGBFunction(0));
-		Assert.assertEquals(TEXTURE_ATTRIBUTES.getCombineRGBFunction(1), textureAttributes.getCombineRGBFunction(1));
-		Assert.assertEquals(TEXTURE_ATTRIBUTES.getCombineRGBFunction(2), textureAttributes.getCombineRGBFunction(2));
-		Assert.assertEquals(TEXTURE_ATTRIBUTES.getCombineAlphaFunction(0), textureAttributes.getCombineAlphaFunction(0));
-		Assert.assertEquals(TEXTURE_ATTRIBUTES.getCombineAlphaFunction(1), textureAttributes.getCombineAlphaFunction(1));
-		Assert.assertEquals(TEXTURE_ATTRIBUTES.getCombineAlphaFunction(2), textureAttributes.getCombineAlphaFunction(2));
-		Assert.assertEquals(TEXTURE_ATTRIBUTES.getCombineRGBScale(), textureAttributes.getCombineRGBScale());
-		Assert.assertEquals(TEXTURE_ATTRIBUTES.getCombineAlphaScale(), textureAttributes.getCombineAlphaScale());
-		Assert.assertEquals(TEXTURE_ATTRIBUTES.getCompareMode(), textureAttributes.getCompareMode());
-		Assert.assertEquals(TEXTURE_ATTRIBUTES.getCompareFunction(), textureAttributes.getCompareFunction());
+		assertEquals(TEXTURE_ATTRIBUTES.getName(), textureAttributes.getName());
+		assertEquals(TEXTURE_ATTRIBUTES.getTextureMode(), textureAttributes.getTextureMode());
+		assertEquals(TEXTURE_ATTRIBUTES.getTextureBlendColor(), textureAttributes.getTextureBlendColor());
+		assertEquals(TEXTURE_ATTRIBUTES.getPerspectiveCorrectionMode(), textureAttributes.getPerspectiveCorrectionMode());
+		assertEquals(TEXTURE_ATTRIBUTES.getTextureTransform(), textureAttributes.getTextureTransform());
+		assertEquals(TEXTURE_ATTRIBUTES.getCombineRGBMode(), textureAttributes.getCombineRGBMode());
+		assertEquals(TEXTURE_ATTRIBUTES.getCombineAlphaMode(), textureAttributes.getCombineAlphaMode());
+		assertEquals(TEXTURE_ATTRIBUTES.getCombineRGBSource(0), textureAttributes.getCombineRGBSource(0));
+		assertEquals(TEXTURE_ATTRIBUTES.getCombineRGBSource(1), textureAttributes.getCombineRGBSource(1));
+		assertEquals(TEXTURE_ATTRIBUTES.getCombineRGBSource(2), textureAttributes.getCombineRGBSource(2));
+		assertEquals(TEXTURE_ATTRIBUTES.getCombineAlphaSource(0), textureAttributes.getCombineAlphaSource(0));
+		assertEquals(TEXTURE_ATTRIBUTES.getCombineAlphaSource(1), textureAttributes.getCombineAlphaSource(1));
+		assertEquals(TEXTURE_ATTRIBUTES.getCombineAlphaSource(2), textureAttributes.getCombineAlphaSource(2));
+		assertEquals(TEXTURE_ATTRIBUTES.getCombineRGBFunction(0), textureAttributes.getCombineRGBFunction(0));
+		assertEquals(TEXTURE_ATTRIBUTES.getCombineRGBFunction(1), textureAttributes.getCombineRGBFunction(1));
+		assertEquals(TEXTURE_ATTRIBUTES.getCombineRGBFunction(2), textureAttributes.getCombineRGBFunction(2));
+		assertEquals(TEXTURE_ATTRIBUTES.getCombineAlphaFunction(0), textureAttributes.getCombineAlphaFunction(0));
+		assertEquals(TEXTURE_ATTRIBUTES.getCombineAlphaFunction(1), textureAttributes.getCombineAlphaFunction(1));
+		assertEquals(TEXTURE_ATTRIBUTES.getCombineAlphaFunction(2), textureAttributes.getCombineAlphaFunction(2));
+		assertEquals(TEXTURE_ATTRIBUTES.getCombineRGBScale(), textureAttributes.getCombineRGBScale());
+		assertEquals(TEXTURE_ATTRIBUTES.getCombineAlphaScale(), textureAttributes.getCombineAlphaScale());
+		assertEquals(TEXTURE_ATTRIBUTES.getCompareMode(), textureAttributes.getCompareMode());
+		assertEquals(TEXTURE_ATTRIBUTES.getCompareFunction(), textureAttributes.getCompareFunction());
 	}
 	
 	@Test
@@ -755,39 +770,39 @@ public class SerializationHelperTest {
 		
 		// testing null check implementation
 		SerializationHelper.writeTexCoordGeneration(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readTexCoordGeneration(getInputStream()));
+		assertNull(SerializationHelper.readTexCoordGeneration(getInputStream()));
 		
 		SerializationHelper.writeTexCoordGeneration(getOutputStream(), TEX_COORD_GENERATION);
 		texCoordGeneration = SerializationHelper.readTexCoordGeneration(getInputStream());
 		
-		Assert.assertEquals(TEX_COORD_GENERATION.getName(), texCoordGeneration.getName());
-		Assert.assertEquals(TEX_COORD_GENERATION.getGenMode(), texCoordGeneration.getGenMode());
-		Assert.assertEquals(TEX_COORD_GENERATION.getFormat(), texCoordGeneration.getFormat());
-		Assert.assertEquals(TEX_COORD_GENERATION.getPlaneS(), texCoordGeneration.getPlaneS());
-		Assert.assertEquals(TEX_COORD_GENERATION.getPlaneT(), texCoordGeneration.getPlaneT());
-		Assert.assertEquals(TEX_COORD_GENERATION.getPlaneR(), texCoordGeneration.getPlaneR());
-		Assert.assertEquals(TEX_COORD_GENERATION.getPlaneQ(), texCoordGeneration.getPlaneQ());
-		Assert.assertEquals(TEX_COORD_GENERATION.isEnabled(), texCoordGeneration.isEnabled());
+		assertEquals(TEX_COORD_GENERATION.getName(), texCoordGeneration.getName());
+		assertEquals(TEX_COORD_GENERATION.getGenMode(), texCoordGeneration.getGenMode());
+		assertEquals(TEX_COORD_GENERATION.getFormat(), texCoordGeneration.getFormat());
+		assertEquals(TEX_COORD_GENERATION.getPlaneS(), texCoordGeneration.getPlaneS());
+		assertEquals(TEX_COORD_GENERATION.getPlaneT(), texCoordGeneration.getPlaneT());
+		assertEquals(TEX_COORD_GENERATION.getPlaneR(), texCoordGeneration.getPlaneR());
+		assertEquals(TEX_COORD_GENERATION.getPlaneQ(), texCoordGeneration.getPlaneQ());
+		assertEquals(TEX_COORD_GENERATION.isEnabled(), texCoordGeneration.isEnabled());
 	}
 	
 	@Test
 	public void testWriteReadBitSet() throws IOException {
 		// testing null check implementation
 		SerializationHelper.writeBitSet(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readBitSet(getInputStream()));
+		assertNull(SerializationHelper.readBitSet(getInputStream()));
 		
 		SerializationHelper.writeBitSet(getOutputStream(), BIT_SET);
-		Assert.assertEquals(BIT_SET, SerializationHelper.readBitSet(getInputStream()));
+		assertEquals(BIT_SET, SerializationHelper.readBitSet(getInputStream()));
 	}
 	
 	@Test
 	public void testWriteReadTuple2f() throws IOException {
 		// testing null check implementation
 		SerializationHelper.writeTuple2f(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readTuple2f(getInputStream()));
+		assertNull(SerializationHelper.readTuple2f(getInputStream()));
 		
 		SerializationHelper.writeTuple2f(getOutputStream(), TUPLE_2F);
-		Assert.assertEquals(TUPLE_2F, SerializationHelper.readTuple2f(getInputStream()));
+		assertEquals(TUPLE_2F, SerializationHelper.readTuple2f(getInputStream()));
 	}
 	
 	@Test
@@ -796,80 +811,80 @@ public class SerializationHelperTest {
 		
 		// testing null check implementation
 		SerializationHelper.writeGeometry(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readGeometry(getInputStream()));
+		assertNull(SerializationHelper.readGeometry(getInputStream()));
 		
 		SerializationHelper.writeGeometry(getOutputStream(), GEOMETRY1);
 		geometry = SerializationHelper.readGeometry(getInputStream());
 		
-		Assert.assertEquals(GEOMETRY1.getName(), geometry.getName());
+		assertEquals(GEOMETRY1.getName(), geometry.getName());
 		
 		GeometryDataContainer geometryDataContainer1 = (GeometryDataContainer) PrivateAccessor.getPrivateField(geometry, "dataContainer");
 		GeometryDataContainer geometryDataContainer2 = (GeometryDataContainer) PrivateAccessor.getPrivateField(GEOMETRY1, "dataContainer");
 		
-		Assert.assertEquals(geometryDataContainer1.getValidVertexCount(), geometryDataContainer2.getValidVertexCount());
-		Assert.assertEquals(geometryDataContainer1.getCoordinatesOffset(), geometryDataContainer2.getCoordinatesOffset());
-		//Assert.assertEquals(geometryDataContainer1.get, geometryDataContainer2.get);
-		Assert.assertEquals(geometryDataContainer1.getInitialIndex(), geometryDataContainer2.getInitialIndex());
+		assertEquals(geometryDataContainer1.getValidVertexCount(), geometryDataContainer2.getValidVertexCount());
+		assertEquals(geometryDataContainer1.getCoordinatesOffset(), geometryDataContainer2.getCoordinatesOffset());
+		//assertEquals(geometryDataContainer1.get, geometryDataContainer2.get);
+		assertEquals(geometryDataContainer1.getInitialIndex(), geometryDataContainer2.getInitialIndex());
 		
-		Assert.assertEquals(geometryDataContainer1.hasIndex(), geometryDataContainer2.hasIndex());
+		assertEquals(geometryDataContainer1.hasIndex(), geometryDataContainer2.hasIndex());
 		if (geometryDataContainer1.hasIndex()) {
-			Assert.assertTrue(BufferUtils.equals(geometryDataContainer1.getIndexData().getBuffer(), geometryDataContainer2.getIndexData().getBuffer()));
+			assertTrue(BufferUtils.equals(geometryDataContainer1.getIndexData().getBuffer(), geometryDataContainer2.getIndexData().getBuffer()));
 		}
 		
-		Assert.assertEquals(geometryDataContainer1.isInterleaved(), geometryDataContainer2.isInterleaved());
+		assertEquals(geometryDataContainer1.isInterleaved(), geometryDataContainer2.isInterleaved());
 		if (geometryDataContainer1.isInterleaved()) {
-			Assert.assertTrue(BufferUtils.equals(geometryDataContainer1.getCoordinatesData().getBuffer(), geometryDataContainer2.getCoordinatesData().getBuffer()));
+			assertTrue(BufferUtils.equals(geometryDataContainer1.getCoordinatesData().getBuffer(), geometryDataContainer2.getCoordinatesData().getBuffer()));
 			
-			Assert.assertEquals(geometryDataContainer1.hasNormals(), geometryDataContainer2.hasNormals());
+			assertEquals(geometryDataContainer1.hasNormals(), geometryDataContainer2.hasNormals());
 			if (geometryDataContainer1.hasNormals()) {
-				Assert.assertTrue(BufferUtils.equals(geometryDataContainer1.getNormalsData().getBuffer(), geometryDataContainer2.getNormalsData().getBuffer()));
+				assertTrue(BufferUtils.equals(geometryDataContainer1.getNormalsData().getBuffer(), geometryDataContainer2.getNormalsData().getBuffer()));
 			}
 			
-			Assert.assertEquals(geometryDataContainer1.hasColors(), geometryDataContainer2.hasColors());
+			assertEquals(geometryDataContainer1.hasColors(), geometryDataContainer2.hasColors());
 			if (geometryDataContainer1.hasColors()) {
-				Assert.assertTrue(BufferUtils.equals(geometryDataContainer1.getColorData().getBuffer(), geometryDataContainer2.getColorData().getBuffer()));
+				assertTrue(BufferUtils.equals(geometryDataContainer1.getColorData().getBuffer(), geometryDataContainer2.getColorData().getBuffer()));
 			}
 			
-			Assert.assertEquals(geometryDataContainer1.hasTextureCoordinates(), geometryDataContainer2.hasTextureCoordinates());
+			assertEquals(geometryDataContainer1.hasTextureCoordinates(), geometryDataContainer2.hasTextureCoordinates());
 			if (geometryDataContainer1.hasTextureCoordinates()) {
 				GeomNioFloatData[] texCoords1 = (GeomNioFloatData[]) PrivateAccessor.getPrivateField(geometryDataContainer1, "texCoords");
 				GeomNioFloatData[] texCoords2 = (GeomNioFloatData[]) PrivateAccessor.getPrivateField(geometryDataContainer2, "texCoords");
 				
-				Assert.assertEquals(texCoords1.length, texCoords2.length);
+				assertEquals(texCoords1.length, texCoords2.length);
 				for (int i = 0; i < texCoords1.length; i++) {
-					Assert.assertTrue(BufferUtils.equals(texCoords1[i].getBuffer(), texCoords2[i].getBuffer()));
+					assertTrue(BufferUtils.equals(texCoords1[i].getBuffer(), texCoords2[i].getBuffer()));
 				}
 			}
 			
-			Assert.assertEquals(geometryDataContainer1.getVertexAttributesCount(), geometryDataContainer2.getVertexAttributesCount());
+			assertEquals(geometryDataContainer1.getVertexAttributesCount(), geometryDataContainer2.getVertexAttributesCount());
 			for (int i = 0; i < geometryDataContainer1.getVertexAttributesCount(); i++) {
-            	Assert.assertTrue(BufferUtils.equals(geometryDataContainer1.getVertexAttribData(i).getBuffer(), geometryDataContainer2.getVertexAttribData(i).getBuffer()));
+            	assertTrue(BufferUtils.equals(geometryDataContainer1.getVertexAttribData(i).getBuffer(), geometryDataContainer2.getVertexAttribData(i).getBuffer()));
             }
 		}
 		
-		Assert.assertTrue(Arrays.equals(geometryDataContainer1.getStripCounts(), geometryDataContainer2.getStripCounts()));
+		assertTrue(Arrays.equals(geometryDataContainer1.getStripCounts(), geometryDataContainer2.getStripCounts()));
 		
 		int[] texCoordSetMap_nonPublic1 = (int[]) PrivateAccessor.getPrivateField(geometryDataContainer1, "texCoordSetMap");
 		int[] texCoordSetMap_nonPublic2 = (int[]) PrivateAccessor.getPrivateField(geometryDataContainer2, "texCoordSetMap");
 		
-		Assert.assertTrue(Arrays.equals(texCoordSetMap_nonPublic1, texCoordSetMap_nonPublic2));
-		Assert.assertTrue(Arrays.equals(geometryDataContainer1.getTexCoordSetMap(), geometryDataContainer2.getTexCoordSetMap()));
+		assertTrue(Arrays.equals(texCoordSetMap_nonPublic1, texCoordSetMap_nonPublic2));
+		assertTrue(Arrays.equals(geometryDataContainer1.getTexCoordSetMap(), geometryDataContainer2.getTexCoordSetMap()));
 		
 		for (int unit = 0; unit < GeometryDataContainer.TEXTURE_COORDINATES; unit++) {
-			Assert.assertEquals(geometryDataContainer1.getTexCoordSize(unit), geometryDataContainer2.getTexCoordSize(unit));
+			assertEquals(geometryDataContainer1.getTexCoordSize(unit), geometryDataContainer2.getTexCoordSize(unit));
 		}
 		
-		Assert.assertEquals(geometryDataContainer1.getColorsSize(), geometryDataContainer2.getColorsSize());
-		Assert.assertEquals(geometryDataContainer1.getVertexFormat(), geometryDataContainer2.getVertexFormat());
-		Assert.assertEquals(geometryDataContainer1.getNormalsOffset(), geometryDataContainer2.getNormalsOffset());
-		Assert.assertEquals(geometryDataContainer1.getColorsOffset(), geometryDataContainer2.getColorsOffset());
+		assertEquals(geometryDataContainer1.getColorsSize(), geometryDataContainer2.getColorsSize());
+		assertEquals(geometryDataContainer1.getVertexFormat(), geometryDataContainer2.getVertexFormat());
+		assertEquals(geometryDataContainer1.getNormalsOffset(), geometryDataContainer2.getNormalsOffset());
+		assertEquals(geometryDataContainer1.getColorsOffset(), geometryDataContainer2.getColorsOffset());
 		
 		for (int unit = 0; unit < GeometryDataContainer.TEXTURE_COORDINATES; unit++) {
-        	Assert.assertEquals(geometryDataContainer1.getTexCoordsOffset(unit), geometryDataContainer2.getTexCoordsOffset(unit));
+        	assertEquals(geometryDataContainer1.getTexCoordsOffset(unit), geometryDataContainer2.getTexCoordsOffset(unit));
         }
 		
 		for (int vertexAttributes = 0; vertexAttributes < GeometryDataContainer.VERTEX_ATTRIBUTES; vertexAttributes++) {
-			Assert.assertEquals(geometryDataContainer1.getVertexAttribsOffset(vertexAttributes), geometryDataContainer2.getVertexAttribsOffset(vertexAttributes));
+			assertEquals(geometryDataContainer1.getVertexAttribsOffset(vertexAttributes), geometryDataContainer2.getVertexAttribsOffset(vertexAttributes));
         }
 	}
 	
@@ -877,19 +892,62 @@ public class SerializationHelperTest {
 	public void testWriteReadBounds() throws IOException {
 		// testing null check implementation
 		SerializationHelper.writeBounds(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readBounds(getInputStream()));
+		assertNull(SerializationHelper.readBounds(getInputStream()));
 		
 		SerializationHelper.writeBounds(getOutputStream(), new BoundingPolytope());
-		Assert.assertEquals(BoundsType.POLYTOPE, SerializationHelper.readBounds(getInputStream()).getType());
+		assertEquals(BoundsType.POLYTOPE, SerializationHelper.readBounds(getInputStream()).getType());
 	}
 	
 	@Test
 	public void testWriteReadGroupAnimator() throws IOException {
+		GroupAnimator groupAnimator;
+		
 		// testing null check implementation
 		SerializationHelper.writeGroupAnimator(getOutputStream(), null);
-		Assert.assertNull(SerializationHelper.readGroupAnimator(getInputStream()));
+		assertNull(SerializationHelper.readGroupAnimator(getInputStream()));
+
+		// ---
 		
-		// TODO:
+		// testing group rotator implementation
+		SerializationHelper.writeGroupAnimator(getOutputStream(), GROUP_ROTATOR1);
+		groupAnimator = SerializationHelper.readGroupAnimator(getInputStream());
+		
+		assertEquals(GROUP_ROTATOR1.getClass(), groupAnimator.getClass());
+		assertEquals(GROUP_ROTATOR1.getTransformationDirectives(), groupAnimator.getTransformationDirectives(), new TransformationDirectivesComparator());
+		
+		// ---
+		
+		// testing group translator implementation
+		SerializationHelper.writeGroupAnimator(getOutputStream(), GROUP_TRANSLATOR1);
+		groupAnimator = SerializationHelper.readGroupAnimator(getInputStream());
+		
+		assertEquals(GROUP_TRANSLATOR1.getClass(), groupAnimator.getClass());
+		assertEquals(GROUP_TRANSLATOR1.getTransformationDirectives(), groupAnimator.getTransformationDirectives(), new TransformationDirectivesComparator());
+	}
+	
+	@Test
+	public void testWriteReadTransformationDirectives() throws IOException {
+		TransformationDirectives transformationDirectives;
+		
+		// testing null check implementation
+		SerializationHelper.writeTransformationDirectives(getOutputStream(), null);
+		assertNull(SerializationHelper.readTransformationDirectives(getInputStream()));
+
+		// ---
+		
+		SerializationHelper.writeTransformationDirectives(getOutputStream(), TRANSFORMATION_DIRECTIVES1);
+		transformationDirectives = SerializationHelper.readTransformationDirectives(getInputStream());
+		
+		assertEquals(TRANSFORMATION_DIRECTIVES1, transformationDirectives, new TransformationDirectivesComparator());
+		
+		// ---
+		
+		SerializationHelper.writeTransformationDirectives(getOutputStream(), TRANSFORMATION_DIRECTIVES2);
+		transformationDirectives = SerializationHelper.readTransformationDirectives(getInputStream());
+		
+		assertEquals(TRANSFORMATION_DIRECTIVES2, transformationDirectives, new TransformationDirectivesComparator());
+		
+		
 	}
 	
 }

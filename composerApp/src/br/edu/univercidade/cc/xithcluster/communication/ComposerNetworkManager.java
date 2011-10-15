@@ -19,13 +19,15 @@ import br.edu.univercidade.cc.xithcluster.Composer;
 import br.edu.univercidade.cc.xithcluster.ComposerConfiguration;
 import br.edu.univercidade.cc.xithcluster.CompressionMethod;
 
-public final class ComposerNetworkManager extends NetworkManager {
+public final class ComposerNetworkManager {
 	
 	private Logger log = Logger.getLogger(ComposerNetworkManager.class);
 	
 	private boolean trace = log.isTraceEnabled();
 	
 	private ComposerMessageBroker composerMessageBroker = new ComposerMessageBroker();
+	
+	protected INonBlockingConnection masterConnection;
 	
 	private List<INonBlockingConnection> renderersConnections = new ArrayList<INonBlockingConnection>();
 	
@@ -296,8 +298,33 @@ public final class ComposerNetworkManager extends NetworkManager {
 		masterConnection.write(currentFrame);
 		masterConnection.flush();
 	}
+	
+	public void update() {
+		Queue<Message> messages;
+		
+		checkMasterNodeConnection();
+		
+		messages = MessageQueue.startReadingMessages();
+		
+		processMessages(messages);
+		
+		MessageQueue.stopReadingMessages();
+	}
+	
+	private void checkMasterNodeConnection() {
+		if (!masterConnection.isOpen()) {
+			System.err.println("Master node disconnected");
+			
+			// TODO:
+			System.exit(-1);
+		}
+	}
 
-	@Override
+	/*
+	 * ================================ 
+	 * Network messages processing loop
+	 * ================================
+	 */
 	protected void processMessages(Queue<Message> messages) {
 		Message message;
 		Message firstStartFrameMessage;

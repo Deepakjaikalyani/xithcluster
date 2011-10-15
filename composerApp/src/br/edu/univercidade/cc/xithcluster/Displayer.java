@@ -133,7 +133,7 @@ public class Displayer extends JFrame {
 		}
 	}
 	
-	public void setFpsCounter(AWTFPSCounter fpsCounter) {
+	public void setFPSCounter(AWTFPSCounter fpsCounter) {
 		this.fpsCounter = fpsCounter;
 	}
 	

@@ -32,7 +32,7 @@ public final class SerializerRegistry {
 	static void register(Class<?> nodeClass, Class<? extends Serializer<?>> registeredClass) {
 		if (classRegistry.containsKey(nodeClass)) {
 			// TODO:
-			throw new RuntimeException("It's not possible to register two serializers for the same class: " + nodeClass.getName());
+			throw new RuntimeException("There's already a registered serializer for class '" + nodeClass.getName() + "'");
 		}
 		
 		classRegistry.put(nodeClass, registeredClass);
@@ -40,19 +40,27 @@ public final class SerializerRegistry {
 	
 	@SuppressWarnings("rawtypes")
 	public static Serializer getSerializer(Class<?> clazz) {
+		Class<? extends Serializer<?>> serializerClass;
 		Serializer<?> serializer = null;
 		
 		try {
 			if ((serializer = cache.get(clazz)) == null) {
-				serializer = classRegistry.get(clazz).newInstance();
+				serializerClass = classRegistry.get(clazz);
+				
+				if (serializerClass == null) {
+					// TODO:
+					throw new RuntimeException("No serializer found for class '" + clazz.getName()  + "'");
+				}
+				
+				serializer = serializerClass.newInstance();
 				cache.put(clazz, serializer);
 			}
 		} catch (InstantiationException e) {
 			// TODO:
-			throw new RuntimeException("Error in serializer's default constructor");
+			throw new RuntimeException("Error in serializer's default constructor", e);
 		} catch (IllegalAccessException e) {
 			// TODO:
-			throw new RuntimeException("Serializer class doesn't have a public default constructor");
+			throw new RuntimeException("Serializer class doesn't have a public default constructor", e);
 		}
 		
 		return serializer;

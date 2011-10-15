@@ -8,7 +8,8 @@ import br.edu.univercidade.cc.xithcluster.test.utils.TestUtils;
 
 public class LowPolyTest extends PolyTest {
 	
-	protected BranchGroup createTestScene() {
+	@Override
+	protected BranchGroup createSceneRoot() {
 		BranchGroup root;
 		TransformGroup transformGroup;
 		Group mainGroup;

@@ -23,7 +23,7 @@ public class Composer implements Runnable, WindowListener {
 	
 	private Displayer displayer;
 	
-	private FPSCounter fpsCounter;
+	private AWTFPSCounter fpsCounter;
 
 	private int screenWidth;
 
@@ -38,10 +38,6 @@ public class Composer implements Runnable, WindowListener {
 		secondsPerFrame = 1000L / 60L;
 		
 		networkManager = new ComposerNetworkManager(this);
-		
-		if (ComposerConfiguration.displayFPSCounter) {
-			fpsCounter = new AWTFPSCounter(FPS_SAMPLES);
-		}
 	}
 
 	private void initializeLog4j() {
@@ -92,6 +88,11 @@ public class Composer implements Runnable, WindowListener {
 		displayer = new Displayer();
 		displayer.addWindowListener(Composer.this);
 		displayer.initializeAndShow();
+		
+		if (ComposerConfiguration.displayFPSCounter) {
+			fpsCounter = new AWTFPSCounter(FPS_SAMPLES);
+			displayer.setFPSCounter(fpsCounter);
+		}
 		
 		try {
 			networkManager.initialize();

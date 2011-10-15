@@ -84,6 +84,10 @@ import org.xith3d.scenegraph.TriangleArray;
 import org.xith3d.scenegraph.TriangleFanArray;
 import org.xith3d.scenegraph.TriangleStripArray;
 import org.xith3d.schedops.movement.GroupAnimator;
+import org.xith3d.schedops.movement.GroupRotator;
+import org.xith3d.schedops.movement.GroupTranslator;
+import org.xith3d.schedops.movement.TransformationDirectives;
+import org.xith3d.schedops.movement.TransformationDirectives.AxisOrder;
 import br.edu.univercidade.cc.xithcluster.util.BufferUtils;
 import br.edu.univercidade.cc.xithcluster.util.PrivateAccessor;
 
@@ -118,6 +122,10 @@ public class SerializationHelper {
 	private static final int TIT_TEXTURE_IMAGE_2D = 1;
 	
 	private static final int TIT_TEXTURE_IMAGE_3D = 2;
+
+	private static final int GA_ROTATOR = 1;
+
+	private static final int GA_TRANSLATOR = 2;
 	
 	private SerializationHelper() {
 	}
@@ -1553,11 +1561,103 @@ public class SerializationHelper {
 			return null;
 		}
 	}
-
-	public static void writeGroupAnimator(DataOutputStream out, GroupAnimator groupAnimator) {
+	
+	public static void writeGroupAnimator(DataOutputStream out, GroupAnimator groupAnimator) throws IOException {
+		int type;
+		
+		if (nullCheck(out, groupAnimator)) {
+			if (groupAnimator instanceof GroupRotator) {
+				type = GA_ROTATOR;
+			} else if (groupAnimator instanceof GroupTranslator) {
+				type = GA_TRANSLATOR;
+			} else {
+				throw new UnsupportedOperationException("Unsupported group animator type: " + groupAnimator.getClass().getName());
+			}
+			
+			out.writeInt(type);
+			writeTransformationDirectives(out, groupAnimator.getTransformationDirectives());
+		}
+	}
+	
+	public static GroupAnimator readGroupAnimator(DataInputStream in) throws IOException {
+		int type;
+		TransformationDirectives transformationDirectives;
+		GroupAnimator groupAnimator;
+		
+		if (nullCheck(in)) {
+			type = in.readInt();
+			transformationDirectives = readTransformationDirectives(in);
+			
+			switch (type) {
+			case GA_ROTATOR:
+				groupAnimator = new GroupRotator(transformationDirectives);
+				break;
+			case GA_TRANSLATOR:
+				groupAnimator = new GroupTranslator(transformationDirectives);
+				break;
+			default:
+				throw new IOException("Unexpected group animator type: " + type);
+			}
+			
+			return groupAnimator;
+		} else {
+			return null;
+		}
 	}
 
-	public static GroupAnimator readGroupAnimator(DataInputStream in) {
-		return null;
+	public static void writeTransformationDirectives(DataOutputStream out, TransformationDirectives transformationDirectives) throws IOException {
+		if (nullCheck(out, transformationDirectives)) {
+			writeVector3f(out, transformationDirectives.getUserAxis());
+			
+			if (transformationDirectives.getUserAxis() == null) {
+				out.writeFloat(transformationDirectives.getInitValueX());
+				out.writeFloat(transformationDirectives.getInitValueY());
+				out.writeFloat(transformationDirectives.getInitValueZ());
+				out.writeFloat(transformationDirectives.getSpeedX());
+				out.writeFloat(transformationDirectives.getSpeedY());
+				out.writeFloat(transformationDirectives.getSpeedZ());
+				writeEnum(out, transformationDirectives.getAxisOrder());
+			} else {
+				out.writeFloat(transformationDirectives.getInitValueUser());
+				out.writeFloat(transformationDirectives.getSpeedUser());
+			}
+		}
 	}
+	
+	public static TransformationDirectives readTransformationDirectives(DataInputStream in) throws IOException {
+		Vector3f userAxis;
+		float initValueX;
+		float initValueY;
+		float initValueZ;
+		float speedX;
+		float speedY;
+		float speedZ;
+		AxisOrder axisOrder;
+		float initValueUser;
+		float speedUser;
+		
+		if (nullCheck(in)) {
+			userAxis = readVector3f(in);
+			
+			if (userAxis == null) {
+				initValueX = in.readFloat();
+				initValueY = in.readFloat();
+				initValueZ = in.readFloat();
+				speedX = in.readFloat();
+				speedY = in.readFloat();
+				speedZ = in.readFloat();
+				axisOrder = readEnum(in, AxisOrder.values());
+				
+				return new TransformationDirectives(initValueX, initValueY, initValueZ, speedX, speedY, speedZ, axisOrder);
+			} else {
+				initValueUser = in.readFloat();
+				speedUser = in.readFloat();
+				
+				return new TransformationDirectives(userAxis, initValueUser, speedUser);
+			}
+		} else {
+			return null;
+		}
+	}
+	
 }
