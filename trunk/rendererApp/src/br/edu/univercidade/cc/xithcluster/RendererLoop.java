@@ -1,17 +1,14 @@
 package br.edu.univercidade.cc.xithcluster;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.log4j.xml.DOMConfigurator;
 import org.jagatoo.input.InputSystem;
 import org.jagatoo.input.InputSystemException;
 import org.jagatoo.input.devices.components.Key;
 import org.jagatoo.input.events.KeyPressedEvent;
 import org.jagatoo.opengl.enums.TextureFormat;
 import org.openmali.vecmath2.Colorf;
-import org.xith3d.base.Xith3DEnvironment;
 import org.xith3d.loaders.texture.TextureCreator;
 import org.xith3d.loop.InputAdapterRenderLoop;
 import org.xith3d.loop.opscheduler.Animatable;
@@ -30,11 +27,13 @@ import org.xith3d.utility.events.WindowClosingRenderLoopEnder;
 import br.edu.univercidade.cc.xithcluster.communication.RendererNetworkManager;
 import br.edu.univercidade.cc.xithcluster.util.BufferUtils;
 
-public class Renderer extends InputAdapterRenderLoop {
-	
-	private static final String LOG4J_CONFIGURATION_FILE = "log4j.xml";
+public class RendererLoop extends InputAdapterRenderLoop implements SceneRenderer {
 	
 	private static final float DEFAULT_TARGET_FPS = 80.0f;
+	
+	private static final Colorf BACKGROUND_COLOR = Colorf.BLACK;
+	
+	private static final TextureFormat RGBA_PIXEL_PACKAGING = TextureFormat.RGBA;
 	
 	private static final String APP_TITLE = "Renderer";
 	
@@ -47,99 +46,95 @@ public class Renderer extends InputAdapterRenderLoop {
 	private Texture2D colorAndAlphaTexture;
 	
 	private Canvas3D canvas;
-
+	
 	private int screenWidth = DEFAULT_WIDTH;
-
+	
 	private int screenHeight = DEFAULT_HEIGHT;
-
+	
 	private BranchGroup currentRoot;
-
+	
 	private DepthBufferRenderTarget depthBufferRenderTarget;
-
-	public Renderer() {
+	
+	public RendererLoop() {
 		super(DEFAULT_TARGET_FPS);
-		
-		initialize();
 	}
 	
-	/**
-	 * The following startup sequence must be strictly obeyed:
-	 * 
-	 * 1). Initialize logging system (log4j).
-	 * 
-	 * 2). Create the Xith3D scene graph.
-	 * 
-	 * 3). Create an empty scene.
-	 * 
-	 * 4). Create the render targets for capturing the color and depth buffers.
-	 * 
-	 * 5). Create the canvas (screen).
-	 * 
-	 * 6). Register input system.
-	 * 
-	 * 7). Create network manager.
-	 */
-	private void initialize() {
-		initializeLog4j();
+	@Override
+	public void begin(RunMode runMode, TimingMode timingMode) {
+		if (!isRunning()) {
+			if (networkManager == null) {
+				// TODO:
+				throw new RuntimeException("Network manager must be set");
+			}
+			
+			if (x3dEnvironment == null) {
+				// TODO:
+				throw new RuntimeException("Xith3d environment must be initialized");
+			}
+			
+			createEmptyScene();
+			
+			createRenderTargets();
+			
+			createCanvas();
+			
+			startNetworkManager();
+		}
 		
-		createXith3DSceneGraph();
-		
-		createEmptyScene();
-		
-		createRenderTargets();
-		
-		createCanvas();
-		
-		registerInputSystem();
-		
-		createNetworkManager();
+		super.begin(runMode, timingMode);
 	}
-
-	private void createXith3DSceneGraph() {
-		new Xith3DEnvironment(this);
+	
+	public void setNetworkManager(RendererNetworkManager networkManager) {
+		if (isRunning()) {
+			throw new IllegalStateException("Cannot set network manager while application is running");
+		}
+		
+		if (networkManager == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		this.networkManager = networkManager;
+		this.networkManager.setSceneRenderer(this);
+		
+		setOperationScheduler(this.networkManager);
+		setUpdater(this.networkManager);
 	}
-
-	private void createNetworkManager() {
-		networkManager = new RendererNetworkManager(this);
+	
+	private void startNetworkManager() {
 		try {
-			networkManager.initialize();
+			networkManager.start();
 		} catch (IOException e) {
-			// TODO:
-			throw new RuntimeException("Error starting network manager", e);
-		}
-		
-		setOperationScheduler(networkManager);
-		setUpdater(networkManager);
-	}
-
-	private void registerInputSystem() {
-		try {
-			InputSystem.getInstance().registerNewKeyboardAndMouse(canvas.getPeer());
-		} catch (InputSystemException e) {
-			// TODO:
-			throw new RuntimeException("Error registering new keyboard and mouse", e);
+			printErrorMessageAndExit("Error starting network manager", e);
 		}
 	}
-
+	
+	private void printErrorMessageAndExit(String errorMessage, Exception e) {
+		System.err.println(errorMessage);
+		e.printStackTrace(System.err);
+		System.exit(-1);
+	}
+	
 	private void createCanvas() {
 		canvas = Canvas3DFactory.createWindowed(screenWidth, screenHeight, APP_TITLE);
-		canvas.setBackgroundColor(Colorf.BLACK);
+		canvas.setBackgroundColor(BACKGROUND_COLOR);
 		canvas.addWindowClosingListener(new WindowClosingRenderLoopEnder(this));
 		
 		x3dEnvironment.addCanvas(canvas);
+		
+		registerDebuggingCanvasAsMouseAndKeyboardListener();
 	}
-
+	
+	private void registerDebuggingCanvasAsMouseAndKeyboardListener() {
+		try {
+			InputSystem.getInstance().registerNewKeyboardAndMouse(canvas.getPeer());
+		} catch (InputSystemException e) {
+			printErrorMessageAndExit("Error registering new keyboard and mouse", e);
+		}
+	}
+	
 	private void createEmptyScene() {
 		currentRoot = new BranchGroup();
 		x3dEnvironment.addPerspectiveBranch(currentRoot);
-	}
-
-	private void initializeLog4j() {
-		if (new File(LOG4J_CONFIGURATION_FILE).exists()) {
-			DOMConfigurator.configure(LOG4J_CONFIGURATION_FILE);
-		} else {
-			System.err.println("Log4j not initialized: \"xithcluster-log4j.xml\" could not be found");
-		}
 	}
 	
 	private void createRenderTargets() {
@@ -147,30 +142,35 @@ public class Renderer extends InputAdapterRenderLoop {
 		TextureRenderTarget colorAndAlphaRenderTarget;
 		BaseRenderPassConfig passConfig;
 		
-		colorAndAlphaTexture = TextureCreator.createTexture(TextureFormat.RGBA, screenWidth, screenHeight, Colorf.BLACK);
+		colorAndAlphaTexture = TextureCreator.createTexture(RGBA_PIXEL_PACKAGING, screenWidth, screenHeight, BACKGROUND_COLOR);
 		
 		renderer = x3dEnvironment.getRenderer();
 		
 		passConfig = new BaseRenderPassConfig(ProjectionPolicy.PERSPECTIVE_PROJECTION);
 		
-		colorAndAlphaRenderTarget = new TextureRenderTarget(currentRoot, colorAndAlphaTexture, Colorf.BLACK, true);
+		colorAndAlphaRenderTarget = new TextureRenderTarget(currentRoot, colorAndAlphaTexture, BACKGROUND_COLOR, true);
 		renderer.addRenderTarget(colorAndAlphaRenderTarget, passConfig);
 		
 		depthBufferRenderTarget = new DepthBufferRenderTarget(currentRoot, screenWidth, screenHeight);
 		renderer.addRenderTarget(depthBufferRenderTarget, passConfig);
 	}
 	
-	public void setScreenSize(int screenWidth, int screenHeight) {
+	@Override
+	public void updateOnScreenInformation(int rendererId, int screenWidth, int screenHeight) {
+		x3dEnvironment.getCanvas().setTitle(APP_TITLE + "[id=" + rendererId + "]");
+		
 		this.screenWidth = screenWidth;
 		this.screenHeight = screenHeight;
 		
 		canvas.setSize(screenWidth, screenHeight);
 	}
 	
+	@Override
 	public byte[] getColorAndAlphaBuffer() {
 		return BufferUtils.safeBufferRead(colorAndAlphaTexture.getTextureCanvas().getImage().getDataBuffer());
 	}
 	
+	@Override
 	public byte[] getDepthBuffer() {
 		return depthBufferRenderTarget.getDepthBufferAsByteArray();
 	}
@@ -184,10 +184,7 @@ public class Renderer extends InputAdapterRenderLoop {
 		}
 	}
 	
-	public void setId(int id) {
-		x3dEnvironment.getCanvas().setTitle(APP_TITLE + "[id=" + id + "]");
-	}
-	
+	@Override
 	public void updateScene(View view, BranchGroup newRoot) {
 		copyView(x3dEnvironment.getView(), view);
 		
@@ -208,7 +205,7 @@ public class Renderer extends InputAdapterRenderLoop {
 		dest.setBackClipDistance(src.getBackClipDistance());
 		dest.setFrontClipDistance(src.getFrontClipDistance());
 	}
-
+	
 	public void copyRootAndInvalidateSource(BranchGroup dest, BranchGroup src) {
 		List<Node> children;
 		
@@ -230,7 +227,7 @@ public class Renderer extends InputAdapterRenderLoop {
 			dest.addChild(child);
 		}
 	}
-
+	
 	public void registerAllAnimatables(GroupNode parent) {
 		Node child;
 		
@@ -249,13 +246,4 @@ public class Renderer extends InputAdapterRenderLoop {
 		}
 	}
 	
-	/*
-	 * =============== 
-	 * 		MAIN 
-	 * ===============
-	 */
-	public static void main(String[] args) throws InputSystemException {
-		new Renderer().begin();
-	}
-
 }

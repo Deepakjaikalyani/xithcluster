@@ -24,22 +24,18 @@ import br.edu.univercidade.cc.xithcluster.FPSCounter;
 import br.edu.univercidade.cc.xithcluster.GeometryDistributionStrategy;
 import br.edu.univercidade.cc.xithcluster.PendingUpdate;
 import br.edu.univercidade.cc.xithcluster.PendingUpdate.Type;
-import br.edu.univercidade.cc.xithcluster.SceneHolder;
 import br.edu.univercidade.cc.xithcluster.SceneInfo;
+import br.edu.univercidade.cc.xithcluster.SceneRenderer;
 import br.edu.univercidade.cc.xithcluster.UpdateManager;
-import br.edu.univercidade.cc.xithcluster.XithClusterConfiguration;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.PointOfViewPackager;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.ScenePackager;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.UpdatesPackager;
 
-public final class MasterNetworkManager extends OperationSchedulerImpl {
+public final class NetworkManager extends OperationSchedulerImpl {
 	
-	private enum SessionState {
-		CLOSED, STARTING, STARTED
-	}
+	private Logger log = Logger.getLogger(NetworkManager.class);
 	
-	private Logger log = Logger.getLogger(MasterNetworkManager.class);
-	
+	// TODO: May be a naive optimization...
 	private boolean trace = log.isTraceEnabled();
 	
 	private MasterMessageBroker masterMessageBroker = new MasterMessageBroker();
@@ -50,7 +46,13 @@ public final class MasterNetworkManager extends OperationSchedulerImpl {
 	
 	private ScenePackager scenePackager = new ScenePackager();
 	
-	private SceneHolder sceneHolder;
+	private String listeningAddress;
+	
+	private int renderersConnectionPort;
+	
+	private int composerConnectionPort;
+	
+	private SceneRenderer sceneRenderer;
 	
 	private UpdateManager updateManager;
 	
@@ -61,6 +63,8 @@ public final class MasterNetworkManager extends OperationSchedulerImpl {
 	private IServer renderersServer;
 	
 	private INonBlockingConnection composerConnection;
+	
+	private FPSCounter fpsCounter;
 	
 	private List<INonBlockingConnection> renderersConnections = Collections.synchronizedList(new ArrayList<INonBlockingConnection>());
 	
@@ -76,19 +80,54 @@ public final class MasterNetworkManager extends OperationSchedulerImpl {
 	
 	private boolean forceFrameStart = false;
 	
-	private FPSCounter fpsCounter;
-	
 	private long lastGameTime = 0L;
 	
-	public MasterNetworkManager(SceneHolder sceneHolder, UpdateManager updateManager, GeometryDistributionStrategy geometryDistributionStrategy) {
-		this.sceneHolder = sceneHolder;
-		this.updateManager = updateManager;
+	public NetworkManager(String listeningAddress,
+			int renderersConnectionPort,
+			int composerConnectionPort,
+			GeometryDistributionStrategy geometryDistributionStrategy) {
+		
+		if (listeningAddress == null || listeningAddress.isEmpty() 
+				|| geometryDistributionStrategy == null)
+		{
+			throw new IllegalArgumentException();
+		}
+		
+		this.listeningAddress = listeningAddress;
+		this.renderersConnectionPort = renderersConnectionPort;
+		this.composerConnectionPort = composerConnectionPort;
 		this.geometryDistributionStrategy = geometryDistributionStrategy;
 	}
+
+	public void setSceneRenderer(SceneRenderer sceneRenderer) {
+		if (sceneRenderer == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		this.sceneRenderer = sceneRenderer;
+	}
 	
-	public void initialize() throws UnknownHostException, IOException {
-		renderersServer = new Server(XithClusterConfiguration.listeningAddress, XithClusterConfiguration.renderersConnectionPort, masterMessageBroker);
-		composerServer = new Server(XithClusterConfiguration.listeningAddress, XithClusterConfiguration.composerConnectionPort, masterMessageBroker);
+	public void setFpsCounter(FPSCounter fpsCounter) {
+		if (fpsCounter == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		this.fpsCounter = fpsCounter;
+	}
+	
+	public void start() throws UnknownHostException, IOException {
+		if (sceneRenderer == null) {
+			// TODO:
+			throw new RuntimeException("Scene renderer must be set");
+		}
+		
+		if (updateManager == null) {
+			// TODO:
+			throw new RuntimeException("Update manager must be set");
+		}
+		
+		renderersServer = new Server(listeningAddress, renderersConnectionPort, masterMessageBroker);
+		composerServer = new Server(listeningAddress, composerConnectionPort, masterMessageBroker);
 		
 		renderersServer.start();
 		composerServer.start();
@@ -150,7 +189,7 @@ public final class MasterNetworkManager extends OperationSchedulerImpl {
 		byte[] sceneData;
 		int rendererIndex;
 		
-		sceneInfo = sceneHolder.getSceneInfo();
+		sceneInfo = sceneRenderer.getDistributableSceneInfo();
 		
 		log.info("Starting a new session");
 		
@@ -344,11 +383,11 @@ public final class MasterNetworkManager extends OperationSchedulerImpl {
 	}
 	
 	private boolean isRendererConnection(INonBlockingConnection arg0) {
-		return arg0.getLocalPort() == XithClusterConfiguration.renderersConnectionPort;
+		return arg0.getLocalPort() == renderersConnectionPort;
 	}
 	
 	private boolean isComposerConnection(INonBlockingConnection arg0) {
-		return arg0.getLocalPort() == XithClusterConfiguration.composerConnectionPort;
+		return arg0.getLocalPort() == composerConnectionPort;
 	}
 	
 	private void onSessionStarted(Message message) {
@@ -403,9 +442,9 @@ public final class MasterNetworkManager extends OperationSchedulerImpl {
 		rendererConnection.flush();
 		
 		rendererConnection.write(getRendererIndex(rendererConnection));
-		rendererConnection.write(XithClusterConfiguration.screenWidth);
-		rendererConnection.write(XithClusterConfiguration.screenHeight);
-		rendererConnection.write(XithClusterConfiguration.targetFPS);
+		rendererConnection.write(sceneRenderer.getTargetScreenDimension().width);
+		rendererConnection.write(sceneRenderer.getTargetScreenDimension().height);
+		rendererConnection.write(sceneRenderer.getTargetFPS());
 		rendererConnection.write(pointOfViewData.length);
 		rendererConnection.write(pointOfViewData);
 		rendererConnection.write(sceneData.length);
@@ -417,9 +456,9 @@ public final class MasterNetworkManager extends OperationSchedulerImpl {
 		composerConnection.write(MessageType.START_SESSION.ordinal());
 		composerConnection.flush();
 		
-		composerConnection.write(XithClusterConfiguration.screenWidth);
-		composerConnection.write(XithClusterConfiguration.screenHeight);
-		composerConnection.write(XithClusterConfiguration.targetFPS);
+		composerConnection.write(sceneRenderer.getTargetScreenDimension().width);
+		composerConnection.write(sceneRenderer.getTargetScreenDimension().height);
+		composerConnection.write(sceneRenderer.getTargetFPS());
 		composerConnection.flush();
 	}
 	
@@ -501,7 +540,7 @@ public final class MasterNetworkManager extends OperationSchedulerImpl {
 					// Update animations and other scheduled operations
 					updateOperationsSchedule(gameTime, frameTime, timingMode);
 					
-					updateFpsCounter(gameTime, frameTime, timingMode);
+					updateFPS(gameTime, frameTime, timingMode);
 				}
 				
 				if (updateManager.hasPendingUpdates()) {
@@ -524,29 +563,36 @@ public final class MasterNetworkManager extends OperationSchedulerImpl {
 		}
 	}
 	
-	private void updateFpsCounter(long gameTime, long frameTime, TimingMode timingMode) {
+	private void updateFPS(long gameTime, long frameTime, TimingMode timingMode) {
 		long elapsedTime;
 		double fps;
 		
-		if (XithClusterConfiguration.displayFPSCounter) {
-			if (lastGameTime > 0) {
-				elapsedTime = gameTime - lastGameTime;
-				
-				fps = timingMode.getDivisor() / elapsedTime;
-				
-				fpsCounter.update(fps);
-			}
-			
-			lastGameTime = gameTime;
+		if (fpsCounter == null) {
+			// TODO:
+			throw new RuntimeException("Cannot update FPS when no FPS counter was set");
 		}
+		
+		if (lastGameTime > 0) {
+			elapsedTime = gameTime - lastGameTime;
+			
+			fps = timingMode.getDivisor() / elapsedTime;
+			
+			fpsCounter.update(fps);
+		}
+		
+		lastGameTime = gameTime;
 	}
 	
 	private void updateOperationsSchedule(long gameTime, long frameTime, TimingMode timingMode) {
 		super.update(gameTime, frameTime, timingMode);
 	}
-	
-	public void setFpsCounter(FPSCounter fpsCounter) {
-		this.fpsCounter = fpsCounter;
+
+	public void addUpdateManager(UpdateManager updateManager) {
+		if (updateManager == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		this.updateManager = updateManager;
 	}
 	
 }

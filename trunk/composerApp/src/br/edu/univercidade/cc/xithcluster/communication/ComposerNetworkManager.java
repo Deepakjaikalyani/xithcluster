@@ -249,8 +249,8 @@ public final class ComposerNetworkManager {
 		targetFPS = (Double) message.getParameters()[2];
 		
 		if (trace) {
-			log.trace("screenWidth=" + screenWidth);
-			log.trace("screenHeight=" + screenHeight);
+			log.trace("targetScreenWidth=" + screenWidth);
+			log.trace("targetScreenHeight=" + screenHeight);
 			log.trace("targetFPS=" + targetFPS);
 		}
 		

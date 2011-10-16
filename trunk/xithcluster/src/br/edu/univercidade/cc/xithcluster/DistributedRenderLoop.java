@@ -1,10 +1,8 @@
 package br.edu.univercidade.cc.xithcluster;
 
-import java.io.File;
+import java.awt.Dimension;
 import java.io.IOException;
 import java.net.UnknownHostException;
-import javax.xml.parsers.FactoryConfigurationError;
-import org.apache.log4j.xml.DOMConfigurator;
 import org.jagatoo.input.InputSystem;
 import org.jagatoo.input.InputSystemException;
 import org.jagatoo.input.devices.components.Key;
@@ -16,117 +14,166 @@ import org.xith3d.render.Canvas3DFactory;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.ui.hud.HUD;
 import org.xith3d.utility.events.WindowClosingRenderLoopEnder;
-import br.edu.univercidade.cc.xithcluster.communication.MasterNetworkManager;
+import br.edu.univercidade.cc.xithcluster.communication.NetworkManager;
 
-public abstract class DistributedRenderLoop extends InputAdapterRenderLoop implements SceneHolder {
-	
-	private static final String LOG4J_CONFIGURATION_FILE = "xithcluster-log4j.xml";
+public class DistributedRenderLoop extends InputAdapterRenderLoop implements SceneRenderer {
 	
 	private static final int FPS_SAMPLES = 10;
 	
 	private UpdateManager updateManager;
 	
-	private MasterNetworkManager networkManager;
+	private NetworkManager networkManager;
 	
-	private GeometryDistributionStrategy geometryDistributionStrategy;
+	private Canvas3D debuggingCanvas;
 	
-	private Canvas3D canvas;
+	private Dimension targetScreenDimension;
+
+	private boolean enableDebuggingScreen;
 	
-	public DistributedRenderLoop(GeometryDistributionStrategy geometryDistributionStrategy) {
-		super(XithClusterConfiguration.targetFPS);
+	private SceneCreationCallback sceneCreationCallback;
+
+	public DistributedRenderLoop(float targetFPS,
+			int targetScreenWidth,
+			int targetScreenHeight,
+			boolean enableDebuggingScreen,
+			SceneCreationCallback sceneCreationCallback) {
+		super(targetFPS);
 		
-		if (geometryDistributionStrategy == null) {
+		if (sceneCreationCallback == null) {
 			// TODO:
-			throw new RuntimeException("You must set a distribution strategy");
+			throw new IllegalArgumentException();
 		}
 		
-		this.geometryDistributionStrategy = geometryDistributionStrategy;
+		this.targetScreenDimension = new Dimension(targetScreenWidth, targetScreenHeight);
+		
+		this.enableDebuggingScreen  = enableDebuggingScreen;
+		
+		this.sceneCreationCallback = sceneCreationCallback;
+	}
+	
+	public void setUpdateManager(UpdateManager updateManager) {
+		if (updateManager == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		this.updateManager = updateManager;
+	}
+	
+	public void setNetworkManager(NetworkManager networkManager) {
+		if (isRunning()) {
+			throw new IllegalStateException("Cannot set network manager while application is running"); 
+		}
+		
+		if (networkManager == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		this.networkManager = networkManager;
+		this.networkManager.setSceneRenderer(this);
+		
+		setOperationScheduler(this.networkManager);
+		setUpdater(this.networkManager);
+		
 	}
 	
 	@Override
 	public void begin(RunMode runMode, TimingMode timingMode) {
-		if (x3dEnvironment == null) {
-			// TODO:
-			throw new RuntimeException("Xith3d environment must be initialized");
-		}
-		
 		if (!isRunning()) {
-			initializeLog4j();
+			if (updateManager == null) {
+				// TODO:
+				throw new RuntimeException("Update manager must be set");
+			}
 			
-			createCanvas();
+			if (networkManager == null) {
+				// TODO:
+				throw new RuntimeException("Network manager must be set");
+			}
 			
-			createUpdateManager();
+			if (x3dEnvironment == null) {
+				// TODO:
+				throw new RuntimeException("Xith3d environment must be initialized");
+			}
 			
-			createNetworkManager();
+			registerUpdateManager();
 			
-			registerDistributedScene();
+			createDebuggingCanvasIfSpecified();
+			
+			createSceneAndAddToSceneGraph();
+			
+			startNetworkManager();
 		}
 		
 		super.begin(runMode, timingMode);
 	}
 
-	private void registerDistributedScene() {
-		x3dEnvironment.addPerspectiveBranch(createSceneRoot());
+	private void createSceneAndAddToSceneGraph() {
+		BranchGroup root;
+		
+		root = sceneCreationCallback.createSceneRoot(getAnimator());
+		
+		if (root == null) {
+			// TODO:
+			throw new RuntimeException("Scene root cannot be null");
+		}
+		
+		x3dEnvironment.addPerspectiveBranch(root);
 	}
 	
-	protected abstract BranchGroup createSceneRoot();
+	private void startNetworkManager() {
+		try {
+			networkManager.start();
+		} catch (UnknownHostException e) {
+			printErrorMessageAndExit("Error starting network manager", e);
+		} catch (IOException e) {
+			printErrorMessageAndExit("Error starting network manager", e);
+		}
+	}
+
+	private void printErrorMessageAndExit(String errorMessage, Exception e) {
+		System.err.println(errorMessage);
+		e.printStackTrace(System.err);
+		System.exit(-1);
+	}
 	
-	private void createNetworkManager() {
+	private void registerUpdateManager() {
+		x3dEnvironment.addScenegraphModificationListener(updateManager);
+	}
+
+	private void createDebuggingCanvasIfSpecified() {
+		if (!enableDebuggingScreen) return;
+		
+		debuggingCanvas = Canvas3DFactory.createWindowed(targetScreenDimension.width, targetScreenDimension.height, "XithCluster Debugging Screen");
+		debuggingCanvas.setBackgroundColor(Colorf.BLACK);
+		debuggingCanvas.addWindowClosingListener(new WindowClosingRenderLoopEnder(this));
+		
+		x3dEnvironment.addCanvas(debuggingCanvas);
+		
+		registerDebuggingCanvasAsMouseAndKeyboardListener();
+		
+		createHUDAndFPSCounter();
+	}
+	
+	private void registerDebuggingCanvasAsMouseAndKeyboardListener() {
+		try {
+			InputSystem.getInstance().registerNewKeyboardAndMouse(debuggingCanvas.getPeer());
+		} catch (InputSystemException e) {
+			// TODO:
+			throw new RuntimeException("Error registering debugging canvas as mouse and keyboard listener", e);
+		}
+	}
+	
+	private void createHUDAndFPSCounter() {
 		HUD hud;
 		HUDFPSCounter fpsCounter;
 		
-		networkManager = new MasterNetworkManager(this, updateManager, geometryDistributionStrategy);
-		try {
-			networkManager.initialize();
-		} catch (UnknownHostException e) {
-			// TODO:
-			throw new RuntimeException("Error starting network manager", e);
-		} catch (IOException e) {
-			// TODO:
-			throw new RuntimeException("Error starting network manager", e);
-		}
+		hud = new HUD(debuggingCanvas, targetScreenDimension.height);
 		
-		setOperationScheduler(networkManager);
-		setUpdater(networkManager);
+		fpsCounter = new HUDFPSCounter(FPS_SAMPLES);
+		fpsCounter.registerTo(hud);
 		
-		if (XithClusterConfiguration.displayFPSCounter) {
-			hud = new HUD(canvas, XithClusterConfiguration.screenHeight);
-			
-			fpsCounter = new HUDFPSCounter(FPS_SAMPLES);
-			fpsCounter.registerTo(hud);
-			
-			networkManager.setFpsCounter(fpsCounter);
-			
-			x3dEnvironment.addHUD(hud);
-		}
-	}
-	
-	private void createUpdateManager() {
-		try {
-			InputSystem.getInstance().registerNewKeyboardAndMouse(canvas.getPeer());
-		} catch (InputSystemException e) {
-			// TODO:
-			throw new RuntimeException("Error registering new keyboard and mouse", e);
-		}
+		networkManager.setFpsCounter(fpsCounter);
 		
-		updateManager = new UpdateManager();
-		x3dEnvironment.addScenegraphModificationListener(updateManager);
-	}
-	
-	private void createCanvas() {
-		canvas = Canvas3DFactory.createWindowed(XithClusterConfiguration.screenWidth, XithClusterConfiguration.screenHeight, XithClusterConfiguration.windowTitle);
-		canvas.setBackgroundColor(Colorf.BLACK);
-		canvas.addWindowClosingListener(new WindowClosingRenderLoopEnder(this));
-		
-		x3dEnvironment.addCanvas(canvas);
-	}
-	
-	private void initializeLog4j() throws FactoryConfigurationError {
-		if (new File(LOG4J_CONFIGURATION_FILE).exists()) {
-			DOMConfigurator.configure(LOG4J_CONFIGURATION_FILE);
-		} else {
-			System.err.println("Log4j not initialized: \"xithcluster-log4j.xml\" could not be found");
-		}
+		x3dEnvironment.addHUD(hud);
 	}
 	
 	@Override
@@ -139,18 +186,14 @@ public abstract class DistributedRenderLoop extends InputAdapterRenderLoop imple
 	}
 	
 	@Override
-	public SceneInfo getSceneInfo() {
+	public SceneInfo getDistributableSceneInfo() {
 		BranchGroup branchGroup;
 
-		if (XithClusterConfiguration.displayFPSCounter) {
-			branchGroup = getFirstBranchGroupThatDoesntBelongToHUD();
-		} else {
-			branchGroup = x3dEnvironment.getBranchGroup();
-		}
+		branchGroup = getFirstBranchGroupThatDoesntBelongToHUD();
 		
 		if (branchGroup == null) {
 			// TODO:
-			throw new RuntimeException("There's no suitable branch group");
+			throw new RuntimeException("There's no suitable distributable branch group in the scene");
 		}
 		
 		return new SceneInfo(branchGroup, x3dEnvironment.getView());
@@ -171,5 +214,15 @@ public abstract class DistributedRenderLoop extends InputAdapterRenderLoop imple
 		
 		return null;
 	}
+
+	@Override
+	public float getTargetFPS() {
+		return getMaxFPS();
+	}
 	
+	@Override
+	public Dimension getTargetScreenDimension() {
+		return targetScreenDimension;
+	}
+
 }
