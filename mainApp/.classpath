@@ -16,5 +16,6 @@
 	<classpathentry kind="lib" path="/xithcluster/lib/xpal-joode.jar"/>
 	<classpathentry kind="lib" path="/xithcluster/lib/xSocket-2.8.14.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/xith3d"/>
+	<classpathentry kind="lib" path="/xithcluster/lib/log4j-1.2.16.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -7,24 +7,36 @@ import java.util.Observable;
 import java.util.Observer;
 import java.util.Queue;
 import org.apache.log4j.Logger;
-import org.xith3d.loop.Updatable;
 import org.xith3d.loop.opscheduler.impl.OperationSchedulerImpl;
 import org.xsocket.connection.INonBlockingConnection;
 import org.xsocket.connection.NonBlockingConnection;
+import br.edu.univercidade.cc.xithcluster.CompressionMethod;
 import br.edu.univercidade.cc.xithcluster.DeserializationResult;
-import br.edu.univercidade.cc.xithcluster.Renderer;
-import br.edu.univercidade.cc.xithcluster.RendererConfiguration;
 import br.edu.univercidade.cc.xithcluster.SceneDeserializer;
+import br.edu.univercidade.cc.xithcluster.SceneRenderer;
 
-public final class RendererNetworkManager extends OperationSchedulerImpl implements Observer, Updatable {
+public class RendererNetworkManager extends OperationSchedulerImpl implements Observer {
 	
 	private Logger log = Logger.getLogger(RendererNetworkManager.class);
 	
+	// TODO: May be a naive optimization...
 	private boolean trace = log.isTraceEnabled();
 	
 	private RendererMessageBroker rendererMessageBroker = new RendererMessageBroker();
 	
-	private Renderer renderer;
+	private String masterListeningAddress;
+	
+	private int masterListeningPort;
+	
+	private CompressionMethod compressionMethod;
+	
+	private String composerListeningAddress;
+	
+	private int composerListeningPort;
+	
+	private int compositionOrder;
+	
+	private SceneRenderer sceneRenderer;
 	
 	protected INonBlockingConnection masterConnection;
 	
@@ -44,12 +56,36 @@ public final class RendererNetworkManager extends OperationSchedulerImpl impleme
 	
 	private int currentFrame = -1;
 	
-	public RendererNetworkManager(Renderer renderer) {
-		this.renderer = renderer;
+	public RendererNetworkManager(String masterListeningAddress, 
+			int masterListeningPort, 
+			String composerListeningAddress, 
+			int composerListeningPort,
+			int compositionOrder,
+			CompressionMethod compressionMethod) {
+		if (masterListeningAddress == null || masterListeningAddress.isEmpty() || 
+				composerListeningAddress == null || composerListeningAddress.isEmpty() ||
+				compressionMethod == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		this.masterListeningAddress = masterListeningAddress;
+		this.masterListeningPort = masterListeningPort;
+		this.composerListeningAddress = composerListeningAddress;
+		this.composerListeningPort = composerListeningPort;
+		this.compositionOrder = compositionOrder;
+		this.compressionMethod = compressionMethod;
 	}
 	
-	public void initialize() throws IOException {
-		masterConnection = new NonBlockingConnection(RendererConfiguration.masterListeningAddress, RendererConfiguration.masterListeningPort, rendererMessageBroker);
+	public void setSceneRenderer(SceneRenderer sceneRenderer) {
+		if (sceneRenderer == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		this.sceneRenderer = sceneRenderer;
+	}
+	
+	public void start() throws IOException {
+		masterConnection = new NonBlockingConnection(masterListeningAddress, masterListeningPort, rendererMessageBroker);
 		masterConnection.setAutoflush(false);
 	}
 	
@@ -69,7 +105,7 @@ public final class RendererNetworkManager extends OperationSchedulerImpl impleme
 			throw new RuntimeException("Error notifying master node that session started successfully", e);
 		}
 		
-		renderer.updateScene(deserializationResult.getPointOfView(), deserializationResult.getScene());
+		sceneRenderer.updateScene(deserializationResult.getPointOfView(), deserializationResult.getScene());
 		
 		deserializationResult = null;
 		sceneDeserializationThread = null;
@@ -86,7 +122,7 @@ public final class RendererNetworkManager extends OperationSchedulerImpl impleme
 		
 		log.info("Current session was closed");
 	}
-
+	
 	private void sendCurrentFrameToCompositor() {
 		byte[] colorAndAlphaBuffer;
 		
@@ -94,22 +130,22 @@ public final class RendererNetworkManager extends OperationSchedulerImpl impleme
 			log.trace("Sending current frame to compositor: " + currentFrame);
 		}
 		
-		colorAndAlphaBuffer = renderer.getColorAndAlphaBuffer();
+		colorAndAlphaBuffer = sceneRenderer.getColorAndAlphaBuffer();
 		
-		switch (RendererConfiguration.compressionMethod) {
+		switch (compressionMethod) {
 		case PNG:
 			// TODO: Deflate!
 			break;
 		}
 		
 		try {
-			sendNewImageMessage(colorAndAlphaBuffer, renderer.getDepthBuffer());
+			sendNewImageMessage(colorAndAlphaBuffer, sceneRenderer.getDepthBuffer());
 		} catch (IOException e) {
 			// TODO:
 			throw new RuntimeException("Error sending image buffers to composer", e);
 		}
 	}
-
+	
 	private void onStartFrame(Message message) {
 		currentFrame = (Integer) message.getParameters()[0];
 		
@@ -156,8 +192,8 @@ public final class RendererNetworkManager extends OperationSchedulerImpl impleme
 		
 		if (trace) {
 			log.trace("rendererId=" + rendererId);
-			log.trace("screenWidth=" + screenWidth);
-			log.trace("screenHeight=" + screenHeight);
+			log.trace("targetScreenWidth=" + screenWidth);
+			log.trace("targetScreenHeight=" + screenHeight);
 			log.trace("targetFPS: " + targetFPS);
 			log.trace("pointOfViewData.length=" + pointOfViewData.length);
 			log.trace("sceneData.length=" + sceneData.length);
@@ -167,7 +203,7 @@ public final class RendererNetworkManager extends OperationSchedulerImpl impleme
 			log.info("Connecting to composer...");
 			
 			try {
-				composerConnection = new NonBlockingConnection(RendererConfiguration.composerListeningAddress, RendererConfiguration.composerListeningPort);
+				composerConnection = new NonBlockingConnection(composerListeningAddress, composerListeningPort);
 				composerConnection.setAutoflush(false);
 			} catch (IOException e) {
 				// TODO:
@@ -175,7 +211,7 @@ public final class RendererNetworkManager extends OperationSchedulerImpl impleme
 			}
 		}
 		
-		log.info("Sending composition order: " + RendererConfiguration.compositionOrder);
+		log.info("Sending composition order: " + compositionOrder);
 		
 		sendCompositionOrder();
 		
@@ -185,8 +221,7 @@ public final class RendererNetworkManager extends OperationSchedulerImpl impleme
 			interruptParallelSceneDeserialization();
 		}
 		
-		renderer.setId(rendererId);
-		renderer.setScreenSize(screenWidth, screenHeight);
+		sceneRenderer.updateOnScreenInformation(rendererId, screenWidth, screenHeight);
 		
 		log.debug("Starting parallel scene deserialization");
 		
@@ -194,13 +229,13 @@ public final class RendererNetworkManager extends OperationSchedulerImpl impleme
 		
 		log.info("Session started successfully");
 	}
-
+	
 	private void sendCompositionOrder() {
 		try {
-			sendSetCompositionOrderMessage(RendererConfiguration.compositionOrder);
+			sendSetCompositionOrderMessage(compositionOrder);
 		} catch (IOException e) {
 			// TODO:
-			throw new RuntimeException("Error notifying composer node the renderer's composition order", e);
+			throw new RuntimeException("Error notifying composer node the sceneRenderer's composition order", e);
 		}
 	}
 	
@@ -209,7 +244,7 @@ public final class RendererNetworkManager extends OperationSchedulerImpl impleme
 	}
 	
 	private void startParallelSceneDeserialization(byte[] pointOfViewData, byte[] sceneData) {
-		sceneDeserializer = new SceneDeserializer(pointOfViewData, sceneData); 
+		sceneDeserializer = new SceneDeserializer(pointOfViewData, sceneData);
 		sceneDeserializer.addObserver(this);
 		
 		sceneDeserializationThread = new Thread(sceneDeserializer);
@@ -230,7 +265,7 @@ public final class RendererNetworkManager extends OperationSchedulerImpl impleme
 		composerConnection.flush();
 		
 		composerConnection.write(currentFrame);
-		composerConnection.write(RendererConfiguration.compressionMethod.ordinal());
+		composerConnection.write(compressionMethod.ordinal());
 		composerConnection.write(colorAndAlphaBuffer.length);
 		composerConnection.write(colorAndAlphaBuffer);
 		composerConnection.write(depthBuffer.length);
@@ -364,5 +399,5 @@ public final class RendererNetworkManager extends OperationSchedulerImpl impleme
 	private void updateOperationsSchedule(long gameTime, long frameTime, TimingMode timingMode) {
 		super.update(gameTime, frameTime, timingMode);
 	}
-
+	
 }
