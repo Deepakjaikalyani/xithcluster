@@ -2,16 +2,15 @@ package br.edu.univercidade.cc.xithcluster;
 
 import java.awt.Canvas;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
-public class Displayer extends JFrame {
-	
-	private static final long serialVersionUID = 1L;
+public class Displayer {
 	
 	private static final int ARGB_PIXEL_PACKAGING = BufferedImage.TYPE_INT_ARGB;
 	
@@ -21,6 +20,8 @@ public class Displayer extends JFrame {
 	
 	private static final int DEFAULT_HEIGHT = 600;
 	
+	private JFrame frame;
+	
 	private Canvas canvas;
 	
 	private BufferedImage backBuffer;
@@ -28,72 +29,106 @@ public class Displayer extends JFrame {
 	private BufferStrategy buffer;
 	
 	private AWTFPSCounter fpsCounter;
-
-	public void initializeAndShow() {
-		setTitle(ComposerConfiguration.windowTitle);
+	
+	private String windowTitle;
+	
+	private int screenWidth;
+	
+	private int screenHeight;
+	
+	public Displayer(String windowTitle) {
+		if (windowTitle == null || windowTitle.isEmpty()) {
+			throw new IllegalArgumentException();
+		}
 		
-		super.setSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+		this.windowTitle = windowTitle;
+	}
+	
+	public void show() {
+		createJFrame();
 		
-		setResizable(false);
-		setIgnoreRepaint(true);
-		setLocationRelativeTo(null);
-		
-		setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-		
-		setVisible(true);
 		setupBufferStrategy();
-		createDataBuffer(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+		
+		setScreenSizeAndRecreateBackBuffer(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+	}
+
+	private void createJFrame() {
+		frame = new JFrame(windowTitle);
+		frame.addWindowListener(new WindowListener() {
+
+			@Override
+			public void windowOpened(WindowEvent e) {
+			}
+
+			@Override
+			public void windowClosing(WindowEvent e) {
+				onWindowClosing(e);
+			}
+
+			@Override
+			public void windowClosed(WindowEvent e) {
+			}
+
+			@Override
+			public void windowIconified(WindowEvent e) {
+			}
+
+			@Override
+			public void windowDeiconified(WindowEvent e) {
+			}
+
+			@Override
+			public void windowActivated(WindowEvent e) {
+			}
+
+			@Override
+			public void windowDeactivated(WindowEvent e) {
+			}
+			
+		});
+		
+		frame.setResizable(false);
+		frame.setIgnoreRepaint(true);
+		frame.setLocationRelativeTo(null);
+		frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+		frame.setVisible(true);
 	}
 	
-	@Override
-	public void setSize(Dimension d) {
-		super.setSize(d);
-		
-		adjustSize(d);
+	protected void onWindowClosing(WindowEvent e) {
+		// TODO:
+		System.exit(-1);
 	}
-	
-	@Override
-	public void setSize(int width, int height) {
-		super.setSize(width, height);
+
+	public void setScreenSizeAndRecreateBackBuffer(int screenWidth, int screenHeight) {
+		if (screenWidth <= 0 || screenHeight <= 0) {
+			throw new IllegalArgumentException();
+		}
 		
-		adjustSize(new Dimension(width, height));
-	}
-	
-	@Override
-	public void setPreferredSize(Dimension dimension) {
-		super.setPreferredSize(dimension);
+		this.screenWidth = screenWidth;
+		this.screenHeight = screenHeight;
 		
-		adjustSize(dimension);
-	}
-	
-	private void adjustSize(Dimension dimension) {
-		int width;
-		int height;
+		frame.setSize(this.screenWidth, this.screenHeight);
+		canvas.setSize(this.screenWidth, this.screenHeight);
 		
-		canvas.setSize(dimension);
-		
-		width = (int) dimension.getWidth();
-		height = (int) dimension.getHeight();
-		
-		createDataBuffer(width, height);
+		createDataBuffer();
 	}
 	
 	private void setupBufferStrategy() {
 		canvas = new Canvas();
 		canvas.setIgnoreRepaint(true);
 		
-		add(canvas);
+		frame.add(canvas);
 		
 		canvas.createBufferStrategy(NUMBER_OF_BUFFERS);
 		buffer = canvas.getBufferStrategy();
 	}
 	
-	private void createDataBuffer(int width, int height) {
-		backBuffer = new BufferedImage(width, height, ARGB_PIXEL_PACKAGING);
+	private void createDataBuffer() {
+		backBuffer = new BufferedImage(screenWidth, screenHeight, ARGB_PIXEL_PACKAGING);
 	}
 	
 	public void setARGBImageData(int[] argbImageData) {
-		backBuffer.setRGB(0, 0, getWidth(), getHeight(), argbImageData, 0, getWidth());
+		backBuffer.setRGB(0, 0, screenWidth, screenHeight, argbImageData, 0, screenWidth);
 	}
 	
 	public void blit() {
@@ -106,7 +141,7 @@ public class Displayer extends JFrame {
 			
 			drawBackBuffer(graphics);
 			
-			if (ComposerConfiguration.displayFPSCounter) {
+			if (fpsCounter != null) {
 				fpsCounter.print(graphics, 20, 20);
 			}
 			
@@ -120,7 +155,7 @@ public class Displayer extends JFrame {
 	
 	private void clear(Graphics graphics) {
 		graphics.setColor(Color.BLACK);
-		graphics.fillRect(0, 0, getWidth(), getHeight());
+		graphics.fillRect(0, 0, screenWidth, screenHeight);
 	}
 	
 	private void drawBackBuffer(Graphics graphics) {
@@ -134,6 +169,10 @@ public class Displayer extends JFrame {
 	}
 	
 	public void setFPSCounter(AWTFPSCounter fpsCounter) {
+		if (fpsCounter == null) {
+			throw new IllegalArgumentException();
+		}
+		
 		this.fpsCounter = fpsCounter;
 	}
 	

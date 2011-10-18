@@ -15,9 +15,10 @@ import org.xsocket.connection.INonBlockingConnection;
 import org.xsocket.connection.IServer;
 import org.xsocket.connection.NonBlockingConnection;
 import org.xsocket.connection.Server;
-import br.edu.univercidade.cc.xithcluster.Composer;
-import br.edu.univercidade.cc.xithcluster.ComposerConfiguration;
 import br.edu.univercidade.cc.xithcluster.CompressionMethod;
+import br.edu.univercidade.cc.xithcluster.FPSCounter;
+import br.edu.univercidade.cc.xithcluster.Rasterizer;
+import br.edu.univercidade.cc.xithcluster.Timer;
 
 public final class ComposerNetworkManager {
 	
@@ -25,13 +26,15 @@ public final class ComposerNetworkManager {
 	
 	private boolean trace = log.isTraceEnabled();
 	
-	private ComposerMessageBroker composerMessageBroker = new ComposerMessageBroker();
+	private Rasterizer rasterizer;
+	
+	private ComposerMessageBroker composerMessageBroker;
 	
 	protected INonBlockingConnection masterConnection;
 	
 	private List<INonBlockingConnection> renderersConnections = new ArrayList<INonBlockingConnection>();
 	
-	private Composer composer;
+	private FPSCounter fpsCounter;
 	
 	private IServer renderersServer;
 	
@@ -39,20 +42,64 @@ public final class ComposerNetworkManager {
 	
 	private Map<Integer, RendererHandler> renderersHandlers = new HashMap<Integer, RendererHandler>();
 	
+	private String renderersConnectionAddress;
+	
+	private int renderersConnectionPort;
+	
+	private String masterListeningAddress;
+	
+	private int masterListeningPort;
+	
 	private BitSet newImageMask = new BitSet();
 	
 	private int currentFrame = -1;
+
+	private boolean started = false;
 	
-	public ComposerNetworkManager(Composer composer) {
-		this.composer = composer;
+	private long lastGameTime;
+	
+	public ComposerNetworkManager(String masterListeningAddress, int masterListeningPort, String renderersConnectionAddress, int renderersConnectionPort) {
+		if (masterListeningAddress == null || masterListeningAddress.isEmpty() ||
+				renderersConnectionAddress == null || renderersConnectionAddress.isEmpty()) {
+			throw new IllegalArgumentException();
+		}
+		
+		this.masterListeningAddress = masterListeningAddress;
+		this.masterListeningPort = masterListeningPort;
+		this.renderersConnectionAddress = renderersConnectionAddress;
+		this.renderersConnectionPort = renderersConnectionPort;
+		
+		composerMessageBroker = new ComposerMessageBroker(this.masterListeningPort);
 	}
 	
-	public void initialize() throws UnknownHostException, IOException {
-		renderersServer = new Server(ComposerConfiguration.renderersConnectionAddress, ComposerConfiguration.renderersConnectionPort, composerMessageBroker);
+	public void setRasterizer(Rasterizer rasterizer) {
+		if (rasterizer == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		this.rasterizer = rasterizer;
+	}
+	
+	public void setFpsCounter(FPSCounter fpsCounter) {
+		if (fpsCounter == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		this.fpsCounter = fpsCounter;
+	}
+	
+	public void start() throws UnknownHostException, IOException {
+		if (rasterizer == null) {
+			throw new RuntimeException("Rasterizer must be set");
+		}
+		
+		renderersServer = new Server(renderersConnectionAddress, renderersConnectionPort, composerMessageBroker);
 		renderersServer.start();
 		
-		masterConnection = new NonBlockingConnection(ComposerConfiguration.masterListeningAddress, ComposerConfiguration.masterListeningPort, composerMessageBroker);
+		masterConnection = new NonBlockingConnection(masterListeningAddress, masterListeningPort, composerMessageBroker);
 		masterConnection.setAutoflush(false);
+		
+		started = true;
 	}
 	
 	private byte[][] getColorAndAlphaBuffers() {
@@ -96,7 +143,7 @@ public final class ComposerNetworkManager {
 		}
 		
 		sessionState = SessionState.STARTED;
-
+		
 		log.info("Session started successfully");
 	}
 	
@@ -118,7 +165,7 @@ public final class ComposerNetworkManager {
 			log.trace("Finishing current frame: " + currentFrame);
 		}
 		
-		composer.setColorAlphaAndDepthBuffers(getColorAndAlphaBuffers(), getDepthBuffers());
+		rasterizer.setColorAlphaAndDepthBuffers(getColorAndAlphaBuffers(), getDepthBuffers());
 		
 		try {
 			sendFinishedFrameMessage();
@@ -127,7 +174,7 @@ public final class ComposerNetworkManager {
 			throw new RuntimeException("Error notifying master node that the frame was finished", e);
 		}
 	}
-
+	
 	private int getRendererIndex(INonBlockingConnection rendererConnection) {
 		Integer rendererId;
 		
@@ -135,13 +182,13 @@ public final class ComposerNetworkManager {
 		
 		return rendererId.intValue();
 	}
-
+	
 	private void setRendererIndex(INonBlockingConnection arg0) {
 		arg0.setAttachment(renderersConnections.size());
 	}
 	
 	private boolean isRendererConnection(INonBlockingConnection arg0) {
-		return arg0.getLocalPort() == ComposerConfiguration.renderersConnectionPort;
+		return arg0.getLocalPort() == renderersConnectionPort;
 	}
 	
 	private void onConnected(INonBlockingConnection arg0) {
@@ -254,7 +301,7 @@ public final class ComposerNetworkManager {
 			log.trace("targetFPS=" + targetFPS);
 		}
 		
-		composer.setScreenSize(screenWidth, screenHeight);
+		rasterizer.setScreenSize(screenWidth, screenHeight);
 		
 		// TODO: Configure target FPS!
 		
@@ -299,14 +346,18 @@ public final class ComposerNetworkManager {
 		masterConnection.flush();
 	}
 	
-	public void update() {
+	public void update(long startingTime, long elapsedTime) {
 		Queue<Message> messages;
+		
+		if (!started) {
+			throw new IllegalStateException();
+		}
 		
 		checkMasterNodeConnection();
 		
 		messages = MessageQueue.startReadingMessages();
 		
-		processMessages(messages);
+		processMessages(startingTime, elapsedTime, messages);
 		
 		MessageQueue.stopReadingMessages();
 	}
@@ -319,13 +370,13 @@ public final class ComposerNetworkManager {
 			System.exit(-1);
 		}
 	}
-
+	
 	/*
 	 * ================================ 
 	 * Network messages processing loop
 	 * ================================
 	 */
-	protected void processMessages(Queue<Message> messages) {
+	protected void processMessages(long startingTime, long elapsedTime, Queue<Message> messages) {
 		Message message;
 		Message firstStartFrameMessage;
 		Message lastStartSessionMessage;
@@ -387,13 +438,16 @@ public final class ComposerNetworkManager {
 					}
 				}
 			}
-		
+			
 			if (areAllSubImagesReceived()) {
 				finishCurrentFrame();
+				
+				updateFPS(startingTime, elapsedTime);
 			}
 		} else if (sessionState == SessionState.CLOSED) {
 			/*
-			 * Consider only the last start session message, throwing away all the rest.
+			 * Consider only the last start session message, throwing away all
+			 * the rest.
 			 */
 			lastStartSessionMessage = null;
 			iterator = messages.iterator();
@@ -422,6 +476,22 @@ public final class ComposerNetworkManager {
 				startNewSession();
 			}
 		}
+	}
+
+	private void updateFPS(long startingTime, long elapsedTime) {
+		double fps;
+		
+		if (fpsCounter == null) {
+			return;
+		}
+		
+		if (lastGameTime > 0) {
+			fps = Timer.getTimeDivisor() / (startingTime - lastGameTime);
+			
+			fpsCounter.update(fps);
+		}
+		
+		lastGameTime = startingTime;		
 	}
 
 }

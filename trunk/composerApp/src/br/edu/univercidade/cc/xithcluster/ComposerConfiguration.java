@@ -1,70 +1,108 @@
 package br.edu.univercidade.cc.xithcluster;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Properties;
+import br.edu.univercidade.cc.xithcluster.configuration.BadParameterException;
+import br.edu.univercidade.cc.xithcluster.configuration.Configuration;
 
-public final class ComposerConfiguration {
-
-	private static final String DEFAULT_WINDOW_TITLE = "XithCluster Application";
+public class ComposerConfiguration extends Configuration {
 	
-	private static final String DEFAULT_MASTER_LISTENING_ADDRESS = "localhost";
-
-	private static final Integer DEFAULT_MASTER_LISTENING_PORT = 22222;
+	private String windowTitle;
 	
-	private static final String DEFAULT_RENDERERS_CONNECTION_ADDRESS = "localhost";
-
-	private static final Integer DEFAULT_RENDERERS_CONNECTION_PORT = 33333;
-
-	private static final Boolean DEFAULT_DISPLAY_FPS_COUNTER = true;
+	private String masterListeningAddress;
 	
-	private static final String DEFAULT_COMPOSITION_STRATEGY_CLASSNAME = SimpleCompositionStrategy.class.getName();
+	private int masterListeningPort;
 	
-	public static final String windowTitle;	
-
-	public static final String masterListeningAddress;
+	private String renderersConnectionAddress;
 	
-	public static final int masterListeningPort;
-
-	public static final String renderersConnectionAddress;
-
-	public static final int renderersConnectionPort;
+	private int renderersConnectionPort;
 	
-	public static final boolean displayFPSCounter;
-
-	public static final String compositionStrategyClassName;
+	private boolean displayFPSCounter;
 	
-	static {
-		Properties properties;
-		InputStream in;
+	private CompositionStrategy compositionStrategy;
+	
+	public String getWindowTitle() {
+		return windowTitle;
+	}
+	
+	public String getMasterListeningAddress() {
+		return masterListeningAddress;
+	}
+	
+	public int getMasterListeningPort() {
+		return masterListeningPort;
+	}
+	
+	public String getRenderersConnectionAddress() {
+		return renderersConnectionAddress;
+	}
+	
+	public int getRenderersConnectionPort() {
+		return renderersConnectionPort;
+	}
+	
+	public boolean isDisplayFPSCounter() {
+		return displayFPSCounter;
+	}
+	
+	public CompositionStrategy getCompositionStrategy() {
+		return compositionStrategy;
+	}
+	
+	@SuppressWarnings("unchecked")
+	private CompositionStrategy createCompositionStrategy(String compositionStrategyClassName) {
+		Class<? extends CompositionStrategy> compositionStrategyClass;
 		
-		properties = new Properties();
-		
-		in = ComposerConfiguration.class.getResourceAsStream("/composerApp.properties");
-		
-		if (in == null) {
-			try {
-				in = new FileInputStream("composerApp.properties");
-			} catch (FileNotFoundException e) {
-				throw new RuntimeException("Error reading properties file", e);
-			}
+		if (compositionStrategyClassName == null) {
+			throw new IllegalArgumentException();
 		}
 		
 		try {
-			properties.load(in);
-			windowTitle = properties.getProperty("window.title", DEFAULT_WINDOW_TITLE);
-			masterListeningAddress = properties.getProperty("master.listening.address", DEFAULT_MASTER_LISTENING_ADDRESS);
-			masterListeningPort = Integer.parseInt(properties.getProperty("master.listening.port", DEFAULT_MASTER_LISTENING_PORT.toString()));
-			renderersConnectionAddress = properties.getProperty("renderers.connection.address", DEFAULT_RENDERERS_CONNECTION_ADDRESS);
-			renderersConnectionPort = Integer.parseInt(properties.getProperty("renderers.connection.port", DEFAULT_RENDERERS_CONNECTION_PORT.toString()));
-			displayFPSCounter = Boolean.parseBoolean(properties.getProperty("display.fps.counter", DEFAULT_DISPLAY_FPS_COUNTER.toString()));
-			compositionStrategyClassName = properties.getProperty("composition.strategy.classname", DEFAULT_COMPOSITION_STRATEGY_CLASSNAME);
-		} catch (IOException e) {
+			compositionStrategyClass = (Class<? extends CompositionStrategy>) Class.forName(compositionStrategyClassName);
+			
+			try {
+				return compositionStrategyClass.newInstance();
+			} catch (Exception e) {
+				// TODO:
+				throw new RuntimeException("Error creating composition strategy", e);
+			}
+		} catch (ClassNotFoundException e) {
 			// TODO:
-			throw new RuntimeException("Error loading configuration file");
+			throw new RuntimeException("Error creating composition strategy", e);
 		}
+	}
+	
+	@Override
+	protected void parseFromCommandLine(String[] args) throws BadParameterException {
+		if (args == null || args.length != getArgsLength()) {
+			throw new AssertionError();
+		}
+		
+		// TODO:
+	}
+	
+	@Override
+	protected void loadFromProperties(Properties properties) throws BadParameterException {
+		if (properties == null) {
+			throw new AssertionError();
+		}
+		
+		windowTitle = getParameterAndCheckIfNullOrEmptyString(properties, "window.title");
+		masterListeningAddress = getParameterAndCheckIfNullOrEmptyString(properties, "master.listening.address");
+		masterListeningPort = getParameterAndConvertToIntegerSafely(properties, "master.listening.port");
+		renderersConnectionAddress = getParameterAndCheckIfNullOrEmptyString(properties, "renderers.connection.address");
+		renderersConnectionPort = getParameterAndConvertToIntegerSafely(properties, "renderers.connection.port");
+		displayFPSCounter = getParameterAndConvertToBooleanSafely(properties, "display.fps.counter");
+		compositionStrategy = createCompositionStrategy(getParameterAndCheckIfNullOrEmptyString(properties, "composition.strategy.classname"));
+	}
+
+	@Override
+	protected int getArgsLength() {
+		return 7;
+	}
+
+	@Override
+	protected String getPropertiesFileName() {
+		return "composerApp.properties";
 	}
 	
 }

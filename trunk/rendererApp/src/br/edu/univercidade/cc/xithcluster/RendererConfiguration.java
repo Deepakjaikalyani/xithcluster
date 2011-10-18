@@ -1,12 +1,10 @@
 package br.edu.univercidade.cc.xithcluster;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Properties;
+import br.edu.univercidade.cc.xithcluster.configuration.BadParameterException;
+import br.edu.univercidade.cc.xithcluster.configuration.Configuration;
 
-public class RendererConfigurationReader extends ConfigurationReader {
+public class RendererConfiguration extends Configuration {
 	
 	private String masterListeningAddress;
 	
@@ -45,9 +43,9 @@ public class RendererConfigurationReader extends ConfigurationReader {
 	}
 	
 	@Override
-	public void parseCommandLine(String[] args) throws RuntimeException {
-		if (args.length != 6) {
-			throw new IllegalArgumentException();
+	protected void parseFromCommandLine(String[] args) throws BadParameterException {
+		if (args == null || args.length != getArgsLength()) {
+			throw new AssertionError();
 		}
 		
 		masterListeningAddress = args[0];
@@ -64,23 +62,10 @@ public class RendererConfigurationReader extends ConfigurationReader {
 	}
 	
 	@Override
-	public void readPropertiesFile() throws FileNotFoundException, IOException {
-		Properties properties;
-		InputStream in;
-		
-		properties = new Properties();
-		
-		in = RendererConfigurationReader.class.getResourceAsStream("/rendererApp.properties");
-		
-		if (in == null) {
-			try {
-				in = new FileInputStream("rendererApp.properties");
-			} catch (FileNotFoundException e) {
-				throw new RuntimeException("Error reading properties file", e);
-			}
+	protected void loadFromProperties(Properties properties) throws BadParameterException {
+		if (properties == null) {
+			throw new AssertionError();
 		}
-		
-		properties.load(in);
 		
 		masterListeningAddress = getParameterAndCheckIfNullOrEmptyString(properties, "master.listening.address");
 		masterListeningPort = getParameterAndConvertToIntegerSafely(properties, "master.listening.port");
@@ -88,6 +73,16 @@ public class RendererConfigurationReader extends ConfigurationReader {
 		composerListeningPort = getParameterAndConvertToIntegerSafely(properties, "composer.listening.port");
 		compositionOrder = getParameterAndConvertToIntegerSafely(properties, "composition.order");
 		compressionMethod = getParameterAndConvertToEnumSafely(properties, "compression.method", CompressionMethod.values());
+	}
+
+	@Override
+	protected int getArgsLength() {
+		return 6;
+	}
+
+	@Override
+	protected String getPropertiesFileName() {
+		return "rendererApp.properties";
 	}
 	
 }

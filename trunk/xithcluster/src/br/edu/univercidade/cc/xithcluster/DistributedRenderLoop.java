@@ -18,7 +18,7 @@ import br.edu.univercidade.cc.xithcluster.communication.NetworkManager;
 
 public class DistributedRenderLoop extends InputAdapterRenderLoop implements SceneRenderer {
 	
-	private static final int FPS_SAMPLES = 10;
+	private static final int MIN_FPS_SAMPLES = 10;
 	
 	private UpdateManager updateManager;
 	
@@ -168,10 +168,10 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 		
 		hud = new HUD(debuggingCanvas, targetScreenDimension.height);
 		
-		fpsCounter = new HUDFPSCounter(FPS_SAMPLES);
+		fpsCounter = new HUDFPSCounter(MIN_FPS_SAMPLES);
 		fpsCounter.registerTo(hud);
 		
-		networkManager.setFpsCounter(fpsCounter);
+		networkManager.setFPSCounter(fpsCounter);
 		
 		x3dEnvironment.addHUD(hud);
 	}
@@ -186,7 +186,7 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 	}
 	
 	@Override
-	public SceneInfo getDistributableSceneInfo() {
+	public SceneInfo getSceneInfo() {
 		BranchGroup branchGroup;
 
 		branchGroup = getFirstBranchGroupThatDoesntBelongToHUD();
@@ -203,16 +203,20 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 		BranchGroup hudBranchGroup;
 		BranchGroup currentBranchGroup;
 		
-		hudBranchGroup = x3dEnvironment.getHUD().getSGGroup();
-		for (int i = 0; i < x3dEnvironment.getNumberOfBranchGroups(); i++) {
-			currentBranchGroup = x3dEnvironment.getBranchGroup(i);
-			
-			if (!currentBranchGroup.equals(hudBranchGroup)) {
-				return currentBranchGroup;
+		if (x3dEnvironment.getHUD() != null) {
+			hudBranchGroup = x3dEnvironment.getHUD().getSGGroup();
+			for (int i = 0; i < x3dEnvironment.getNumberOfBranchGroups(); i++) {
+				currentBranchGroup = x3dEnvironment.getBranchGroup(i);
+				
+				if (!currentBranchGroup.equals(hudBranchGroup)) {
+					return currentBranchGroup;
+				}
 			}
+			
+			return null;
+		} else {
+			return x3dEnvironment.getBranchGroup();
 		}
-		
-		return null;
 	}
 
 	@Override

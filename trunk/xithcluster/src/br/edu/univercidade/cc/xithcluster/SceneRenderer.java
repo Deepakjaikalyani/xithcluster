@@ -8,6 +8,6 @@ public interface SceneRenderer {
 	
 	float getTargetFPS();
 	
-	SceneInfo getDistributableSceneInfo();
+	SceneInfo getSceneInfo();
 	
 }

@@ -107,7 +107,7 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		this.sceneRenderer = sceneRenderer;
 	}
 	
-	public void setFpsCounter(FPSCounter fpsCounter) {
+	public void setFPSCounter(FPSCounter fpsCounter) {
 		if (fpsCounter == null) {
 			throw new IllegalArgumentException();
 		}
@@ -189,7 +189,7 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		byte[] sceneData;
 		int rendererIndex;
 		
-		sceneInfo = sceneRenderer.getDistributableSceneInfo();
+		sceneInfo = sceneRenderer.getSceneInfo();
 		
 		log.info("Starting a new session");
 		
@@ -568,8 +568,7 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		double fps;
 		
 		if (fpsCounter == null) {
-			// TODO:
-			throw new RuntimeException("Cannot update FPS when no FPS counter was set");
+			return;
 		}
 		
 		if (lastGameTime > 0) {

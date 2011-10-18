@@ -9,15 +9,20 @@ import org.xsocket.connection.IConnectHandler;
 import org.xsocket.connection.IDataHandler;
 import org.xsocket.connection.IDisconnectHandler;
 import org.xsocket.connection.INonBlockingConnection;
-import br.edu.univercidade.cc.xithcluster.ComposerConfiguration;
 import br.edu.univercidade.cc.xithcluster.CompressionMethod;
 
 public class ComposerMessageBroker implements IConnectHandler, IDataHandler, IDisconnectHandler {
 	
 	private final Logger log = Logger.getLogger(ComposerMessageBroker.class);
 	
+	private int masterListeningPort;
+	
+	public ComposerMessageBroker(int masterListeningPort) {
+		this.masterListeningPort = masterListeningPort;
+	}
+
 	private boolean isMyOwnConnection(INonBlockingConnection arg0) {
-		return arg0.getLocalPort() == ComposerConfiguration.masterListeningPort;
+		return arg0.getLocalPort() == masterListeningPort;
 	}
 	
 	@Override
