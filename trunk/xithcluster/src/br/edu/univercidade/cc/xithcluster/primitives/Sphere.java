@@ -12,7 +12,6 @@ public class Sphere extends org.xith3d.scenegraph.primitives.Sphere {
 	
 	private float centerZ;
 	
-	
 	private int slices;
 	
 	private int stacks;

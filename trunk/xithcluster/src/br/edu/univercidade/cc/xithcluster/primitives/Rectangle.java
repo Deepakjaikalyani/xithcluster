@@ -1,6 +1,5 @@
 package br.edu.univercidade.cc.xithcluster.primitives;
 
-import org.openmali.vecmath2.Colorf;
 import org.openmali.vecmath2.Tuple2f;
 import org.openmali.vecmath2.Tuple3f;
 import org.xith3d.scenegraph.Node;
@@ -9,22 +8,41 @@ import org.xith3d.scenegraph.Texture;
 
 public class Rectangle extends org.xith3d.scenegraph.primitives.Rectangle {
 	
+	private float width;
+	
+	private float height;
+	
+	private ZeroPointLocation zpl;
+	
 	private Tuple3f offset;
 	
 	private Tuple2f texLowerLeft;
 	
 	private Tuple2f texUpperRight;
 	
-	public Rectangle() {
-		super(1.0f, 1.0f);
-	}
-	
-	public Rectangle(float width, float height, Tuple3f offset, Tuple2f texLowerLeft, Tuple2f texUpperRight) {
-		super(width, height, offset, (Texture) null, texLowerLeft, texUpperRight, (Colorf) null);
+	public Rectangle(String name, float width, float height, ZeroPointLocation zpl, Texture texture, Tuple3f offset, Tuple2f texLowerLeft, Tuple2f texUpperRight) {
+		super(width, height, zpl, offset, texture, texLowerLeft, texUpperRight);
 		
+		setName(name);
+		this.width = width;
+		this.height = height;
+		this.zpl = zpl;
+		getAppearance(true).setTexture(texture);
 		this.offset = offset;
 		this.texLowerLeft = texLowerLeft;
 		this.texUpperRight = texUpperRight;
+	}
+	
+	public float getOriginalWidth() {
+		return width;
+	}
+	
+	public float getOriginalHeight() {
+		return height;
+	}
+	
+	public ZeroPointLocation getZpl() {
+		return zpl;
 	}
 	
 	public Tuple3f getOffset() {
@@ -45,26 +63,30 @@ public class Rectangle extends org.xith3d.scenegraph.primitives.Rectangle {
 		
 		destination = (Rectangle) arg0;
 		
+		setName(getName());
+		destination.width = width;
+		destination.height = height;
+		destination.zpl = zpl;
 		destination.offset = offset;
 		destination.texLowerLeft = texLowerLeft;
 		destination.texUpperRight = texUpperRight;
+		destination.setAppearance(getAppearance());
 		
-        destination.setAppearance(getAppearance());
-        destination.setBoundsAutoCompute(false);
-        destination.setBounds(getBounds());
-        destination.boundsDirty = true;
-        destination.updateBounds(false);
-        destination.setPickable(isPickable());
-        destination.setRenderable(isRenderable());
-        destination.setName(getName());
+		destination.setBoundsAutoCompute(false);
+		destination.setBounds(getBounds());
+		destination.boundsDirty = true;
+		destination.updateBounds(false);
+		destination.setPickable(isPickable());
+		destination.setRenderable(isRenderable());
 	}
 	
 	@Override
 	protected Shape3D newInstance() {
+		Rectangle newRectangle;
 		boolean globalIgnoreBounds = Node.globalIgnoreBounds;
 		
 		Node.globalIgnoreBounds = isIgnoreBounds();
-		Rectangle newRectangle = new Rectangle();
+		newRectangle = new Rectangle(null, 1.0f, 1.0f, null, null, null, null, null);
 		Node.globalIgnoreBounds = globalIgnoreBounds;
 		
 		return newRectangle;
