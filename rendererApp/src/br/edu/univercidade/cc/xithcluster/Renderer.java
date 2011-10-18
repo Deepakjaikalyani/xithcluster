@@ -3,7 +3,7 @@ package br.edu.univercidade.cc.xithcluster;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.View;
 
-public interface SceneRenderer {
+public interface Renderer {
 
 	void updateScene(View view, BranchGroup newRoot);
 	

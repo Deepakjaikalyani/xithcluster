@@ -13,7 +13,7 @@ import org.xsocket.connection.NonBlockingConnection;
 import br.edu.univercidade.cc.xithcluster.CompressionMethod;
 import br.edu.univercidade.cc.xithcluster.DeserializationResult;
 import br.edu.univercidade.cc.xithcluster.SceneDeserializer;
-import br.edu.univercidade.cc.xithcluster.SceneRenderer;
+import br.edu.univercidade.cc.xithcluster.Renderer;
 
 public class RendererNetworkManager extends OperationSchedulerImpl implements Observer {
 	
@@ -36,7 +36,7 @@ public class RendererNetworkManager extends OperationSchedulerImpl implements Ob
 	
 	private int compositionOrder;
 	
-	private SceneRenderer sceneRenderer;
+	private Renderer renderer;
 	
 	protected INonBlockingConnection masterConnection;
 	
@@ -76,12 +76,12 @@ public class RendererNetworkManager extends OperationSchedulerImpl implements Ob
 		this.compressionMethod = compressionMethod;
 	}
 	
-	public void setSceneRenderer(SceneRenderer sceneRenderer) {
-		if (sceneRenderer == null) {
+	public void setSceneRenderer(Renderer renderer) {
+		if (renderer == null) {
 			throw new IllegalArgumentException();
 		}
 		
-		this.sceneRenderer = sceneRenderer;
+		this.renderer = renderer;
 	}
 	
 	public void start() throws IOException {
@@ -105,7 +105,7 @@ public class RendererNetworkManager extends OperationSchedulerImpl implements Ob
 			throw new RuntimeException("Error notifying master node that session started successfully", e);
 		}
 		
-		sceneRenderer.updateScene(deserializationResult.getPointOfView(), deserializationResult.getScene());
+		renderer.updateScene(deserializationResult.getPointOfView(), deserializationResult.getScene());
 		
 		deserializationResult = null;
 		sceneDeserializationThread = null;
@@ -131,8 +131,8 @@ public class RendererNetworkManager extends OperationSchedulerImpl implements Ob
 			log.trace("Sending current frame to compositor: " + currentFrame);
 		}
 		
-		colorAndAlphaBuffer = sceneRenderer.getColorAndAlphaBuffer();
-		depthBuffer = sceneRenderer.getDepthBuffer();
+		colorAndAlphaBuffer = renderer.getColorAndAlphaBuffer();
+		depthBuffer = renderer.getDepthBuffer();
 		
 		switch (compressionMethod) {
 		case PNG:
@@ -223,7 +223,7 @@ public class RendererNetworkManager extends OperationSchedulerImpl implements Ob
 			interruptParallelSceneDeserialization();
 		}
 		
-		sceneRenderer.updateOnScreenInformation(rendererId, screenWidth, screenHeight);
+		renderer.updateOnScreenInformation(rendererId, screenWidth, screenHeight);
 		
 		log.debug("Starting parallel scene deserialization");
 		
@@ -237,7 +237,7 @@ public class RendererNetworkManager extends OperationSchedulerImpl implements Ob
 			sendSetCompositionOrderMessage(compositionOrder);
 		} catch (IOException e) {
 			// TODO:
-			throw new RuntimeException("Error notifying composer node the sceneRenderer's composition order", e);
+			throw new RuntimeException("Error notifying composer node the renderer's composition order", e);
 		}
 	}
 	

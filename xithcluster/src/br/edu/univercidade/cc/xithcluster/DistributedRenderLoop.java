@@ -16,7 +16,7 @@ import org.xith3d.ui.hud.HUD;
 import org.xith3d.utility.events.WindowClosingRenderLoopEnder;
 import br.edu.univercidade.cc.xithcluster.communication.NetworkManager;
 
-public class DistributedRenderLoop extends InputAdapterRenderLoop implements SceneRenderer {
+public class DistributedRenderLoop extends InputAdapterRenderLoop implements DistributedSceneManager {
 	
 	private static final int MIN_FPS_SAMPLES = 10;
 	

@@ -25,7 +25,7 @@ import br.edu.univercidade.cc.xithcluster.GeometryDistributionStrategy;
 import br.edu.univercidade.cc.xithcluster.PendingUpdate;
 import br.edu.univercidade.cc.xithcluster.PendingUpdate.Type;
 import br.edu.univercidade.cc.xithcluster.SceneInfo;
-import br.edu.univercidade.cc.xithcluster.SceneRenderer;
+import br.edu.univercidade.cc.xithcluster.DistributedSceneManager;
 import br.edu.univercidade.cc.xithcluster.UpdateManager;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.PointOfViewPackager;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.ScenePackager;
@@ -52,7 +52,7 @@ public final class NetworkManager extends OperationSchedulerImpl {
 	
 	private int composerConnectionPort;
 	
-	private SceneRenderer sceneRenderer;
+	private DistributedSceneManager distributedSceneManager;
 	
 	private UpdateManager updateManager;
 	
@@ -99,12 +99,12 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		this.geometryDistributionStrategy = geometryDistributionStrategy;
 	}
 
-	public void setSceneRenderer(SceneRenderer sceneRenderer) {
-		if (sceneRenderer == null) {
+	public void setSceneRenderer(DistributedSceneManager distributedSceneManager) {
+		if (distributedSceneManager == null) {
 			throw new IllegalArgumentException();
 		}
 		
-		this.sceneRenderer = sceneRenderer;
+		this.distributedSceneManager = distributedSceneManager;
 	}
 	
 	public void setFPSCounter(FPSCounter fpsCounter) {
@@ -116,7 +116,7 @@ public final class NetworkManager extends OperationSchedulerImpl {
 	}
 	
 	public void start() throws UnknownHostException, IOException {
-		if (sceneRenderer == null) {
+		if (distributedSceneManager == null) {
 			// TODO:
 			throw new RuntimeException("Scene renderer must be set");
 		}
@@ -189,7 +189,7 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		byte[] sceneData;
 		int rendererIndex;
 		
-		sceneInfo = sceneRenderer.getSceneInfo();
+		sceneInfo = distributedSceneManager.getSceneInfo();
 		
 		log.info("Starting a new session");
 		
@@ -442,9 +442,9 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		rendererConnection.flush();
 		
 		rendererConnection.write(getRendererIndex(rendererConnection));
-		rendererConnection.write(sceneRenderer.getTargetScreenDimension().width);
-		rendererConnection.write(sceneRenderer.getTargetScreenDimension().height);
-		rendererConnection.write(sceneRenderer.getTargetFPS());
+		rendererConnection.write(distributedSceneManager.getTargetScreenDimension().width);
+		rendererConnection.write(distributedSceneManager.getTargetScreenDimension().height);
+		rendererConnection.write(distributedSceneManager.getTargetFPS());
 		rendererConnection.write(pointOfViewData.length);
 		rendererConnection.write(pointOfViewData);
 		rendererConnection.write(sceneData.length);
@@ -456,9 +456,9 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		composerConnection.write(MessageType.START_SESSION.ordinal());
 		composerConnection.flush();
 		
-		composerConnection.write(sceneRenderer.getTargetScreenDimension().width);
-		composerConnection.write(sceneRenderer.getTargetScreenDimension().height);
-		composerConnection.write(sceneRenderer.getTargetFPS());
+		composerConnection.write(distributedSceneManager.getTargetScreenDimension().width);
+		composerConnection.write(distributedSceneManager.getTargetScreenDimension().height);
+		composerConnection.write(distributedSceneManager.getTargetFPS());
 		composerConnection.flush();
 	}
 	
