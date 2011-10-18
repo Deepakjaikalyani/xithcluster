@@ -86,7 +86,7 @@ public class Rectangle extends org.xith3d.scenegraph.primitives.Rectangle {
 		boolean globalIgnoreBounds = Node.globalIgnoreBounds;
 		
 		Node.globalIgnoreBounds = isIgnoreBounds();
-		newRectangle = new Rectangle(null, 1.0f, 1.0f, null, null, null, null, null);
+		newRectangle = new Rectangle(null, 1.0f, 1.0f, ZeroPointLocation.CENTER_CENTER, null, new Tuple3f(0.0f, 0.0f, 0.0f), null, null);
 		Node.globalIgnoreBounds = globalIgnoreBounds;
 		
 		return newRectangle;
