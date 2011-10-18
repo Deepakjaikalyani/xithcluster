@@ -27,7 +27,7 @@ import org.xith3d.utility.events.WindowClosingRenderLoopEnder;
 import br.edu.univercidade.cc.xithcluster.communication.RendererNetworkManager;
 import br.edu.univercidade.cc.xithcluster.util.BufferUtils;
 
-public class RendererLoop extends InputAdapterRenderLoop implements SceneRenderer {
+public class RendererLoop extends InputAdapterRenderLoop implements Renderer {
 	
 	private static final float DEFAULT_TARGET_FPS = 80.0f;
 	
