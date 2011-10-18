@@ -14,13 +14,38 @@ import org.xith3d.scenegraph.Texture2D;
 import org.xith3d.scenegraph.Transform;
 import org.xith3d.scenegraph.TransformGroup;
 import org.xith3d.scenegraph.primitives.GeomFactory;
+import org.xith3d.scenegraph.primitives.Rectangle.ZeroPointLocation;
 import br.edu.univercidade.cc.xithcluster.primitives.Cube;
+import br.edu.univercidade.cc.xithcluster.primitives.Rectangle;
 import br.edu.univercidade.cc.xithcluster.primitives.Sphere;
 
 
 public final class SceneUtils {
 	
 	private SceneUtils() {
+	}
+	
+	public static void addRectangle(Group group, String name, float width, float height, Tuple3f translation, Tuple3f rotation, Texture2D texture) {
+		Transform transform;
+		TransformGroup translationTransform;
+		TransformGroup rotationTransform;
+		Rectangle rectangle;
+		
+		transform = new Transform();
+		transform.setTranslation(translation);
+		translationTransform = new TransformGroup(transform.getTransform());
+		
+		transform = new Transform();
+		transform.setRotation(rotation);
+		rotationTransform = new TransformGroup(transform.getTransform());
+		
+		translationTransform.addChild(rotationTransform);
+		
+		rectangle = new Rectangle(name, width, height, ZeroPointLocation.CENTER_CENTER, texture, new Tuple3f(0.0f, 0.0f, 0.0f), null, null);
+		
+		rotationTransform.addChild(rectangle);
+		
+		group.addChild(translationTransform);
 	}
 	
 	public static void addSphere(Group group, String name, float radius, Tuple3f translation, Colorf emissiveColor) {

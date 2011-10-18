@@ -43,6 +43,9 @@ public class SampleApp {
 			
 			animator.addAnimatableObject(animatableGroup);
 			
+			SceneUtils.addRectangle(group, "floor", 3.0f, 3.0f, new Tuple3f(0.0f, -1.0f, -1.0f), new Tuple3f(90.0f, 0.0f, 0.0f), SceneUtils.loadTexture2D("resources/textures/floor.png"));
+			
+			
 			// Shapes
 			
 			SceneUtils.addCube(group, "cube1", 0.75f, new Tuple3f(0.0f, 0.3f, -0.5f), new Tuple3f(-35.0f, 20.0f, 0.0f), Colorf.RED);
