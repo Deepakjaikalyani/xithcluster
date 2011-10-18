@@ -1,12 +1,10 @@
 package br.edu.univercidade.cc.xithcluster;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Properties;
+import br.edu.univercidade.cc.xithcluster.configuration.BadParameterException;
+import br.edu.univercidade.cc.xithcluster.configuration.Configuration;
 
-public final class XithClusterConfigurationReader extends ConfigurationReader {
+public final class XithClusterConfiguration extends Configuration {
 	
 	private String listeningAddress;
 	
@@ -45,9 +43,9 @@ public final class XithClusterConfigurationReader extends ConfigurationReader {
 	}
 	
 	@Override
-	public void parseCommandLine(String args[]) throws RuntimeException {
-		if (args.length != 6) {
-			throw new IllegalArgumentException();
+	protected void parseFromCommandLine(String args[]) throws BadParameterException {
+		if (args == null || args.length != getArgsLength()) {
+			throw new AssertionError();
 		}
 		
 		listeningAddress = args[0];
@@ -62,19 +60,10 @@ public final class XithClusterConfigurationReader extends ConfigurationReader {
 	}
 	
 	@Override
-	public void readPropertiesFile() throws FileNotFoundException, IOException {
-		Properties properties;
-		InputStream in;
-		
-		properties = new Properties();
-		
-		in = XithClusterConfigurationReader.class.getResourceAsStream("/xithcluster.properties");
-		
-		if (in == null) {
-			in = new FileInputStream("xithcluster.properties");
+	protected void loadFromProperties(Properties properties) throws BadParameterException {
+		if (properties == null) {
+			throw new AssertionError();
 		}
-		
-		properties.load(in);
 		
 		listeningAddress = getParameterAndCheckIfNullOrEmptyString(properties, "listening.address");
 		renderersConnectionPort = getParameterAndConvertToIntegerSafely(properties, "renderers.connection.port");
@@ -82,6 +71,16 @@ public final class XithClusterConfigurationReader extends ConfigurationReader {
 		targetScreenWidth = getParameterAndConvertToIntegerSafely(properties, "screen.width");
 		targetScreenHeight = getParameterAndConvertToIntegerSafely(properties, "screen.height");
 		targetFPS = getParameterAndConvertToFloatSafely(properties, "target.fps");
+	}
+
+	@Override
+	protected int getArgsLength() {
+		return 6;
+	}
+
+	@Override
+	protected String getPropertiesFileName() {
+		return "xithcluster.properties";
 	}
 	
 }

@@ -125,12 +125,14 @@ public class RendererNetworkManager extends OperationSchedulerImpl implements Ob
 	
 	private void sendCurrentFrameToCompositor() {
 		byte[] colorAndAlphaBuffer;
+		byte[] depthBuffer;
 		
 		if (trace) {
 			log.trace("Sending current frame to compositor: " + currentFrame);
 		}
 		
 		colorAndAlphaBuffer = sceneRenderer.getColorAndAlphaBuffer();
+		depthBuffer = sceneRenderer.getDepthBuffer();
 		
 		switch (compressionMethod) {
 		case PNG:
@@ -139,7 +141,7 @@ public class RendererNetworkManager extends OperationSchedulerImpl implements Ob
 		}
 		
 		try {
-			sendNewImageMessage(colorAndAlphaBuffer, sceneRenderer.getDepthBuffer());
+			sendNewImageMessage(colorAndAlphaBuffer, depthBuffer);
 		} catch (IOException e) {
 			// TODO:
 			throw new RuntimeException("Error sending image buffers to composer", e);

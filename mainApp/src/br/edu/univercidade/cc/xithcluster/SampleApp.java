@@ -1,7 +1,6 @@
 package br.edu.univercidade.cc.xithcluster;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.openmali.vecmath2.Colorf;
@@ -15,6 +14,8 @@ import org.xith3d.schedops.movement.AnimatableGroup;
 import org.xith3d.schedops.movement.GroupRotator;
 import org.xith3d.schedops.movement.TransformationDirectives;
 import br.edu.univercidade.cc.xithcluster.communication.NetworkManager;
+import br.edu.univercidade.cc.xithcluster.configuration.CommandLineParsingException;
+import br.edu.univercidade.cc.xithcluster.configuration.PropertiesFileLoadingException;
 
 public class SampleApp {
 	
@@ -68,7 +69,7 @@ public class SampleApp {
 	 */
 	@SuppressWarnings("unused")
 	public static void main(String[] args) {
-		XithClusterConfigurationReader xithClusterConfigurationReader;
+		XithClusterConfiguration xithClusterConfiguration;
 		DistributedRenderLoop distributedRenderLoop;
 		Xith3DEnvironment xith3dEnvironment;
 		UpdateManager updateManager;
@@ -76,45 +77,29 @@ public class SampleApp {
 		
 		initializeLog4j();
 		
-		xithClusterConfigurationReader = new XithClusterConfigurationReader();
-
-		if (args.length == 6) {
-			try {
-				xithClusterConfigurationReader.parseCommandLine(args);
-			} catch (RuntimeException e) {
-				printCommandLineHelpAndExit();
-			}
-		} else {
-			System.out.println("Reading parameters from properties file");
-			
-			try {
-				xithClusterConfigurationReader.readPropertiesFile();
-			} catch (FileNotFoundException e) {
-				printErrorMessageAndExit("Properties file not found", e);
-			} catch (IOException e) {
-				printErrorMessageAndExit("I/O error reading properties file", e);
-			} catch (RuntimeException e) {
-				printErrorMessageAndExit("Invalid properties file", e);
-			}
+		xithClusterConfiguration = new XithClusterConfiguration();
+		
+		try {
+			xithClusterConfiguration.load(args);
+		} catch (CommandLineParsingException e) {
+			printErrorMessage("Error parsing command line", e.getBadParameterException());
+			printCommandLineHelp();
+			System.exit(-1);
+		} catch (PropertiesFileLoadingException e) {
+			printErrorMessage("Error reading properties file", e.getBadParameterException());
+			System.exit(-1);
+		} catch (IOException e) {
+			printErrorMessage("I/O error reading properties file", e);
+			System.exit(-1);
 		}
 		
-		distributedRenderLoop = new DistributedRenderLoop(xithClusterConfigurationReader.getTargetFPS(), 
-				xithClusterConfigurationReader.getTargetScreenWidth(), 
-				xithClusterConfigurationReader.getTargetScreenHeight(), 
-				true, 
-				sceneCreationCallback);
+		distributedRenderLoop = new DistributedRenderLoop(xithClusterConfiguration.getTargetFPS(), xithClusterConfiguration.getTargetScreenWidth(), xithClusterConfiguration.getTargetScreenHeight(), true, sceneCreationCallback);
 		
-		xith3dEnvironment = new Xith3DEnvironment(new Tuple3f(0.0f, 0.0f, 3.0f), 
-				new Tuple3f(0.0f, 0.0f, 0.0f), 
-				new Tuple3f(0.0f, 1.0f, 0.0f), 
-				distributedRenderLoop);
+		xith3dEnvironment = new Xith3DEnvironment(new Tuple3f(0.0f, 0.0f, 3.0f), new Tuple3f(0.0f, 0.0f, 0.0f), new Tuple3f(0.0f, 1.0f, 0.0f), distributedRenderLoop);
 		
 		updateManager = new UpdateManager();
 		
-		networkManager = new NetworkManager(xithClusterConfigurationReader.getListeningAddress(), 
-				xithClusterConfigurationReader.getRenderersConnectionPort(), 
-				xithClusterConfigurationReader.getComposerConnectionPort(), 
-				new RoundRobinGeometryDistribution());
+		networkManager = new NetworkManager(xithClusterConfiguration.getListeningAddress(), xithClusterConfiguration.getRenderersConnectionPort(), xithClusterConfiguration.getComposerConnectionPort(), new RoundRobinGeometryDistribution());
 		
 		networkManager.addUpdateManager(updateManager);
 		
@@ -124,7 +109,7 @@ public class SampleApp {
 		
 		distributedRenderLoop.begin();
 	}
-
+	
 	private static void initializeLog4j() {
 		if (new File(LOG4J_CONFIGURATION_FILE).exists()) {
 			DOMConfigurator.configure(LOG4J_CONFIGURATION_FILE);
@@ -132,16 +117,14 @@ public class SampleApp {
 			System.err.println("Log4j not initialized: \"xithcluster-log4j.xml\" could not be found");
 		}
 	}
-
-	private static void printErrorMessageAndExit(String errorMessage, Exception e) {
+	
+	private static void printErrorMessage(String errorMessage, Exception e) {
 		System.err.println(errorMessage);
 		e.printStackTrace(System.err);
-		System.exit(-1);
 	}
-
-	private static void printCommandLineHelpAndExit() {
+	
+	private static void printCommandLineHelp() {
 		System.err.println("java -jar <your application>.jar <listeningAddress> <renderersConnectionPort> <composerConnectionPort> <targetScreenWidth> <targetScreenHeight> <targetFPS>");
-		System.exit(-1);
 	}
 	
 }
