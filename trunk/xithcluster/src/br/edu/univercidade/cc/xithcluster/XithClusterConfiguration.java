@@ -56,7 +56,7 @@ public final class XithClusterConfiguration extends Configuration {
 		composerConnectionPort = convertToIntegerSafely("composerConnectionPort", args[2]);
 		targetScreenWidth = convertToIntegerSafely("targetScreenWidth", args[3]);
 		targetScreenHeight = convertToIntegerSafely("targetScreenHeight", args[4]);
-		targetFPS = convertToIntegerSafely("targetFPS", args[5]);
+		targetFPS = convertToFloatSafely("targetFPS", args[5]);
 	}
 	
 	@Override
