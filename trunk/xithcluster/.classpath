@@ -17,6 +17,6 @@
 	<classpathentry kind="lib" path="lib/vorbis.jar"/>
 	<classpathentry kind="lib" path="lib/xpal-joode.jar"/>
 	<classpathentry kind="lib" path="lib/log4j-1.2.16.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/xith3d"/>
+	<classpathentry kind="lib" path="lib/xith3d.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
