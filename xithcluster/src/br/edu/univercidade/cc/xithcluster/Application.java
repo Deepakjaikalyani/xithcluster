@@ -13,6 +13,12 @@ import br.edu.univercidade.cc.xithcluster.configuration.PropertiesFileLoadingExc
 
 public abstract class Application {
 	
+	private static final Tuple3f DEFAULT_UP_DIRECTION = new Tuple3f(0.0f, 1.0f, 0.0f);
+
+	private static final Tuple3f DEFAULT_VIEW_FOCUS = new Tuple3f(0.0f, 0.0f, 0.0f);
+
+	private static final Tuple3f DEFAULT_EYE_POSITION = new Tuple3f(0.0f, 0.0f, 3.0f);
+
 	private static final String LOG4J_CONFIGURATION_FILE = "xithcluster-log4j.xml";
 	
 	private SceneCreationCallback sceneCreationCallback = new SceneCreationCallback() {
@@ -23,7 +29,35 @@ public abstract class Application {
 		}
 		
 	};
+
+	protected Tuple3f eyePosition;
+
+	protected Tuple3f viewFocus;
+
+	protected Tuple3f upDirection;
 	
+	public Application() {
+		super();
+		eyePosition = DEFAULT_EYE_POSITION;
+		viewFocus = DEFAULT_VIEW_FOCUS;
+		upDirection = DEFAULT_UP_DIRECTION;
+	}
+
+	public Application(Tuple3f eyePosition, Tuple3f viewFocus) {
+		super();
+		this.eyePosition = eyePosition;
+		this.viewFocus = viewFocus;
+		upDirection = DEFAULT_UP_DIRECTION;
+	}
+
+	public Application(Tuple3f eyePosition, Tuple3f viewFocus,
+			Tuple3f upDirection) {
+		super();
+		this.eyePosition = eyePosition;
+		this.viewFocus = viewFocus;
+		this.upDirection = upDirection;
+	}
+
 	protected abstract String getJARName();
 	
 	protected abstract BranchGroup createSceneRoot(Animator animator);
@@ -54,9 +88,7 @@ public abstract class Application {
 		
 		distributedRenderLoop = new DistributedRenderLoop(xithClusterConfiguration.getTargetFPS(), xithClusterConfiguration.getTargetScreenWidth(), xithClusterConfiguration.getTargetScreenHeight(), true, sceneCreationCallback);
 		
-		// The xith3d environment registers himself with the distributed render
-		// loop
-		new Xith3DEnvironment(new Tuple3f(0.0f, 0.0f, 3.0f), new Tuple3f(0.0f, 0.0f, 0.0f), new Tuple3f(0.0f, 1.0f, 0.0f), distributedRenderLoop);
+		new Xith3DEnvironment(eyePosition, viewFocus, upDirection, distributedRenderLoop);
 		
 		updateManager = new UpdateManager();
 		
