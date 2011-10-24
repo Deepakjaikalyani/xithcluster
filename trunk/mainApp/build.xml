@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="build.jar" basedir="." name="sampleApp">
+	
+	<!-- ===============
+		  	BUILD JAR
+		 =============== -->
+    <target name="build.jar">
+        <jar destfile="dist/sampleApp.jar">
+            <manifest>
+                <attribute name="Main-Class" value="br.edu.univercidade.cc.xithcluster.SampleApp"/>
+                <attribute name="Class-Path" value=". lib/log4j-1.2.16.jar lib/xSocket-2.8.14.jar lib/gluegen-rt.jar lib/jagatoo.jar lib/jinput.jar lib/joal.jar lib/jogl.jar lib/joode.jar lib/jops.jar lib/lwjgl.jar lib/openmali.jar lib/vorbis.jar lib/xpal-joode.jar lib/xith3d.jar"/>
+            </manifest>
+            <fileset dir="bin">
+            	<exclude name="sampleApp.properties"/>
+            </fileset>
+            <fileset dir="../xithcluster/bin"/>
+        </jar>
+    	
+    	<!-- Libraries -->
+        <delete dir="dist/lib"/>
+        <mkdir dir="dist/lib"/>
+    	<copydir src="../xithcluster/lib/native" dest="dist/lib/native"/>
+        <copy file="../xithcluster/lib/log4j-1.2.16.jar" todir="dist/lib"/>
+        <copy file="../xithcluster/lib/xSocket-2.8.14.jar" todir="dist/lib"/>
+        <copy file="../xithcluster/lib/gluegen-rt.jar" todir="dist/lib"/>
+        <copy file="../xithcluster/lib/jagatoo.jar" todir="dist/lib"/>
+        <copy file="../xithcluster/lib/jinput.jar" todir="dist/lib"/>
+        <copy file="../xithcluster/lib/joal.jar" todir="dist/lib"/>
+        <copy file="../xithcluster/lib/jogl.jar" todir="dist/lib"/>
+        <copy file="../xithcluster/lib/joode.jar" todir="dist/lib"/>
+        <copy file="../xithcluster/lib/jops.jar" todir="dist/lib"/>
+        <copy file="../xithcluster/lib/lwjgl.jar" todir="dist/lib"/>
+        <copy file="../xithcluster/lib/openmali.jar" todir="dist/lib"/>
+        <copy file="../xithcluster/lib/vorbis.jar" todir="dist/lib"/>
+        <copy file="../xithcluster/lib/xpal-joode.jar" todir="dist/lib"/>
+        <copy file="../xithcluster/lib/xith3d.jar" todir="dist/lib"/>
+
+    	<!-- Resources -->
+    	<copydir src="resources" dest="dist/resources"/>
+    	
+        <!-- Properties file -->
+    	<copy file="bin/xithcluster.properties" todir="dist"/>
+    	
+    	<!-- Log4j configuration file -->
+    	<copy file="xithcluster-log4j.xml" todir="dist"/>
+    	
+    	<!-- Scripts -->
+    	<copy file="scripts/run.bat" todir="dist"/>
+    	<copy file="scripts/run.sh" todir="dist"/>
+    </target>
+</project>
