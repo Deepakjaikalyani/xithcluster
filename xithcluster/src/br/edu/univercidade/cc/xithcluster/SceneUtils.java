@@ -4,6 +4,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import org.openmali.vecmath2.Colorf;
 import org.openmali.vecmath2.Tuple3f;
+import org.openmali.vecmath2.Vector3f;
 import org.xith3d.loaders.texture.TextureLoader;
 import org.xith3d.scenegraph.Appearance;
 import org.xith3d.scenegraph.Geometry;
@@ -133,6 +134,12 @@ public final class SceneUtils {
 		rotationTransform.addChild(cube);
 		
 		parent.addChild(translationTransform);
+	}
+	
+	public static void addDirectionalLight(GroupNode parent, String name, Colorf color, Vector3f direction) {
+		DirectionalLight directionalLight = new DirectionalLight(true, color, direction);
+		directionalLight.setName(name);
+		parent.addChild(directionalLight);
 	}
 	
 	public static Texture2D loadTexture2D(String fileName) {
