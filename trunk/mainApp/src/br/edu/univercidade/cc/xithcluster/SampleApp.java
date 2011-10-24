@@ -23,7 +23,6 @@ public class SampleApp extends Application {
 		Group group;
 		AnimatableGroup animatableGroup;
 		GroupRotator groupRotator;
-		DirectionalLight directionalLight;
 		
 		root = new BranchGroup();
 		
@@ -51,8 +50,7 @@ public class SampleApp extends Application {
 		
 		// Lights
 		
-		directionalLight = new DirectionalLight(true, new Colorf(0.5f, 0.5f, 0.5f), Vector3f.NEGATIVE_Z_AXIS);
-		root.addChild(directionalLight);
+		SceneUtils.addDirectionalLight(root, "light1", new Colorf(0.5f, 0.5f, 0.5f), Vector3f.NEGATIVE_Z_AXIS);
 		
 		return root;
 	}
