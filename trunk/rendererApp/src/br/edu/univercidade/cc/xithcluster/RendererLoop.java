@@ -3,6 +3,7 @@ package br.edu.univercidade.cc.xithcluster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.log4j.Logger;
 import org.jagatoo.input.InputSystem;
 import org.jagatoo.input.InputSystemException;
 import org.jagatoo.input.devices.components.Key;
@@ -40,6 +41,8 @@ public class RendererLoop extends InputAdapterRenderLoop implements Renderer {
 	private static final int DEFAULT_WIDTH = 800;
 	
 	private static final int DEFAULT_HEIGHT = 600;
+	
+	private Logger log = Logger.getLogger(RendererLoop.class);
 	
 	private RendererNetworkManager networkManager;
 	
@@ -80,6 +83,8 @@ public class RendererLoop extends InputAdapterRenderLoop implements Renderer {
 			
 			startNetworkManager();
 		}
+		
+		log.info("Renderer started successfully.");
 		
 		super.begin(runMode, timingMode);
 	}

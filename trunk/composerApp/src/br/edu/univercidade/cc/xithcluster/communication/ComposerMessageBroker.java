@@ -22,7 +22,7 @@ public class ComposerMessageBroker implements IConnectHandler, IDataHandler, IDi
 	}
 
 	private boolean isMyOwnConnection(INonBlockingConnection arg0) {
-		return arg0.getLocalPort() == masterListeningPort;
+		return arg0.getRemotePort() == masterListeningPort;
 	}
 	
 	@Override
