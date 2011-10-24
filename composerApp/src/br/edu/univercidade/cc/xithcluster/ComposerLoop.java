@@ -2,6 +2,7 @@ package br.edu.univercidade.cc.xithcluster;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import org.apache.log4j.Logger;
 import br.edu.univercidade.cc.xithcluster.communication.ComposerNetworkManager;
 
 public class ComposerLoop implements Runnable, Rasterizer {
@@ -11,6 +12,8 @@ public class ComposerLoop implements Runnable, Rasterizer {
 	private static final long DEFAULT_SECONDS_PER_FRAME = (long)Math.ceil(1000L / DEFAULT_TARGET_FPS);
 	
 	private static final int FPS_SAMPLES = 10;
+	
+	private Logger log = Logger.getLogger(ComposerLoop.class);
 	
 	private ComposerNetworkManager networkManager;
 	
@@ -113,6 +116,8 @@ public class ComposerLoop implements Runnable, Rasterizer {
 		long endingTime;
 		
 		running = true;
+		
+		log.info("Composer started successfully.");
 		
 		lastElapsedTime = 0L;
 		while (running) {
