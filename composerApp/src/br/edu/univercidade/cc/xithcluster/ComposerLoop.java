@@ -3,13 +3,12 @@ package br.edu.univercidade.cc.xithcluster;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import org.apache.log4j.Logger;
+import br.edu.univercidade.cc.xithcluster.Timer.TimeMeasurementUnit;
 import br.edu.univercidade.cc.xithcluster.communication.ComposerNetworkManager;
 
 public class ComposerLoop implements Runnable, Rasterizer {
 	
-	private static final float DEFAULT_TARGET_FPS = 80.0f;
-	
-	private static final long DEFAULT_SECONDS_PER_FRAME = (long)Math.ceil(1000L / DEFAULT_TARGET_FPS);
+	private static final double TARGET_FPS = 80.0;
 	
 	private static final int FPS_SAMPLES = 10;
 	
@@ -110,6 +109,7 @@ public class ComposerLoop implements Runnable, Rasterizer {
 	}
 
 	private void startLoop() {
+		long frameTime;
 		long elapsedTime;
 		long startingTime;
 		long lastElapsedTime;
@@ -118,6 +118,9 @@ public class ComposerLoop implements Runnable, Rasterizer {
 		running = true;
 		
 		log.info("Composer started successfully.");
+		
+		Timer.setTimeMeasurementUnit(TimeMeasurementUnit.MILLISECONDS);
+		frameTime = (long) Math.floor(Timer.getTimeDivisor() / TARGET_FPS);
 		
 		lastElapsedTime = 0L;
 		while (running) {
@@ -129,11 +132,10 @@ public class ComposerLoop implements Runnable, Rasterizer {
 			
 			elapsedTime = endingTime - startingTime;
 			
-			if (elapsedTime < DEFAULT_SECONDS_PER_FRAME) {
+			if (elapsedTime < frameTime) {
 				try {
-					Thread.sleep(DEFAULT_SECONDS_PER_FRAME - elapsedTime);
+					Thread.sleep(frameTime - elapsedTime);
 				} catch (InterruptedException e) {
-				// TODO: Do nothing!
 				}
 			}
 			
