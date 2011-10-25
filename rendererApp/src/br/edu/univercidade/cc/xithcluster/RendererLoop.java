@@ -8,33 +8,27 @@ import org.jagatoo.input.InputSystem;
 import org.jagatoo.input.InputSystemException;
 import org.jagatoo.input.devices.components.Key;
 import org.jagatoo.input.events.KeyPressedEvent;
-import org.jagatoo.opengl.enums.TextureFormat;
+import org.lwjgl.opengl.GL11;
 import org.openmali.vecmath2.Colorf;
-import org.xith3d.loaders.texture.TextureCreator;
 import org.xith3d.loop.InputAdapterRenderLoop;
 import org.xith3d.loop.opscheduler.Animatable;
 import org.xith3d.render.BaseRenderPassConfig;
 import org.xith3d.render.Canvas3D;
 import org.xith3d.render.Canvas3DFactory;
-import org.xith3d.render.DepthBufferRenderTarget;
-import org.xith3d.render.TextureRenderTarget;
+import org.xith3d.render.DirectByteBufferRenderTarget;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.GroupNode;
 import org.xith3d.scenegraph.Node;
-import org.xith3d.scenegraph.Texture2D;
 import org.xith3d.scenegraph.View;
 import org.xith3d.scenegraph.View.ProjectionPolicy;
 import org.xith3d.utility.events.WindowClosingRenderLoopEnder;
 import br.edu.univercidade.cc.xithcluster.communication.RendererNetworkManager;
-import br.edu.univercidade.cc.xithcluster.util.BufferUtils;
 
 public class RendererLoop extends InputAdapterRenderLoop implements Renderer {
 	
 	private static final float DEFAULT_TARGET_FPS = 80.0f;
 	
 	private static final Colorf BACKGROUND_COLOR = Colorf.BLACK;
-	
-	private static final TextureFormat RGBA_PIXEL_PACKAGING = TextureFormat.RGBA;
 	
 	private static final String APP_TITLE = "Renderer";
 	
@@ -46,8 +40,6 @@ public class RendererLoop extends InputAdapterRenderLoop implements Renderer {
 	
 	private RendererNetworkManager networkManager;
 	
-	private Texture2D colorAndAlphaTexture;
-	
 	private Canvas3D canvas;
 	
 	private int screenWidth = DEFAULT_WIDTH;
@@ -56,7 +48,9 @@ public class RendererLoop extends InputAdapterRenderLoop implements Renderer {
 	
 	private BranchGroup currentRoot;
 	
-	private DepthBufferRenderTarget depthBufferRenderTarget;
+	private DirectByteBufferRenderTarget depthBufferRenderTarget;
+
+	private DirectByteBufferRenderTarget colorAndAlphaRenderTarget;
 	
 	public RendererLoop() {
 		super(DEFAULT_TARGET_FPS);
@@ -143,21 +137,15 @@ public class RendererLoop extends InputAdapterRenderLoop implements Renderer {
 	}
 	
 	private void createRenderTargets() {
-		org.xith3d.render.Renderer renderer;
-		TextureRenderTarget colorAndAlphaRenderTarget;
 		BaseRenderPassConfig passConfig;
-		
-		colorAndAlphaTexture = TextureCreator.createTexture(RGBA_PIXEL_PACKAGING, screenWidth, screenHeight, BACKGROUND_COLOR);
-		
-		renderer = x3dEnvironment.getRenderer();
 		
 		passConfig = new BaseRenderPassConfig(ProjectionPolicy.PERSPECTIVE_PROJECTION);
 		
-		colorAndAlphaRenderTarget = new TextureRenderTarget(currentRoot, colorAndAlphaTexture, BACKGROUND_COLOR, true);
-		renderer.addRenderTarget(colorAndAlphaRenderTarget, passConfig);
+		colorAndAlphaRenderTarget = new DirectByteBufferRenderTarget(currentRoot, screenWidth, screenHeight, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, 4);
+		x3dEnvironment.getRenderer().addRenderTarget(colorAndAlphaRenderTarget, passConfig);
 		
-		depthBufferRenderTarget = new DepthBufferRenderTarget(currentRoot, screenWidth, screenHeight);
-		renderer.addRenderTarget(depthBufferRenderTarget, passConfig);
+		depthBufferRenderTarget = new DirectByteBufferRenderTarget(currentRoot, screenWidth, screenHeight, GL11.GL_DEPTH_COMPONENT, GL11.GL_FLOAT, 4);
+		x3dEnvironment.getRenderer().addRenderTarget(depthBufferRenderTarget, passConfig);
 	}
 	
 	@Override
@@ -172,12 +160,12 @@ public class RendererLoop extends InputAdapterRenderLoop implements Renderer {
 	
 	@Override
 	public byte[] getColorAndAlphaBuffer() {
-		return BufferUtils.safeBufferRead(colorAndAlphaTexture.getTextureCanvas().getImage().getDataBuffer());
+		return colorAndAlphaRenderTarget.getDirectByteBufferAsArray();
 	}
 	
 	@Override
 	public byte[] getDepthBuffer() {
-		return depthBufferRenderTarget.getDepthBufferAsByteArray();
+		return depthBufferRenderTarget.getDirectByteBufferAsArray();
 	}
 	
 	@Override
