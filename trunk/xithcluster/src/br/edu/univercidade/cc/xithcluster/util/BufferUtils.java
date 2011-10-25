@@ -12,24 +12,35 @@ import java.util.Arrays;
 
 public final class BufferUtils {
 	
-	private BufferUtils() {
-	}
 	
 	private static boolean useDirectBuffers = true;
 	
+	private static ByteOrder byteOrder = ByteOrder.LITTLE_ENDIAN;
+	
+	private BufferUtils() {
+	}
+	
 	public static void setUseDirectBuffers(boolean b) {
-		useDirectBuffers = b;
+		BufferUtils.useDirectBuffers = b;
+	}
+	
+	public static void setByteOrder(ByteOrder byteOrder) {
+		BufferUtils.byteOrder = byteOrder;
 	}
 	
 	public static final boolean getUseDirectBuffers() {
-		return useDirectBuffers;
+		return BufferUtils.useDirectBuffers;
+	}
+	
+	public static ByteOrder getByteOrder() {
+		return BufferUtils.byteOrder;
 	}
 	
 	public static ByteBuffer createByteBuffer(int size) {
-		if (useDirectBuffers) {
-			return ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
+		if (BufferUtils.useDirectBuffers) {
+			return ByteBuffer.allocateDirect(size).order(BufferUtils.byteOrder);
 		} else {
-			return ByteBuffer.allocate(size).order(ByteOrder.nativeOrder());
+			return ByteBuffer.allocate(size).order(BufferUtils.byteOrder);
 		}
 	}
 	
@@ -155,6 +166,14 @@ public final class BufferUtils {
 		return buffer;
 	}
 	
+	public static ByteBuffer wrapAndRewind(byte[] arg0) {
+		ByteBuffer byteBuffer = ByteBuffer.wrap(arg0);
+		byteBuffer.order(BufferUtils.byteOrder);
+		byteBuffer.rewind();
+		
+		return byteBuffer;
+	}
+	
 	public static float[] safeBufferRead(FloatBuffer arg0) {
 		float[] buffer;
 		
@@ -162,16 +181,11 @@ public final class BufferUtils {
 			throw new IllegalArgumentException();
 		}
 		
-		if (arg0.isDirect()) {
-			buffer = new float[arg0.limit()];
-			arg0.rewind();
-			arg0.get(buffer);
-			arg0.rewind();
-			
-			return buffer;
-		} else {
-			return arg0.array();
-		}
+		buffer = new float[arg0.limit()];
+		arg0.get(buffer);
+		arg0.rewind();
+		
+		return buffer;
 	}
 	
 	public static int[] safeBufferRead(IntBuffer arg0) {
@@ -181,16 +195,11 @@ public final class BufferUtils {
 			throw new IllegalArgumentException();
 		}
 		
-		if (arg0.isDirect()) {
-			buffer = new int[arg0.limit()];
-			arg0.rewind();
-			arg0.get(buffer);
-			arg0.rewind();
-			
-			return buffer;
-		} else {
-			return arg0.array();
-		}
+		buffer = new int[arg0.limit()];
+		arg0.get(buffer);
+		arg0.rewind();
+		
+		return buffer;
 	}
 	
 	public static byte[] safeBufferRead(ByteBuffer arg0) {
@@ -200,16 +209,11 @@ public final class BufferUtils {
 			throw new IllegalArgumentException();
 		}
 		
-		if (arg0.isDirect()) {
-			buffer = new byte[arg0.limit()];
-			arg0.rewind();
-			arg0.get(buffer);
-			arg0.rewind();
-			
-			return buffer;
-		} else {
-			return arg0.array();
-		}
+		buffer = new byte[arg0.limit()];
+		arg0.get(buffer);
+		arg0.rewind();
+		
+		return buffer;
 	}
 	
 	public static boolean equals(FloatBuffer arg0, FloatBuffer arg1) {
@@ -222,6 +226,10 @@ public final class BufferUtils {
 
 	public static boolean equals(ByteBuffer arg0, ByteBuffer arg1) {
 		return Arrays.equals(safeBufferRead(arg0), safeBufferRead(arg1));
+	}
+
+	public static FloatBuffer wrapAsFloatBuffer(byte[] arg0) {
+		return BufferUtils.wrapAndRewind(arg0).asFloatBuffer();
 	}
 	
 }
