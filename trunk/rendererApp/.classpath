@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/xithcluster"/>
 	<classpathentry kind="lib" path="/xithcluster/lib/gluegen-rt.jar"/>
 	<classpathentry kind="lib" path="/xithcluster/lib/jagatoo.jar"/>
@@ -16,6 +16,6 @@
 	<classpathentry kind="lib" path="/xithcluster/lib/xpal-joode.jar"/>
 	<classpathentry kind="lib" path="/xithcluster/lib/xSocket-2.8.14.jar"/>
 	<classpathentry kind="lib" path="/xithcluster/lib/log4j-1.2.16.jar"/>
-	<classpathentry kind="lib" path="/xithcluster/lib/xith3d.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/xith3d"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
