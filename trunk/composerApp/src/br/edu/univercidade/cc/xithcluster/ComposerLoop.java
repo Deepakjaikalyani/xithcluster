@@ -2,6 +2,7 @@ package br.edu.univercidade.cc.xithcluster;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.List;
 import org.apache.log4j.Logger;
 import br.edu.univercidade.cc.xithcluster.Timer.TimeMeasurementUnit;
 import br.edu.univercidade.cc.xithcluster.communication.ComposerNetworkManager;
@@ -10,7 +11,7 @@ public class ComposerLoop implements Runnable, Rasterizer {
 	
 	private static final double TARGET_FPS = 80.0;
 	
-	private static final int FPS_SAMPLES = 10;
+	private static final int FPS_SAMPLES_COLLECTED = 10;
 	
 	private Logger log = Logger.getLogger(ComposerLoop.class);
 	
@@ -21,21 +22,20 @@ public class ComposerLoop implements Runnable, Rasterizer {
 	private Display display;
 	
 	private AWTFPSCounter fpsCounter;
-
+	
 	private int screenWidth;
-
+	
 	private int screenHeight;
-
-	private byte[][] colorAndAlphaBuffers;
-
-	private float[][] depthBuffers;
-
+	
+	private List<byte[]> colorAndAlphaBuffersCopies;
+	
+	private List<float[]> depthBuffersCopies;
+	
 	private boolean displayFPSCounter;
 	
 	private boolean running = false;
 	
-	public ComposerLoop(boolean displayFPSCounter,
-			CompositionStrategy compositionStrategy) {
+	public ComposerLoop(boolean displayFPSCounter, CompositionStrategy compositionStrategy) {
 		if (compositionStrategy == null) {
 			throw new IllegalArgumentException();
 		}
@@ -60,7 +60,7 @@ public class ComposerLoop implements Runnable, Rasterizer {
 		
 		this.display = display;
 	}
-
+	
 	@Override
 	public void run() {
 		if (!running) {
@@ -86,12 +86,12 @@ public class ComposerLoop implements Runnable, Rasterizer {
 	
 	private void createFPSCounterIfSpecified() {
 		if (displayFPSCounter) {
-			fpsCounter = new AWTFPSCounter(FPS_SAMPLES);
+			fpsCounter = new AWTFPSCounter(FPS_SAMPLES_COLLECTED);
 			display.setFPSCounter(fpsCounter);
 			networkManager.setFpsCounter(fpsCounter);
 		}
 	}
-
+	
 	private void startNetworkManager() {
 		try {
 			networkManager.start();
@@ -103,11 +103,11 @@ public class ComposerLoop implements Runnable, Rasterizer {
 			throw new RuntimeException("Error starting network manager", e);
 		}
 	}
-
+	
 	private void showDisplayer() {
 		display.show();
 	}
-
+	
 	private void startLoop() {
 		long frameTime;
 		long elapsedTime;
@@ -142,32 +142,35 @@ public class ComposerLoop implements Runnable, Rasterizer {
 			lastElapsedTime = elapsedTime;
 		}
 	}
-
+	
 	private void loopIteration(long startingTime, long elapsedTime) {
 		int[] argbImageData;
 		
 		if (hasNewImage()) {
-			argbImageData = compositionStrategy.compose(screenWidth, screenHeight, colorAndAlphaBuffers, depthBuffers);
+			argbImageData = compositionStrategy.compose(screenWidth, 
+					screenHeight, 
+					colorAndAlphaBuffersCopies, 
+					depthBuffersCopies);
 			
 			display.setARGBImageData(argbImageData);
 			
-			clearBuffers();
+			clearBuffersCopies();
 		}
 		
 		display.blit();
 		
 		networkManager.update(startingTime, elapsedTime);
 	}
-
-	private void clearBuffers() {
-		colorAndAlphaBuffers = null;
-		depthBuffers = null;
+	
+	private void clearBuffersCopies() {
+		colorAndAlphaBuffersCopies = null;
+		depthBuffersCopies = null;
 	}
-
+	
 	private boolean hasNewImage() {
-		return colorAndAlphaBuffers != null && depthBuffers != null;
+		return colorAndAlphaBuffersCopies != null && depthBuffersCopies != null;
 	}
-
+	
 	@Override
 	public void setScreenSize(int screenWidth, int screenHeight) {
 		if (display == null) {
@@ -181,9 +184,9 @@ public class ComposerLoop implements Runnable, Rasterizer {
 	}
 	
 	@Override
-	public void setColorAlphaAndDepthBuffers(byte[][] colorAndAlphaBuffers, float[][] depthBuffers) {
-		this.colorAndAlphaBuffers = colorAndAlphaBuffers;
-		this.depthBuffers = depthBuffers;
+	public void setColorAlphaAndDepthBuffers(List<byte[]> colorAndAlphaBuffers, List<float[]> depthBuffers) {
+		this.colorAndAlphaBuffersCopies = colorAndAlphaBuffers;
+		this.depthBuffersCopies = depthBuffers;
 	}
 	
 }

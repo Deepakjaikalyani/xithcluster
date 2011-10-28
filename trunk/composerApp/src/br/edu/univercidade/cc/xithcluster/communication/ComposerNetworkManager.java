@@ -42,6 +42,10 @@ public final class ComposerNetworkManager {
 	
 	private Map<Integer, RendererHandler> renderersHandlers = new HashMap<Integer, RendererHandler>();
 	
+	private List<byte[]> colorAndAlphaBuffers = new ArrayList<byte[]>();
+	
+	private List<float[]> depthBuffers = new ArrayList<float[]>();
+	
 	private String renderersConnectionAddress;
 	
 	private int renderersConnectionPort;
@@ -102,29 +106,23 @@ public final class ComposerNetworkManager {
 		started = true;
 	}
 	
-	private byte[][] getColorAndAlphaBuffers() {
-		byte[][] colorAndAlphaBuffers;
+	private List<byte[]> getColorAndAlphaBuffers() {
 		int i;
 		
-		// TODO: Optimize!
-		colorAndAlphaBuffers = new byte[renderersHandlers.size()][];
 		i = 0;
 		for (RendererHandler rendererHandler : renderersHandlers.values()) {
-			colorAndAlphaBuffers[i++] = rendererHandler.getColorAndAlphaBuffer();
+			colorAndAlphaBuffers.set(i++, rendererHandler.getColorAndAlphaBuffer());
 		}
 		
 		return colorAndAlphaBuffers;
 	}
 	
-	private float[][] getDepthBuffers() {
-		float[][] depthBuffers;
+	private List<float[]> getDepthBuffers() {
 		int i;
 		
-		// TODO: Optimize!
-		depthBuffers = new float[renderersHandlers.size()][];
 		i = 0;
 		for (RendererHandler rendererHandler : renderersHandlers.values()) {
-			depthBuffers[i++] = rendererHandler.getDepthBuffer();
+			depthBuffers.set(i++, rendererHandler.getDepthBuffer());
 		}
 		
 		return depthBuffers;
@@ -233,6 +231,8 @@ public final class ComposerNetworkManager {
 		}
 		
 		renderersHandlers.remove(rendererIndex);
+		colorAndAlphaBuffers.remove(colorAndAlphaBuffers.size() - 1);
+		depthBuffers.remove(depthBuffers.size() - 1);
 		
 		log.info("Renderer disconnected");
 	}
@@ -324,6 +324,9 @@ public final class ComposerNetworkManager {
 		
 		if (!renderersHandlers.containsKey(rendererIndex)) {
 			renderersHandlers.put(rendererIndex, new RendererHandler(compositionOrder));
+			
+			colorAndAlphaBuffers.add(null);
+			depthBuffers.add(null);
 			
 			if (trace) {
 				log.trace("Renderer " + rendererIndex + " has composition order " + compositionOrder);
