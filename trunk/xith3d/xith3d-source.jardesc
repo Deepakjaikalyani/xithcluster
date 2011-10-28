@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jardesc>
+    <jar path="xith3d-source.jar"/>
+        <options buildIfNeeded="true" compress="true" descriptionLocation="/xith3d/xith3d-source.jardesc" exportErrors="true" exportWarnings="true" includeDirectoryEntries="false" overwrite="true" saveDescription="true" storeRefactorings="false" useSourceFolders="false"/>
+        <storedRefactorings deprecationInfo="true" structuralOnly="false"/>
+        <selectedProjects/>
+        <selectedElements exportClassFiles="false" exportJavaFiles="true" exportOutputFolder="false">
+            <javaElement handleIdentifier="=xith3d/src"/>
+            <file path="/xith3d/license.txt"/>
+        </selectedElements>
+</jardesc>
