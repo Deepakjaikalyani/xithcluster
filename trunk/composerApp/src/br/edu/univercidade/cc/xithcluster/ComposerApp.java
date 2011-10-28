@@ -22,7 +22,7 @@ public class ComposerApp {
 		ComposerLoop composerLoop;
 		Thread composerLoopThread;
 		ComposerNetworkManager networkManager;
-		Displayer displayer;
+		Display display;
 
 		initializeLog4j();
 		
@@ -51,8 +51,8 @@ public class ComposerApp {
 				composerConfiguration.getRenderersConnectionPort());
 		composerLoop.setNetworkManager(networkManager);
 		
-		displayer = new Displayer(composerConfiguration.getWindowTitle());
-		composerLoop.setDisplayer(displayer);
+		display = new Display(composerConfiguration.getWindowTitle());
+		composerLoop.setDisplayer(display);
 		
 		composerLoopThread = new Thread(composerLoop);
 		composerLoopThread.start();
