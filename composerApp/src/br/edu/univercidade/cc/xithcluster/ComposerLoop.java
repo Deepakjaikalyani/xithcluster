@@ -18,7 +18,7 @@ public class ComposerLoop implements Runnable, Rasterizer {
 	
 	private CompositionStrategy compositionStrategy;
 	
-	private Displayer displayer;
+	private Display display;
 	
 	private AWTFPSCounter fpsCounter;
 
@@ -53,12 +53,12 @@ public class ComposerLoop implements Runnable, Rasterizer {
 		this.networkManager.setRasterizer(this);
 	}
 	
-	public void setDisplayer(Displayer displayer) {
-		if (displayer == null) {
+	public void setDisplayer(Display display) {
+		if (display == null) {
 			throw new IllegalArgumentException();
 		}
 		
-		this.displayer = displayer;
+		this.display = display;
 	}
 
 	@Override
@@ -69,9 +69,9 @@ public class ComposerLoop implements Runnable, Rasterizer {
 				throw new RuntimeException("Network manager must be set");
 			}
 			
-			if (displayer == null) {
+			if (display == null) {
 				// TODO:
-				throw new RuntimeException("Displayer must be set");
+				throw new RuntimeException("Display must be set");
 			}
 			
 			showDisplayer();
@@ -87,7 +87,7 @@ public class ComposerLoop implements Runnable, Rasterizer {
 	private void createFPSCounterIfSpecified() {
 		if (displayFPSCounter) {
 			fpsCounter = new AWTFPSCounter(FPS_SAMPLES);
-			displayer.setFPSCounter(fpsCounter);
+			display.setFPSCounter(fpsCounter);
 			networkManager.setFpsCounter(fpsCounter);
 		}
 	}
@@ -105,7 +105,7 @@ public class ComposerLoop implements Runnable, Rasterizer {
 	}
 
 	private void showDisplayer() {
-		displayer.show();
+		display.show();
 	}
 
 	private void startLoop() {
@@ -149,12 +149,12 @@ public class ComposerLoop implements Runnable, Rasterizer {
 		if (hasNewImage()) {
 			argbImageData = compositionStrategy.compose(screenWidth, screenHeight, colorAndAlphaBuffers, depthBuffers);
 			
-			displayer.setARGBImageData(argbImageData);
+			display.setARGBImageData(argbImageData);
 			
 			clearBuffers();
 		}
 		
-		displayer.blit();
+		display.blit();
 		
 		networkManager.update(startingTime, elapsedTime);
 	}
@@ -170,14 +170,14 @@ public class ComposerLoop implements Runnable, Rasterizer {
 
 	@Override
 	public void setScreenSize(int screenWidth, int screenHeight) {
-		if (displayer == null) {
+		if (display == null) {
 			throw new IllegalStateException();
 		}
 		
 		this.screenWidth = screenWidth;
 		this.screenHeight = screenHeight;
 		
-		displayer.setScreenSizeAndRecreateBackBuffer(screenWidth, screenHeight);
+		display.setSizeAndRecreateBackBuffer(screenWidth, screenHeight);
 	}
 	
 	@Override

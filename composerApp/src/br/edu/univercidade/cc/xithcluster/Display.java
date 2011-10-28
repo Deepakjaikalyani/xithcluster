@@ -10,9 +10,39 @@ import java.awt.image.BufferedImage;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
-public class Displayer {
+public class Display {
 	
-	private static final int ARGB_PIXEL_PACKAGING = BufferedImage.TYPE_INT_ARGB;
+	private final class WindowClosingListener implements WindowListener {
+		
+		@Override
+		public void windowOpened(WindowEvent e) {
+		}
+		
+		@Override
+		public void windowClosing(WindowEvent e) {
+			onWindowClosing(e);
+		}
+		
+		@Override
+		public void windowClosed(WindowEvent e) {
+		}
+		
+		@Override
+		public void windowIconified(WindowEvent e) {
+		}
+		
+		@Override
+		public void windowDeiconified(WindowEvent e) {
+		}
+		
+		@Override
+		public void windowActivated(WindowEvent e) {
+		}
+		
+		@Override
+		public void windowDeactivated(WindowEvent e) {
+		}
+	}
 	
 	private static final int NUMBER_OF_BUFFERS = 2;
 	
@@ -26,17 +56,17 @@ public class Displayer {
 	
 	private BufferedImage backBuffer;
 	
-	private BufferStrategy buffer;
+	private BufferStrategy bufferStrategy;
 	
 	private AWTFPSCounter fpsCounter;
 	
 	private String windowTitle;
 	
-	private int screenWidth;
+	private int width;
 	
-	private int screenHeight;
+	private int height;
 	
-	public Displayer(String windowTitle) {
+	public Display(String windowTitle) {
 		if (windowTitle == null || windowTitle.isEmpty()) {
 			throw new IllegalArgumentException();
 		}
@@ -45,52 +75,27 @@ public class Displayer {
 	}
 	
 	public void show() {
-		createJFrame();
+		createFrameAndCanvas();
 		
 		setupBufferStrategy();
 		
-		setScreenSizeAndRecreateBackBuffer(DEFAULT_WIDTH, DEFAULT_HEIGHT);
+		setSizeAndRecreateBackBuffer(DEFAULT_WIDTH, DEFAULT_HEIGHT);
 	}
-
-	private void createJFrame() {
+	
+	private void createFrameAndCanvas() {
 		frame = new JFrame(windowTitle);
-		frame.addWindowListener(new WindowListener() {
-
-			@Override
-			public void windowOpened(WindowEvent e) {
-			}
-
-			@Override
-			public void windowClosing(WindowEvent e) {
-				onWindowClosing(e);
-			}
-
-			@Override
-			public void windowClosed(WindowEvent e) {
-			}
-
-			@Override
-			public void windowIconified(WindowEvent e) {
-			}
-
-			@Override
-			public void windowDeiconified(WindowEvent e) {
-			}
-
-			@Override
-			public void windowActivated(WindowEvent e) {
-			}
-
-			@Override
-			public void windowDeactivated(WindowEvent e) {
-			}
-			
-		});
+		frame.addWindowListener(new WindowClosingListener());
 		
 		frame.setResizable(false);
 		frame.setIgnoreRepaint(true);
 		frame.setLocationRelativeTo(null);
 		frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+		
+		canvas = new Canvas();
+		canvas.setIgnoreRepaint(true);
+		
+		frame.add(canvas);
+		
 		frame.setVisible(true);
 	}
 	
@@ -98,44 +103,39 @@ public class Displayer {
 		// TODO:
 		System.exit(-1);
 	}
-
-	public void setScreenSizeAndRecreateBackBuffer(int screenWidth, int screenHeight) {
-		if (screenWidth <= 0 || screenHeight <= 0) {
+	
+	public void setSizeAndRecreateBackBuffer(int width, int height) {
+		if (width <= 0 || height <= 0) {
 			throw new IllegalArgumentException();
 		}
 		
-		this.screenWidth = screenWidth;
-		this.screenHeight = screenHeight;
+		this.width = width;
+		this.height = height;
 		
-		frame.setSize(this.screenWidth, this.screenHeight);
-		canvas.setSize(this.screenWidth, this.screenHeight);
+		frame.setSize(this.width, this.height);
+		canvas.setSize(this.width, this.height);
 		
-		createDataBuffer();
+		createBackBuffer();
 	}
 	
 	private void setupBufferStrategy() {
-		canvas = new Canvas();
-		canvas.setIgnoreRepaint(true);
-		
-		frame.add(canvas);
-		
 		canvas.createBufferStrategy(NUMBER_OF_BUFFERS);
-		buffer = canvas.getBufferStrategy();
+		bufferStrategy = canvas.getBufferStrategy();
 	}
 	
-	private void createDataBuffer() {
-		backBuffer = new BufferedImage(screenWidth, screenHeight, ARGB_PIXEL_PACKAGING);
+	private void createBackBuffer() {
+		backBuffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 	}
 	
 	public void setARGBImageData(int[] argbImageData) {
-		backBuffer.setRGB(0, 0, screenWidth, screenHeight, argbImageData, 0, screenWidth);
+		backBuffer.setRGB(0, 0, width, height, argbImageData, 0, width);
 	}
 	
 	public void blit() {
 		Graphics graphics = null;
 		
 		try {
-			graphics = buffer.getDrawGraphics();
+			graphics = bufferStrategy.getDrawGraphics();
 			
 			clear(graphics);
 			
@@ -155,7 +155,7 @@ public class Displayer {
 	
 	private void clear(Graphics graphics) {
 		graphics.setColor(Color.BLACK);
-		graphics.fillRect(0, 0, screenWidth, screenHeight);
+		graphics.fillRect(0, 0, width, height);
 	}
 	
 	private void drawBackBuffer(Graphics graphics) {
@@ -163,8 +163,8 @@ public class Displayer {
 	}
 	
 	private void swapBuffers() {
-		if (!buffer.contentsLost()) {
-			buffer.show();
+		if (!bufferStrategy.contentsLost()) {
+			bufferStrategy.show();
 		}
 	}
 	
