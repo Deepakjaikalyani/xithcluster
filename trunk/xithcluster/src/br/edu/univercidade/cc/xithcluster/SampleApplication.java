@@ -9,10 +9,14 @@ import org.openmali.vecmath2.Tuple3f;
 import org.xith3d.base.Xith3DEnvironment;
 import org.xith3d.loop.opscheduler.Animator;
 import org.xith3d.scenegraph.BranchGroup;
+import br.edu.univercidade.cc.xithcluster.callbacks.ProcessInputCallback;
+import br.edu.univercidade.cc.xithcluster.callbacks.SceneCreationCallback;
 import br.edu.univercidade.cc.xithcluster.communication.NetworkManager;
 import br.edu.univercidade.cc.xithcluster.configuration.CommandLineParsingException;
 import br.edu.univercidade.cc.xithcluster.configuration.PropertiesFileLoadingException;
+import br.edu.univercidade.cc.xithcluster.configuration.XithClusterConfiguration;
 import br.edu.univercidade.cc.xithcluster.distribution.RoundRobinGeometryDistribution;
+import br.edu.univercidade.cc.xithcluster.update.UpdateManager;
 
 public abstract class SampleApplication {
 	

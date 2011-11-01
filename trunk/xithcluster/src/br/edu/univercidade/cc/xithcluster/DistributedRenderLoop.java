@@ -14,11 +14,13 @@ import org.xith3d.render.Canvas3DFactory;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.ui.hud.HUD;
 import org.xith3d.utility.events.WindowClosingRenderLoopEnder;
+import br.edu.univercidade.cc.xithcluster.callbacks.ProcessInputCallback;
+import br.edu.univercidade.cc.xithcluster.callbacks.SceneCreationCallback;
 import br.edu.univercidade.cc.xithcluster.communication.NetworkManager;
 import br.edu.univercidade.cc.xithcluster.hud.components.HUDFPSCounter;
-import br.edu.univercidade.cc.xithcluster.update.DistributedSceneManager;
+import br.edu.univercidade.cc.xithcluster.update.UpdateManager;
 
-public class DistributedRenderLoop extends InputAdapterRenderLoop implements DistributedSceneManager {
+public class DistributedRenderLoop extends InputAdapterRenderLoop implements SceneManager {
 	
 	private static final int MIN_FPS_SAMPLES = 10;
 	
