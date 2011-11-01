@@ -4,7 +4,7 @@ import java.awt.Dimension;
 
 public interface SceneManager {
 	
-	Dimension getTargetScreenDimension();
+	Dimension getScreenSize();
 	
 	float getTargetFPS();
 	

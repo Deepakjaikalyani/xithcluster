@@ -251,7 +251,7 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 	}
 	
 	@Override
-	public Dimension getTargetScreenDimension() {
+	public Dimension getScreenSize() {
 		return targetScreenDimension;
 	}
 
