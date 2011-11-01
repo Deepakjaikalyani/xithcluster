@@ -1,4 +1,4 @@
-package br.edu.univercidade.cc.xithcluster;
+package br.edu.univercidade.cc.xithcluster.nodes.lights;
 
 import org.openmali.vecmath2.Colorf;
 import org.openmali.vecmath2.Tuple3f;

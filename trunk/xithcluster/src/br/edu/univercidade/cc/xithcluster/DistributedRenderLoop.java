@@ -15,6 +15,8 @@ import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.ui.hud.HUD;
 import org.xith3d.utility.events.WindowClosingRenderLoopEnder;
 import br.edu.univercidade.cc.xithcluster.communication.NetworkManager;
+import br.edu.univercidade.cc.xithcluster.hud.components.HUDFPSCounter;
+import br.edu.univercidade.cc.xithcluster.update.DistributedSceneManager;
 
 public class DistributedRenderLoop extends InputAdapterRenderLoop implements DistributedSceneManager {
 	

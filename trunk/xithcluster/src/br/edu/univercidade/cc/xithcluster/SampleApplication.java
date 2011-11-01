@@ -12,6 +12,7 @@ import org.xith3d.scenegraph.BranchGroup;
 import br.edu.univercidade.cc.xithcluster.communication.NetworkManager;
 import br.edu.univercidade.cc.xithcluster.configuration.CommandLineParsingException;
 import br.edu.univercidade.cc.xithcluster.configuration.PropertiesFileLoadingException;
+import br.edu.univercidade.cc.xithcluster.distribution.RoundRobinGeometryDistribution;
 
 public abstract class SampleApplication {
 	

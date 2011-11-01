@@ -4,8 +4,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
-import br.edu.univercidade.cc.xithcluster.InvalidParameterException;
-import br.edu.univercidade.cc.xithcluster.MissingParameterException;
 
 public abstract class Configuration {
 	

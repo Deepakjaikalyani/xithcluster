@@ -1,4 +1,4 @@
-package br.edu.univercidade.cc.xithcluster;
+package br.edu.univercidade.cc.xithcluster.utils;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -15,9 +15,11 @@ import org.xith3d.scenegraph.Transform;
 import org.xith3d.scenegraph.TransformGroup;
 import org.xith3d.scenegraph.primitives.GeomFactory;
 import org.xith3d.scenegraph.primitives.Rectangle.ZeroPointLocation;
-import br.edu.univercidade.cc.xithcluster.primitives.Cube;
-import br.edu.univercidade.cc.xithcluster.primitives.Rectangle;
-import br.edu.univercidade.cc.xithcluster.primitives.Sphere;
+import br.edu.univercidade.cc.xithcluster.nodes.lights.DirectionalLight;
+import br.edu.univercidade.cc.xithcluster.nodes.lights.SpotLight;
+import br.edu.univercidade.cc.xithcluster.nodes.primitives.Cube;
+import br.edu.univercidade.cc.xithcluster.nodes.primitives.Rectangle;
+import br.edu.univercidade.cc.xithcluster.nodes.primitives.Sphere;
 
 
 public final class SceneUtils {

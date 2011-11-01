@@ -1,4 +1,4 @@
-package br.edu.univercidade.cc.xithcluster;
+package br.edu.univercidade.cc.xithcluster.distribution;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,6 +10,7 @@ import org.xith3d.scenegraph.Light;
 import org.xith3d.scenegraph.Node;
 import org.xith3d.scenegraph.Shape3D;
 import org.xith3d.scenegraph.traversal.TraversalCallback;
+import br.edu.univercidade.cc.xithcluster.replication.NodePathReplicator;
 
 public class RoundRobinGeometryDistribution implements GeometryDistributionStrategy {
 	

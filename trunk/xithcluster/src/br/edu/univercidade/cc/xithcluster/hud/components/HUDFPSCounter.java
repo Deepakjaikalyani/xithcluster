@@ -1,4 +1,4 @@
-package br.edu.univercidade.cc.xithcluster;
+package br.edu.univercidade.cc.xithcluster.hud.components;
 
 import org.openmali.vecmath2.Colorf;
 import org.xith3d.ui.hud.HUD;

@@ -8,7 +8,7 @@ import org.xith3d.scenegraph.AmbientLight;
 import org.xith3d.scenegraph.Light;
 import org.xith3d.scenegraph.PointLight;
 import org.xith3d.scenegraph.SpotLight;
-import br.edu.univercidade.cc.xithcluster.DirectionalLight;
+import br.edu.univercidade.cc.xithcluster.nodes.lights.DirectionalLight;
 
 public class LightSerializer extends Serializer<Light> {
 	
