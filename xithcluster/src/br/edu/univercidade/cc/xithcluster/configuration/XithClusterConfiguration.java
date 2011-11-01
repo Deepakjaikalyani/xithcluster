@@ -1,8 +1,6 @@
-package br.edu.univercidade.cc.xithcluster;
+package br.edu.univercidade.cc.xithcluster.configuration;
 
 import java.util.Properties;
-import br.edu.univercidade.cc.xithcluster.configuration.BadParameterException;
-import br.edu.univercidade.cc.xithcluster.configuration.Configuration;
 
 public final class XithClusterConfiguration extends Configuration {
 	
