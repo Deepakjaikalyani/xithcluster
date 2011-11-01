@@ -4,8 +4,11 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.List;
 import org.apache.log4j.Logger;
-import br.edu.univercidade.cc.xithcluster.Timer.TimeMeasurementUnit;
 import br.edu.univercidade.cc.xithcluster.communication.ComposerNetworkManager;
+import br.edu.univercidade.cc.xithcluster.composition.CompositionStrategy;
+import br.edu.univercidade.cc.xithcluster.hud.components.AWTFPSCounter;
+import br.edu.univercidade.cc.xithcluster.utils.Timer;
+import br.edu.univercidade.cc.xithcluster.utils.Timer.TimeMeasurementUnit;
 
 public class ComposerLoop implements Runnable, Rasterizer {
 	

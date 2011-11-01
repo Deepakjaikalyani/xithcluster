@@ -9,6 +9,7 @@ import java.awt.image.BufferStrategy;
 import java.awt.image.BufferedImage;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
+import br.edu.univercidade.cc.xithcluster.hud.components.AWTFPSCounter;
 
 public class Display {
 	

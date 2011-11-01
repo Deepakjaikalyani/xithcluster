@@ -6,7 +6,7 @@ import java.nio.channels.ClosedChannelException;
 import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.INonBlockingConnection;
 import br.edu.univercidade.cc.xithcluster.CompressionMethod;
-import br.edu.univercidade.cc.xithcluster.util.BufferUtils;
+import br.edu.univercidade.cc.xithcluster.utils.BufferUtils;
 
 public final class NewImageDataHandler extends ChainedTransactionalDataHandler<ComposerMessageBroker> {
 	

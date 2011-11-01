@@ -16,9 +16,9 @@ import org.xsocket.connection.IServer;
 import org.xsocket.connection.NonBlockingConnection;
 import org.xsocket.connection.Server;
 import br.edu.univercidade.cc.xithcluster.CompressionMethod;
-import br.edu.univercidade.cc.xithcluster.FPSCounter;
 import br.edu.univercidade.cc.xithcluster.Rasterizer;
-import br.edu.univercidade.cc.xithcluster.Timer;
+import br.edu.univercidade.cc.xithcluster.hud.components.FPSCounter;
+import br.edu.univercidade.cc.xithcluster.utils.Timer;
 
 public final class ComposerNetworkManager {
 	
