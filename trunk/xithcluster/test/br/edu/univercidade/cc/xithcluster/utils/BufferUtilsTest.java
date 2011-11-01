@@ -1,10 +1,10 @@
-package br.edu.univercidade.cc.xithcluster.util;
+package br.edu.univercidade.cc.xithcluster.utils;
 
 import java.nio.FloatBuffer;
 import java.util.Arrays;
 import org.junit.Assert;
 import org.junit.Test;
-import br.edu.univercidade.cc.xithcluster.util.BufferUtils;
+import br.edu.univercidade.cc.xithcluster.utils.BufferUtils;
 
 public class BufferUtilsTest {
 	

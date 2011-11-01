@@ -13,7 +13,7 @@ import java.util.Arrays;
 import java.util.BitSet;
 import javax.imageio.ImageIO;
 import static junit.framework.Assert.*;
-import static br.edu.univercidade.cc.xithcluster.util.AssertExtention.*;
+import static br.edu.univercidade.cc.xithcluster.utils.AssertExtention.*;
 import org.jagatoo.opengl.enums.BlendFunction;
 import org.jagatoo.opengl.enums.BlendMode;
 import org.jagatoo.opengl.enums.ColorTarget;
@@ -81,8 +81,8 @@ import org.xith3d.schedops.movement.TransformationDirectives;
 import org.xith3d.schedops.movement.TransformationDirectives.AxisOrder;
 import br.edu.univercidade.cc.xithcluster.comparators.TransformationDirectivesComparator;
 import br.edu.univercidade.cc.xithcluster.serialization.SerializationHelper;
-import br.edu.univercidade.cc.xithcluster.util.BufferUtils;
-import br.edu.univercidade.cc.xithcluster.util.PrivateAccessor;
+import br.edu.univercidade.cc.xithcluster.utils.BufferUtils;
+import br.edu.univercidade.cc.xithcluster.utils.PrivateAccessor;
 
 public class SerializationHelperTest {
 	

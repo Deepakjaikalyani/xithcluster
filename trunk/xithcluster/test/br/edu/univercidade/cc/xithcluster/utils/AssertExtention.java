@@ -1,4 +1,4 @@
-package br.edu.univercidade.cc.xithcluster.util;
+package br.edu.univercidade.cc.xithcluster.utils;
 
 import java.util.Comparator;
 
