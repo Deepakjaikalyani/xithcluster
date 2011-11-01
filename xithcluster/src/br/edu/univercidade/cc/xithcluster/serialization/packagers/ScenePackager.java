@@ -11,7 +11,7 @@ import br.edu.univercidade.cc.xithcluster.serialization.GroupNodeSerializer;
 import br.edu.univercidade.cc.xithcluster.serialization.SerializationHelper;
 import br.edu.univercidade.cc.xithcluster.serialization.Serializer;
 import br.edu.univercidade.cc.xithcluster.serialization.SerializerRegistry;
-import br.edu.univercidade.cc.xithcluster.util.PrintUtils;
+import br.edu.univercidade.cc.xithcluster.utils.PrintUtils;
 
 public class ScenePackager extends Serializer<BranchGroup> {
 	

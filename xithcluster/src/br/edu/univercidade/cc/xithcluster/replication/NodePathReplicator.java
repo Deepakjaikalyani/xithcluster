@@ -1,9 +1,9 @@
-package br.edu.univercidade.cc.xithcluster;
+package br.edu.univercidade.cc.xithcluster.replication;
 
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.GroupNode;
 import org.xith3d.scenegraph.Node;
-import br.edu.univercidade.cc.xithcluster.util.PrivateAccessor;
+import br.edu.univercidade.cc.xithcluster.utils.PrivateAccessor;
 
 public class NodePathReplicator extends PathBuilder {
 	

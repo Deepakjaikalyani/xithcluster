@@ -1,6 +1,5 @@
-package br.edu.univercidade.cc.xithcluster;
+package br.edu.univercidade.cc.xithcluster.configuration;
 
-import br.edu.univercidade.cc.xithcluster.configuration.BadParameterException;
 
 public class InvalidParameterException extends BadParameterException {
 	

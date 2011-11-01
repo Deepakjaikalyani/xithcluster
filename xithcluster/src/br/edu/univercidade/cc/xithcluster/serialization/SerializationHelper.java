@@ -88,8 +88,8 @@ import org.xith3d.schedops.movement.GroupRotator;
 import org.xith3d.schedops.movement.GroupTranslator;
 import org.xith3d.schedops.movement.TransformationDirectives;
 import org.xith3d.schedops.movement.TransformationDirectives.AxisOrder;
-import br.edu.univercidade.cc.xithcluster.util.BufferUtils;
-import br.edu.univercidade.cc.xithcluster.util.PrivateAccessor;
+import br.edu.univercidade.cc.xithcluster.utils.BufferUtils;
+import br.edu.univercidade.cc.xithcluster.utils.PrivateAccessor;
 
 public class SerializationHelper {
 	

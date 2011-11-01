@@ -1,4 +1,4 @@
-package br.edu.univercidade.cc.xithcluster;
+package br.edu.univercidade.cc.xithcluster.hud.components;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -10,7 +10,7 @@ public class AWTFPSCounter extends FPSCounter {
 	
 	private static final Color DEFAULT_COLOR = Color.GREEN;
 	
-	protected AWTFPSCounter(int numSamples) {
+	public AWTFPSCounter(int numSamples) {
 		super(numSamples);
 	}
 	

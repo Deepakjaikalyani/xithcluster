@@ -4,7 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import org.xith3d.scenegraph.Appearance;
-import br.edu.univercidade.cc.xithcluster.primitives.Sphere;
+import br.edu.univercidade.cc.xithcluster.nodes.primitives.Sphere;
 
 public class SphereSerializer extends Serializer<Sphere> {
 	

@@ -12,7 +12,8 @@ import org.xith3d.scenegraph.Switch;
 import org.xith3d.scenegraph.Transform3D;
 import org.xith3d.scenegraph.TransformGroup;
 import org.xith3d.scenegraph.modifications.ScenegraphModificationsListener;
-import br.edu.univercidade.cc.xithcluster.PendingUpdate.Type;
+import br.edu.univercidade.cc.xithcluster.update.PendingUpdate;
+import br.edu.univercidade.cc.xithcluster.update.PendingUpdate.Type;
 
 public class UpdateManager implements ScenegraphModificationsListener {
 	

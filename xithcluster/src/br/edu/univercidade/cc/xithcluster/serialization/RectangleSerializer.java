@@ -7,7 +7,7 @@ import org.openmali.vecmath2.Tuple2f;
 import org.openmali.vecmath2.Tuple3f;
 import org.xith3d.scenegraph.Texture;
 import org.xith3d.scenegraph.primitives.Rectangle.ZeroPointLocation;
-import br.edu.univercidade.cc.xithcluster.primitives.Rectangle;
+import br.edu.univercidade.cc.xithcluster.nodes.primitives.Rectangle;
 
 public class RectangleSerializer extends Serializer<Rectangle> {
 

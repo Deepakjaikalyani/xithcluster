@@ -1,4 +1,4 @@
-package br.edu.univercidade.cc.xithcluster;
+package br.edu.univercidade.cc.xithcluster.update;
 
 import java.util.HashMap;
 import java.util.Map;

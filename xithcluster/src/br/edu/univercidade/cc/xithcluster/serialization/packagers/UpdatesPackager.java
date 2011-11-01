@@ -6,11 +6,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import org.xith3d.scenegraph.Node;
-import br.edu.univercidade.cc.xithcluster.PendingUpdate;
-import br.edu.univercidade.cc.xithcluster.PendingUpdate.Type;
 import br.edu.univercidade.cc.xithcluster.serialization.SerializationHelper;
 import br.edu.univercidade.cc.xithcluster.serialization.Serializer;
 import br.edu.univercidade.cc.xithcluster.serialization.SerializerRegistry;
+import br.edu.univercidade.cc.xithcluster.update.PendingUpdate;
+import br.edu.univercidade.cc.xithcluster.update.PendingUpdate.Type;
 
 public class UpdatesPackager extends Serializer<List<PendingUpdate>> {
 	

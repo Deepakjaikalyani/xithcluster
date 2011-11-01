@@ -20,16 +20,16 @@ import org.xith3d.scenegraph.Node;
 import org.xsocket.connection.INonBlockingConnection;
 import org.xsocket.connection.IServer;
 import org.xsocket.connection.Server;
-import br.edu.univercidade.cc.xithcluster.FPSCounter;
-import br.edu.univercidade.cc.xithcluster.GeometryDistributionStrategy;
-import br.edu.univercidade.cc.xithcluster.PendingUpdate;
-import br.edu.univercidade.cc.xithcluster.PendingUpdate.Type;
 import br.edu.univercidade.cc.xithcluster.SceneInfo;
-import br.edu.univercidade.cc.xithcluster.DistributedSceneManager;
 import br.edu.univercidade.cc.xithcluster.UpdateManager;
+import br.edu.univercidade.cc.xithcluster.distribution.GeometryDistributionStrategy;
+import br.edu.univercidade.cc.xithcluster.hud.components.FPSCounter;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.PointOfViewPackager;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.ScenePackager;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.UpdatesPackager;
+import br.edu.univercidade.cc.xithcluster.update.DistributedSceneManager;
+import br.edu.univercidade.cc.xithcluster.update.PendingUpdate;
+import br.edu.univercidade.cc.xithcluster.update.PendingUpdate.Type;
 
 public final class NetworkManager extends OperationSchedulerImpl {
 	

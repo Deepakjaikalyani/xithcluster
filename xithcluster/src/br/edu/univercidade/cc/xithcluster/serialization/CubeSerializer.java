@@ -4,7 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import org.xith3d.scenegraph.Appearance;
-import br.edu.univercidade.cc.xithcluster.primitives.Cube;
+import br.edu.univercidade.cc.xithcluster.nodes.primitives.Cube;
 
 public class CubeSerializer extends Serializer<Cube> {
 	

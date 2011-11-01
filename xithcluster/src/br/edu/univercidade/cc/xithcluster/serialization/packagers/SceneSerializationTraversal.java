@@ -10,7 +10,7 @@ import org.xith3d.scenegraph.Node;
 import org.xith3d.scenegraph.traversal.TraversalCallback;
 import br.edu.univercidade.cc.xithcluster.serialization.SerializationHelper;
 import br.edu.univercidade.cc.xithcluster.serialization.SerializerRegistry;
-import br.edu.univercidade.cc.xithcluster.util.PrintUtils;
+import br.edu.univercidade.cc.xithcluster.utils.PrintUtils;
 
 class SceneSerializationTraversal implements TraversalCallback {
 	

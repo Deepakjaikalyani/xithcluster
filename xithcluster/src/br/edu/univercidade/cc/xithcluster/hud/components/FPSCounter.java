@@ -1,4 +1,4 @@
-package br.edu.univercidade.cc.xithcluster;
+package br.edu.univercidade.cc.xithcluster.hud.components;
 
 
 public abstract class FPSCounter {
