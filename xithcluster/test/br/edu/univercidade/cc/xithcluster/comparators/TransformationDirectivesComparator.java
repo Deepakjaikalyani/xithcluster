@@ -2,7 +2,7 @@ package br.edu.univercidade.cc.xithcluster.comparators;
 
 import java.util.Comparator;
 import org.xith3d.schedops.movement.TransformationDirectives;
-import br.edu.univercidade.cc.xithcluster.util.CompareUtils;
+import br.edu.univercidade.cc.xithcluster.utils.CompareUtils;
 
 public class TransformationDirectivesComparator implements Comparator<TransformationDirectives> {
 	
