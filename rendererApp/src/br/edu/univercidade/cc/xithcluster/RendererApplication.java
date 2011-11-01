@@ -9,8 +9,9 @@ import org.xith3d.base.Xith3DEnvironment;
 import br.edu.univercidade.cc.xithcluster.communication.RendererNetworkManager;
 import br.edu.univercidade.cc.xithcluster.configuration.CommandLineParsingException;
 import br.edu.univercidade.cc.xithcluster.configuration.PropertiesFileLoadingException;
+import br.edu.univercidade.cc.xithcluster.configuration.RendererConfiguration;
 
-public class RendererApp {
+public class RendererApplication {
 
 	private static final String LOG4J_CONFIGURATION_FILE = "rendererApp-log4j.xml";
 	
