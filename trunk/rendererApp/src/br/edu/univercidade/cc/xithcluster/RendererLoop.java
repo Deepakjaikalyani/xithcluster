@@ -10,6 +10,7 @@ import org.jagatoo.input.devices.components.Key;
 import org.jagatoo.input.events.KeyPressedEvent;
 import org.lwjgl.opengl.GL11;
 import org.openmali.vecmath2.Colorf;
+import org.openmali.vecmath2.Tuple3f;
 import org.xith3d.loop.InputAdapterRenderLoop;
 import org.xith3d.loop.opscheduler.Animatable;
 import org.xith3d.render.BaseRenderPassConfig;
@@ -26,15 +27,15 @@ import br.edu.univercidade.cc.xithcluster.communication.RendererNetworkManager;
 
 public class RendererLoop extends InputAdapterRenderLoop implements Renderer {
 	
-	private static final float DEFAULT_TARGET_FPS = 80.0f;
+	private static final float DEFAULT_TARGET_FPS = 200.0f;
 	
 	private static final Colorf BACKGROUND_COLOR = Colorf.BLACK;
 	
 	private static final String APP_TITLE = "Renderer";
 	
-	private static final int DEFAULT_WIDTH = 800;
+	private static final int DEFAULT_WIDTH = 640;
 	
-	private static final int DEFAULT_HEIGHT = 600;
+	private static final int DEFAULT_HEIGHT = 480;
 	
 	private Logger log = Logger.getLogger(RendererLoop.class);
 	
@@ -49,8 +50,10 @@ public class RendererLoop extends InputAdapterRenderLoop implements Renderer {
 	private BranchGroup currentRoot;
 	
 	private DirectByteBufferRenderTarget depthBufferRenderTarget;
-
+	
 	private DirectByteBufferRenderTarget colorAndAlphaRenderTarget;
+	
+	private List<Animatable> animatableObjects = new ArrayList<Animatable>();
 	
 	public RendererLoop() {
 		super(DEFAULT_TARGET_FPS);
@@ -181,7 +184,7 @@ public class RendererLoop extends InputAdapterRenderLoop implements Renderer {
 	public void updateScene(View view, BranchGroup newRoot) {
 		copyView(x3dEnvironment.getView(), view);
 		
-		copyRootAndInvalidateSource(currentRoot, newRoot);
+		copyChildrenAndInvalidate(newRoot);
 		
 		registerAllAnimatables(currentRoot);
 	}
@@ -199,25 +202,43 @@ public class RendererLoop extends InputAdapterRenderLoop implements Renderer {
 		dest.setFrontClipDistance(src.getFrontClipDistance());
 	}
 	
-	public void copyRootAndInvalidateSource(BranchGroup dest, BranchGroup src) {
+	public void copyChildrenAndInvalidate(BranchGroup newRoot) {
 		List<Node> children;
 		
-		if (src == null || dest == null) {
+		if (newRoot == null || currentRoot == null) {
 			throw new IllegalArgumentException();
 		}
 		
-		currentRoot.removeAllChildren();
-		
-		int numChildren = src.numChildren();
+		int numChildren = newRoot.numChildren();
 		children = new ArrayList<Node>();
 		for (int i = 0; i < numChildren; i++) {
-			children.add(src.getChild(i));
+			children.add(newRoot.getChild(i));
 		}
 		
-		src.removeAllChildren();
+		newRoot.removeAllChildren();
+		currentRoot.removeAllChildren();
 		
 		for (Node child : children) {
-			dest.addChild(child);
+			currentRoot.addChild(child);
+
+			// FIXME:
+			if (child instanceof GroupNode) {
+				applyLoneChildWorkaround((GroupNode) child);
+			}
+		}
+	}
+	
+	private void applyLoneChildWorkaround(GroupNode group) {
+		Node loneChild;
+		
+		if (group.numChildren() == 1) {
+			loneChild = group.getChild(0);
+			
+			if (loneChild instanceof GroupNode) {
+				applyLoneChildWorkaround((GroupNode) loneChild);
+			} else {
+				SceneUtils.addSphere(group, "bug-fix-geom", 0.01f, 5, 5, new Tuple3f(0.0f, 0.0f, 0.0f), new Colorf(0.0f, 0.0f, 0.0f, 0.0f));
+			}
 		}
 	}
 	
@@ -228,11 +249,17 @@ public class RendererLoop extends InputAdapterRenderLoop implements Renderer {
 			throw new IllegalArgumentException();
 		}
 		
+		for (Animatable animatableObject : animatableObjects) {
+			x3dEnvironment.getOperationScheduler().removeAnimatableObject(animatableObject);
+		}
+		
 		int numChildren = parent.numChildren();
 		for (int i = 0; i < numChildren; i++) {
 			child = parent.getChild(i);
 			if (child instanceof Animatable) {
-				x3dEnvironment.getOperationScheduler().addAnimatableObject((Animatable) child);
+				Animatable animatableObject = (Animatable) child;
+				x3dEnvironment.getOperationScheduler().addAnimatableObject(animatableObject);
+				animatableObjects.add(animatableObject);
 			} else if (child instanceof GroupNode) {
 				registerAllAnimatables((GroupNode) child);
 			}

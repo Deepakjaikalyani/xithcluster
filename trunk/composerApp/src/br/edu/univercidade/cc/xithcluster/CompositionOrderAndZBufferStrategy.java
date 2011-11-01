@@ -17,7 +17,7 @@ public final class CompositionOrderAndZBufferStrategy implements CompositionStra
 	private int[] pixelBuffer;
 	
 	@Override
-	public int[] compose(int width, int height, List<byte[]> colorAndAlphaBuffer, List<float[]> depthBuffer) {
+	public int[] compose(int width, int height, List<byte[]> colorAndAlphaBuffers, List<float[]> depthBuffers) {
 		int numberOfImages;
 		int lastComponentIndexRead;
 		int lastZValueRead;
@@ -32,11 +32,11 @@ public final class CompositionOrderAndZBufferStrategy implements CompositionStra
 		float z;
 		float lowerZ;
 		
-		if (colorAndAlphaBuffer == null || depthBuffer == null) {
+		if (colorAndAlphaBuffers == null || depthBuffers == null) {
 			throw new IllegalArgumentException();
 		}
 		
-		if (colorAndAlphaBuffer.size() != depthBuffer.size()) {
+		if (colorAndAlphaBuffers.size() != depthBuffers.size()) {
 			throw new IllegalArgumentException();
 		}
 		
@@ -48,7 +48,7 @@ public final class CompositionOrderAndZBufferStrategy implements CompositionStra
 			createPixelBuffer();
 		}
 		
-		numberOfImages = colorAndAlphaBuffer.size();
+		numberOfImages = colorAndAlphaBuffers.size();
 		lastComponentIndexRead = lastComponentIndex;
 		lastZValueRead = pixelBufferSize;
 		i = 0;
@@ -61,7 +61,7 @@ public final class CompositionOrderAndZBufferStrategy implements CompositionStra
 				lowerZ = Integer.MAX_VALUE;
 				selectedImageIndex = -1;
 				for (int imageIndex = 0; imageIndex < numberOfImages; imageIndex++) {
-					z = depthBuffer.get(imageIndex)[zIndex];
+					z = depthBuffers.get(imageIndex)[zIndex];
 					if (z < lowerZ) {
 						selectedImageIndex = imageIndex;
 						lowerZ = z;
@@ -69,9 +69,9 @@ public final class CompositionOrderAndZBufferStrategy implements CompositionStra
 				}
 				zIndex++;
 				
-				red = colorAndAlphaBuffer.get(selectedImageIndex)[componentIndex++];
-				green = colorAndAlphaBuffer.get(selectedImageIndex)[componentIndex++];
-				blue = colorAndAlphaBuffer.get(selectedImageIndex)[componentIndex++];
+				red = colorAndAlphaBuffers.get(selectedImageIndex)[componentIndex++];
+				green = colorAndAlphaBuffers.get(selectedImageIndex)[componentIndex++];
+				blue = colorAndAlphaBuffers.get(selectedImageIndex)[componentIndex++];
 				// TODO: Use alpha component!
 				//alpha = colorAndAlphaBuffer[selectedImageIndex][pixelIndex++];
 				componentIndex++;

@@ -3,6 +3,8 @@ package br.edu.univercidade.cc.xithcluster;
 import java.io.File;
 import java.io.IOException;
 import org.apache.log4j.xml.DOMConfigurator;
+import org.jagatoo.input.devices.components.Key;
+import org.jagatoo.input.events.KeyPressedEvent;
 import org.openmali.vecmath2.Tuple3f;
 import org.xith3d.base.Xith3DEnvironment;
 import org.xith3d.loop.opscheduler.Animator;
@@ -11,56 +13,67 @@ import br.edu.univercidade.cc.xithcluster.communication.NetworkManager;
 import br.edu.univercidade.cc.xithcluster.configuration.CommandLineParsingException;
 import br.edu.univercidade.cc.xithcluster.configuration.PropertiesFileLoadingException;
 
-public abstract class Application {
+public abstract class SampleApplication {
 	
 	private static final Tuple3f DEFAULT_UP_DIRECTION = new Tuple3f(0.0f, 1.0f, 0.0f);
-
+	
 	private static final Tuple3f DEFAULT_VIEW_FOCUS = new Tuple3f(0.0f, 0.0f, 0.0f);
-
+	
 	private static final Tuple3f DEFAULT_EYE_POSITION = new Tuple3f(0.0f, 0.0f, 3.0f);
-
+	
 	private static final String LOG4J_CONFIGURATION_FILE = "xithcluster-log4j.xml";
 	
 	private SceneCreationCallback sceneCreationCallback = new SceneCreationCallback() {
 		
 		@Override
 		public BranchGroup createSceneRoot(Animator animator) {
-			return Application.this.createSceneRoot(animator);
+			return SampleApplication.this.createSceneRoot(animator);
 		}
 		
 	};
-
+	
+	private ProcessInputCallback processInputCallback = new ProcessInputCallback() {
+		
+		@Override
+		public void keyPressed(KeyPressedEvent e, Key key) {
+			SampleApplication.this.keyPressed(e, key);
+		}
+		
+	};
+	
 	protected Tuple3f eyePosition;
-
+	
 	protected Tuple3f viewFocus;
-
+	
 	protected Tuple3f upDirection;
 	
-	public Application() {
+	public SampleApplication() {
 		super();
 		eyePosition = DEFAULT_EYE_POSITION;
 		viewFocus = DEFAULT_VIEW_FOCUS;
 		upDirection = DEFAULT_UP_DIRECTION;
 	}
-
-	public Application(Tuple3f eyePosition, Tuple3f viewFocus) {
+	
+	public SampleApplication(Tuple3f eyePosition, Tuple3f viewFocus) {
 		super();
 		this.eyePosition = eyePosition;
 		this.viewFocus = viewFocus;
 		upDirection = DEFAULT_UP_DIRECTION;
 	}
-
-	public Application(Tuple3f eyePosition, Tuple3f viewFocus,
-			Tuple3f upDirection) {
+	
+	public SampleApplication(Tuple3f eyePosition, Tuple3f viewFocus, Tuple3f upDirection) {
 		super();
 		this.eyePosition = eyePosition;
 		this.viewFocus = viewFocus;
 		this.upDirection = upDirection;
 	}
-
+	
 	protected abstract String getJARName();
 	
 	protected abstract BranchGroup createSceneRoot(Animator animator);
+	
+	protected void keyPressed(KeyPressedEvent event, Key key) {
+	}
 	
 	public void init(String[] commandLineArguments) {
 		XithClusterConfiguration xithClusterConfiguration;
@@ -100,6 +113,8 @@ public abstract class Application {
 		
 		distributedRenderLoop.setNetworkManager(networkManager);
 		
+		distributedRenderLoop.setProcessInputCallback(processInputCallback);
+		
 		distributedRenderLoop.begin();
 	}
 	
@@ -119,6 +134,5 @@ public abstract class Application {
 	private void printCommandLineHelp() {
 		System.err.println("java -jar " + getJARName() + " <listeningAddress> <renderersConnectionPort> <composerConnectionPort> <targetScreenWidth> <targetScreenHeight> <targetFPS>");
 	}
-
 	
 }

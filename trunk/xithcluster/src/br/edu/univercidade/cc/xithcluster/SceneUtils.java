@@ -8,7 +8,6 @@ import org.openmali.vecmath2.Vector3f;
 import org.xith3d.loaders.texture.TextureLoader;
 import org.xith3d.scenegraph.Appearance;
 import org.xith3d.scenegraph.Geometry;
-import org.xith3d.scenegraph.Group;
 import org.xith3d.scenegraph.GroupNode;
 import org.xith3d.scenegraph.Material;
 import org.xith3d.scenegraph.Texture2D;
@@ -26,7 +25,7 @@ public final class SceneUtils {
 	private SceneUtils() {
 	}
 	
-	public static void addRectangle(Group group, String name, float width, float height, Tuple3f translation, Tuple3f rotation, Texture2D texture) {
+	public static Rectangle addRectangle(GroupNode group, String name, float width, float height, Tuple3f translation, Tuple3f rotation, Texture2D texture) {
 		Transform transform;
 		TransformGroup translationTransform;
 		TransformGroup rotationTransform;
@@ -47,9 +46,11 @@ public final class SceneUtils {
 		rotationTransform.addChild(rectangle);
 		
 		group.addChild(translationTransform);
+		
+		return rectangle;
 	}
 	
-	public static void addSphere(Group group, String name, float radius, Tuple3f translation, Colorf emissiveColor) {
+	public static Sphere addSphere(GroupNode group, String name, float radius, int slices, int stacks, Tuple3f translation, Colorf emissiveColor) {
 		Appearance appearance;
 		Material material;
 		
@@ -61,19 +62,19 @@ public final class SceneUtils {
 		appearance = new Appearance();
 		appearance.setMaterial(material);
 		
-		addSphere(group, name, radius, translation, appearance);
+		return addSphere(group, name, radius, slices, stacks, translation, appearance);
 	}
 	
-	public static void addSphere(Group group, String name, float radius, Tuple3f translation, Texture2D texture) {
+	public static Sphere addSphere(GroupNode group, String name, float radius, int slices, int stacks, Tuple3f translation, Texture2D texture) {
 		Appearance appearance;
 		
 		appearance = new Appearance();
 		appearance.setTexture(texture);
 		
-		addSphere(group, name, radius, translation, appearance);
+		return addSphere(group, name, radius, slices, stacks, translation, appearance);
 	}
 	
-	public static void addSphere(Group group, String name, float radius, Tuple3f translation, Appearance appearance) {
+	public static Sphere addSphere(GroupNode group, String name, float radius, int slices, int stacks, Tuple3f translation, Appearance appearance) {
 		Transform transform;
 		TransformGroup transformGroup;
 		Sphere sphere;
@@ -87,9 +88,11 @@ public final class SceneUtils {
 		sphere = new Sphere(name, 0.0f, 0.0f, 0.0f, radius, 20, 20, Geometry.COORDINATES | Geometry.NORMALS | GeomFactory.getFeaturesFromAppearance(appearance), false, 2, appearance);
 		
 		transformGroup.addChild(sphere);
+		
+		return sphere;
 	}
 
-	public static void addCube(GroupNode parent, String name, float side, Tuple3f translation, Tuple3f rotation, Colorf emissiveColor) {
+	public static Cube addCube(GroupNode parent, String name, float side, Tuple3f translation, Tuple3f rotation, Colorf emissiveColor) {
 		Appearance appearance;
 		Material material;
 		
@@ -101,19 +104,19 @@ public final class SceneUtils {
 		appearance = new Appearance();
 		appearance.setMaterial(material);
 		
-		addCube(parent, name, side, translation, rotation, appearance);
+		return addCube(parent, name, side, translation, rotation, appearance);
 	}
 	
-	public static void addCube(GroupNode parent, String name, float side, Tuple3f translation, Tuple3f rotation, Texture2D texture) {
+	public static Cube addCube(GroupNode parent, String name, float side, Tuple3f translation, Tuple3f rotation, Texture2D texture) {
 		Appearance appearance;
 		
 		appearance = new Appearance();
 		appearance.setTexture(texture);
 		
-		addCube(parent, name, side, translation, rotation, appearance);
+		return addCube(parent, name, side, translation, rotation, appearance);
 	}
 	
-	public static void addCube(GroupNode parent, String name, float side, Tuple3f translation, Tuple3f rotation, Appearance appearance) {
+	public static Cube addCube(GroupNode parent, String name, float side, Tuple3f translation, Tuple3f rotation, Appearance appearance) {
 		Transform transform;
 		TransformGroup translationTransform;
 		TransformGroup rotationTransform;
@@ -134,12 +137,26 @@ public final class SceneUtils {
 		rotationTransform.addChild(cube);
 		
 		parent.addChild(translationTransform);
+		
+		return cube;
 	}
 	
-	public static void addDirectionalLight(GroupNode parent, String name, Colorf color, Vector3f direction) {
+	public static DirectionalLight addDirectionalLight(GroupNode parent, String name, Colorf color, Vector3f direction) {
 		DirectionalLight directionalLight = new DirectionalLight(true, color, direction);
+		
 		directionalLight.setName(name);
 		parent.addChild(directionalLight);
+		
+		return directionalLight;
+	}
+	
+	public static SpotLight addSpotLight(GroupNode parent, String name, Colorf color, Tuple3f location, Tuple3f direction, Tuple3f attenuation, float spreadAngle, float concentration) {
+		SpotLight spotLight = new SpotLight(true, color, location, direction, attenuation, spreadAngle, concentration);
+		
+		spotLight.setName(name);
+		parent.addChild(spotLight);
+		
+		return spotLight;
 	}
 	
 	public static Texture2D loadTexture2D(String fileName) {

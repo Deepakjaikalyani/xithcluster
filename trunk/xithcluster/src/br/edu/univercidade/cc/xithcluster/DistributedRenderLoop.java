@@ -32,6 +32,8 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Dis
 	
 	private SceneCreationCallback sceneCreationCallback;
 
+	private ProcessInputCallback processInputCallback;
+
 	public DistributedRenderLoop(float targetFPS,
 			int targetScreenWidth,
 			int targetScreenHeight,
@@ -52,6 +54,10 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Dis
 	}
 	
 	public void setUpdateManager(UpdateManager updateManager) {
+		if (isRunning()) {
+			throw new IllegalStateException("Cannot set the update manager while the application is running"); 
+		}
+		
 		if (updateManager == null) {
 			throw new IllegalArgumentException();
 		}
@@ -61,7 +67,7 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Dis
 	
 	public void setNetworkManager(NetworkManager networkManager) {
 		if (isRunning()) {
-			throw new IllegalStateException("Cannot set network manager while application is running"); 
+			throw new IllegalStateException("Cannot set the network manager while the application is running"); 
 		}
 		
 		if (networkManager == null) {
@@ -74,6 +80,18 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Dis
 		setOperationScheduler(this.networkManager);
 		setUpdater(this.networkManager);
 		
+	}
+	
+	public void setProcessInputCallback(ProcessInputCallback processInputCallback) {
+		if (isRunning()) {
+			throw new IllegalStateException("Cannot set the process input callback while the application is running"); 
+		}
+		
+		if (processInputCallback == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		this.processInputCallback = processInputCallback;
 	}
 	
 	@Override
@@ -182,6 +200,10 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Dis
 		case ESCAPE:
 			this.end();
 			break;
+		}
+		
+		if (processInputCallback != null) {
+			processInputCallback.keyPressed(e, key);
 		}
 	}
 	
