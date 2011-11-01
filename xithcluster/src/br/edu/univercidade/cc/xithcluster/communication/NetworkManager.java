@@ -442,8 +442,8 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		rendererConnection.flush();
 		
 		rendererConnection.write(getRendererIndex(rendererConnection));
-		rendererConnection.write(sceneManager.getTargetScreenDimension().width);
-		rendererConnection.write(sceneManager.getTargetScreenDimension().height);
+		rendererConnection.write(sceneManager.getScreenSize().width);
+		rendererConnection.write(sceneManager.getScreenSize().height);
 		rendererConnection.write(sceneManager.getTargetFPS());
 		rendererConnection.write(pointOfViewData.length);
 		rendererConnection.write(pointOfViewData);
@@ -456,8 +456,8 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		composerConnection.write(MessageType.START_SESSION.ordinal());
 		composerConnection.flush();
 		
-		composerConnection.write(sceneManager.getTargetScreenDimension().width);
-		composerConnection.write(sceneManager.getTargetScreenDimension().height);
+		composerConnection.write(sceneManager.getScreenSize().width);
+		composerConnection.write(sceneManager.getScreenSize().height);
 		composerConnection.write(sceneManager.getTargetFPS());
 		composerConnection.flush();
 	}
