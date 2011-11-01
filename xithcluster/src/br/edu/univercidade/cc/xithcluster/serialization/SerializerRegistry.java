@@ -7,6 +7,7 @@ import org.xith3d.scenegraph.Group;
 import org.xith3d.scenegraph.TransformGroup;
 import org.xith3d.schedops.movement.AnimatableGroup;
 import br.edu.univercidade.cc.xithcluster.DirectionalLight;
+import br.edu.univercidade.cc.xithcluster.SpotLight;
 import br.edu.univercidade.cc.xithcluster.primitives.Cube;
 import br.edu.univercidade.cc.xithcluster.primitives.Rectangle;
 import br.edu.univercidade.cc.xithcluster.primitives.Sphere;
@@ -23,6 +24,7 @@ public final class SerializerRegistry {
 		register(Sphere.class, SphereSerializer.class);
 		register(Rectangle.class, RectangleSerializer.class);
 		register(DirectionalLight.class, LightSerializer.class);
+		register(SpotLight.class, LightSerializer.class);
 		register(TransformGroup.class, TransformGroupSerializer.class);
 		register(AnimatableGroup.class, AnimatableGroupSerializer.class);
 		register(BranchGroup.class, BranchGroupSerializer.class);
