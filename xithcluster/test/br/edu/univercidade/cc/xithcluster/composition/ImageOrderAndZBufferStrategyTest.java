@@ -20,6 +20,8 @@ public class ImageOrderAndZBufferStrategyTest {
 	};
 	
 	private static String COMPOSITION_RESULT_FILE_PATH = "resources/test/compositionResult1.png";
+
+	private CompositionContext context;
 	
 	@Before
 	public void setUp() throws Exception {
@@ -39,7 +41,7 @@ public class ImageOrderAndZBufferStrategyTest {
 		
 		CompositionContext.setDefaultBufferReadOrderClass(DirectBufferReadOrder.class);
 		
-		CompositionContext context = CompositionContext.getInstance(WIDTH, HEIGHT);
+		context = CompositionContext.getInstance(WIDTH, HEIGHT);
 		
 		context.setColorAndAlphaBuffers(ColorAndAlphaBufferList.wrap(colorAndAlphaBuffersData, Type.ARGB));
 		context.setDepthBuffers(DepthBufferList.wrap(depthBuffersData));
@@ -48,7 +50,6 @@ public class ImageOrderAndZBufferStrategyTest {
 	@Test
 	public void testCompose() throws IOException {
 		ImageOrderAndZBufferStrategy compositionStrategy = new ImageOrderAndZBufferStrategy();
-		CompositionContext context = CompositionContext.getInstance(WIDTH, HEIGHT);
 		
 		compositionStrategy.compose(context);
 		
