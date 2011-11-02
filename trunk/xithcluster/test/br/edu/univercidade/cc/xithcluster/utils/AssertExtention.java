@@ -14,4 +14,8 @@ public final class AssertExtention {
 		}
 	}
 	
+	public static void assertPixelBufferRegion(int[] expectedPixelBuffer, int[] actualPixelBuffer, int x, int y, int width, int height) {
+		
+	}
+	
 }

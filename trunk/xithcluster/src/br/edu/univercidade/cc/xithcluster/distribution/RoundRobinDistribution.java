@@ -12,9 +12,9 @@ import org.xith3d.scenegraph.Shape3D;
 import org.xith3d.scenegraph.traversal.TraversalCallback;
 import br.edu.univercidade.cc.xithcluster.replication.NodePathReplicator;
 
-public class RoundRobinGeometryDistribution implements GeometryDistributionStrategy {
+public class RoundRobinDistribution implements DistributionStrategy {
 	
-	private Logger log = Logger.getLogger(RoundRobinGeometryDistribution.class);
+	private Logger log = Logger.getLogger(RoundRobinDistribution.class);
 	
 	private List<Light> lights = new ArrayList<Light>();
 	
@@ -70,7 +70,7 @@ public class RoundRobinGeometryDistribution implements GeometryDistributionStrat
 		}
 		
 		c = 0;
-		// Round-robin
+		// Round-robin algorithm
 		while (!shapes.isEmpty()) {
 			nodePathReplicator.setRoot(branchGroups.get((c++) % branchGroups.size()));
 			nodePathReplicator.build(shapes.pop());

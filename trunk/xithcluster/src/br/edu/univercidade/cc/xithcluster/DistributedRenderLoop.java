@@ -3,6 +3,8 @@ package br.edu.univercidade.cc.xithcluster;
 import java.awt.Dimension;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
 import org.jagatoo.input.InputSystem;
 import org.jagatoo.input.InputSystemException;
 import org.jagatoo.input.devices.components.Key;
@@ -31,39 +33,36 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 	private Canvas3D debuggingCanvas;
 	
 	private Dimension targetScreenDimension;
-
+	
 	private boolean enableDebuggingScreen;
 	
 	private SceneCreationCallback sceneCreationCallback;
-
-	private ProcessInputCallback processInputCallback;
-
-	public DistributedRenderLoop(float targetFPS,
-			int targetScreenWidth,
-			int targetScreenHeight,
-			boolean enableDebuggingScreen,
-			SceneCreationCallback sceneCreationCallback) {
+	
+	private List<ProcessInputCallback> processInputCallbacks;
+	
+	public DistributedRenderLoop(float targetFPS, int targetScreenWidth, int targetScreenHeight, boolean enableDebuggingScreen, SceneCreationCallback sceneCreationCallback) {
 		super(targetFPS);
 		
 		if (sceneCreationCallback == null) {
-			// TODO:
-			throw new IllegalArgumentException();
+			throw new IllegalArgumentException("The scene creation callback cannot be null");
 		}
 		
 		this.targetScreenDimension = new Dimension(targetScreenWidth, targetScreenHeight);
 		
-		this.enableDebuggingScreen  = enableDebuggingScreen;
+		this.enableDebuggingScreen = enableDebuggingScreen;
 		
 		this.sceneCreationCallback = sceneCreationCallback;
+		
+		this.processInputCallbacks = new ArrayList<ProcessInputCallback>();
 	}
 	
 	public void setUpdateManager(UpdateManager updateManager) {
 		if (isRunning()) {
-			throw new IllegalStateException("Cannot set the update manager while the application is running"); 
+			throw new IllegalStateException("Cannot set the update manager while the application is running");
 		}
 		
 		if (updateManager == null) {
-			throw new IllegalArgumentException();
+			throw new IllegalArgumentException("The update manager cannot be null");
 		}
 		
 		this.updateManager = updateManager;
@@ -71,11 +70,11 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 	
 	public void setNetworkManager(NetworkManager networkManager) {
 		if (isRunning()) {
-			throw new IllegalStateException("Cannot set the network manager while the application is running"); 
+			throw new IllegalStateException("Cannot set the network manager while the application is running");
 		}
 		
 		if (networkManager == null) {
-			throw new IllegalArgumentException();
+			throw new IllegalArgumentException("The network manager cannot be null");
 		}
 		
 		this.networkManager = networkManager;
@@ -86,34 +85,31 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 		
 	}
 	
-	public void setProcessInputCallback(ProcessInputCallback processInputCallback) {
+	public void addProcessInputCallback(ProcessInputCallback processInputCallback) {
 		if (isRunning()) {
-			throw new IllegalStateException("Cannot set the process input callback while the application is running"); 
+			throw new IllegalStateException("Cannot add a process input callback while the application is running");
 		}
 		
 		if (processInputCallback == null) {
-			throw new IllegalArgumentException();
+			throw new IllegalArgumentException("You can't add a null process input callback");
 		}
 		
-		this.processInputCallback = processInputCallback;
+		processInputCallbacks.add(processInputCallback);
 	}
 	
 	@Override
 	public void begin(RunMode runMode, TimingMode timingMode) {
 		if (!isRunning()) {
 			if (updateManager == null) {
-				// TODO:
-				throw new RuntimeException("Update manager must be set");
+				throw new IllegalStateException("You cannot start the application without an update manager");
 			}
 			
 			if (networkManager == null) {
-				// TODO:
-				throw new RuntimeException("Network manager must be set");
+				throw new IllegalStateException("You cannot start the application without a network manager");
 			}
 			
 			if (x3dEnvironment == null) {
-				// TODO:
-				throw new RuntimeException("Xith3d environment must be initialized");
+				throw new IllegalStateException("The Xith3D environment must be initialized");
 			}
 			
 			registerUpdateManager();
@@ -127,7 +123,7 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 		
 		super.begin(runMode, timingMode);
 	}
-
+	
 	private void createSceneAndAddToSceneGraph() {
 		BranchGroup root;
 		
@@ -150,7 +146,7 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 			printErrorMessageAndExit("Error starting network manager", e);
 		}
 	}
-
+	
 	private void printErrorMessageAndExit(String errorMessage, Exception e) {
 		System.err.println(errorMessage);
 		e.printStackTrace(System.err);
@@ -160,9 +156,10 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 	private void registerUpdateManager() {
 		x3dEnvironment.addScenegraphModificationListener(updateManager);
 	}
-
+	
 	private void createDebuggingCanvasIfSpecified() {
-		if (!enableDebuggingScreen) return;
+		if (!enableDebuggingScreen)
+			return;
 		
 		debuggingCanvas = Canvas3DFactory.createWindowed(targetScreenDimension.width, targetScreenDimension.height, "XithCluster Debugging Screen");
 		debuggingCanvas.setBackgroundColor(Colorf.BLACK);
@@ -200,13 +197,21 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 	
 	@Override
 	public void onKeyPressed(KeyPressedEvent e, Key key) {
+		processInput(key);
+		
+		invokeProcessInputCallbacks(e, key);
+	}
+	
+	private void processInput(Key key) {
 		switch (key.getKeyID()) {
 		case ESCAPE:
 			this.end();
 			break;
 		}
-		
-		if (processInputCallback != null) {
+	}
+	
+	private void invokeProcessInputCallbacks(KeyPressedEvent e, Key key) {
+		for (ProcessInputCallback processInputCallback : processInputCallbacks) {
 			processInputCallback.keyPressed(e, key);
 		}
 	}
@@ -214,18 +219,17 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 	@Override
 	public SceneInfo getSceneInfo() {
 		BranchGroup branchGroup;
-
-		branchGroup = getFirstBranchGroupThatDoesntBelongToHUD();
+		
+		branchGroup = getFirstBranchGroupThatDoesntBelongToTheHUD();
 		
 		if (branchGroup == null) {
-			// TODO:
-			throw new RuntimeException("There's no suitable distributable branch group in the scene");
+			throw new IllegalStateException("There's no suitable branch group in the scene");
 		}
 		
 		return new SceneInfo(branchGroup, x3dEnvironment.getView());
 	}
-
-	private BranchGroup getFirstBranchGroupThatDoesntBelongToHUD() {
+	
+	private BranchGroup getFirstBranchGroupThatDoesntBelongToTheHUD() {
 		BranchGroup hudBranchGroup;
 		BranchGroup currentBranchGroup;
 		
@@ -244,7 +248,7 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 			return x3dEnvironment.getBranchGroup();
 		}
 	}
-
+	
 	@Override
 	public float getTargetFPS() {
 		return getMaxFPS();
@@ -254,5 +258,5 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 	public Dimension getScreenSize() {
 		return targetScreenDimension;
 	}
-
+	
 }

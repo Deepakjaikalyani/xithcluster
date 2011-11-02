@@ -15,7 +15,7 @@ import br.edu.univercidade.cc.xithcluster.communication.NetworkManager;
 import br.edu.univercidade.cc.xithcluster.configuration.CommandLineParsingException;
 import br.edu.univercidade.cc.xithcluster.configuration.PropertiesFileLoadingException;
 import br.edu.univercidade.cc.xithcluster.configuration.XithClusterConfiguration;
-import br.edu.univercidade.cc.xithcluster.distribution.RoundRobinGeometryDistribution;
+import br.edu.univercidade.cc.xithcluster.distribution.RoundRobinDistribution;
 import br.edu.univercidade.cc.xithcluster.update.UpdateManager;
 
 public abstract class SampleApplication {
@@ -24,7 +24,7 @@ public abstract class SampleApplication {
 	
 	private static final Tuple3f DEFAULT_VIEW_FOCUS = new Tuple3f(0.0f, 0.0f, 0.0f);
 	
-	private static final Tuple3f DEFAULT_EYE_POSITION = new Tuple3f(0.0f, 0.0f, 3.0f);
+	private static final Tuple3f DEFAULT_EYE_POSITION = new Tuple3f(0.0f, 0.0f, 5.0f);
 	
 	private static final String LOG4J_CONFIGURATION_FILE = "xithcluster-log4j.xml";
 	
@@ -78,6 +78,7 @@ public abstract class SampleApplication {
 	protected abstract BranchGroup createSceneRoot(Animator animator);
 	
 	protected void keyPressed(KeyPressedEvent event, Key key) {
+		// Empty method
 	}
 	
 	public void init(String[] commandLineArguments) {
@@ -110,7 +111,7 @@ public abstract class SampleApplication {
 		
 		updateManager = new UpdateManager();
 		
-		networkManager = new NetworkManager(xithClusterConfiguration.getListeningAddress(), xithClusterConfiguration.getRenderersConnectionPort(), xithClusterConfiguration.getComposerConnectionPort(), new RoundRobinGeometryDistribution());
+		networkManager = new NetworkManager(xithClusterConfiguration.getListeningAddress(), xithClusterConfiguration.getRenderersConnectionPort(), xithClusterConfiguration.getComposerConnectionPort(), new RoundRobinDistribution());
 		
 		networkManager.addUpdateManager(updateManager);
 		
@@ -118,7 +119,7 @@ public abstract class SampleApplication {
 		
 		distributedRenderLoop.setNetworkManager(networkManager);
 		
-		distributedRenderLoop.setProcessInputCallback(processInputCallback);
+		distributedRenderLoop.addProcessInputCallback(processInputCallback);
 		
 		distributedRenderLoop.begin();
 	}

@@ -128,7 +128,11 @@ public class Display {
 		backBuffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 	}
 	
-	public void setARGBImageData(int[] argbImageData) {
+	public void setPixelBuffer(int[] argbImageData) {
+		if (argbImageData == null || argbImageData.length == 0) {
+			throw new IllegalArgumentException();
+		}
+		
 		backBuffer.setRGB(0, 0, width, height, argbImageData, 0, width);
 	}
 	
