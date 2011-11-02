@@ -12,7 +12,7 @@ public final class ImageOrderAndZBufferStrategy implements CompositionStrategy {
 			int depthBufferIndex = context.getDepthBufferIndexByLowerZComponent(pixelIndex);
 			ColorAndAlphaBuffer colorAndAlphaBuffer = context.getColorAndAlphaBufferByIndex(depthBufferIndex);
 			
-			int pixel = colorAndAlphaBuffer.getARGB(pixelIndex);
+			int pixel = colorAndAlphaBuffer.getRGB(pixelIndex);
 			
 			pixelBuffer.put(pixelIndex, pixel);
 		}

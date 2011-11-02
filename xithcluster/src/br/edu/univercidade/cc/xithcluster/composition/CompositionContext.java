@@ -34,7 +34,7 @@ public class CompositionContext {
 		this.width = width;
 		this.height = height;
 		
-		pixelBuffer = new PixelBuffer(this.width * this.height);
+		pixelBuffer = new PixelBuffer(this.width, this.height);
 		bufferReadOrder = createBufferReadOrder();
 	}
 	
