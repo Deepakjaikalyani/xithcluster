@@ -21,6 +21,7 @@ import br.edu.univercidade.cc.xithcluster.composition.ColorAndAlphaBuffer;
 import br.edu.univercidade.cc.xithcluster.composition.ColorAndAlphaBufferList;
 import br.edu.univercidade.cc.xithcluster.composition.DepthBuffer;
 import br.edu.univercidade.cc.xithcluster.composition.DepthBufferList;
+import br.edu.univercidade.cc.xithcluster.composition.ColorAndAlphaBuffer.Type;
 import br.edu.univercidade.cc.xithcluster.hud.components.FPSCounter;
 import br.edu.univercidade.cc.xithcluster.utils.Timer;
 
@@ -248,7 +249,7 @@ public final class ComposerNetworkManager {
 			break;
 		}
 		
-		colorAndAlphaBuffers.add(rendererIndex, ColorAndAlphaBuffer.wrap(colorAndAlphaBuffer));
+		colorAndAlphaBuffers.add(rendererIndex, ColorAndAlphaBuffer.wrap(colorAndAlphaBuffer, Type.RGBA));
 		depthBuffers.add(rendererIndex, DepthBuffer.wrap(depthBuffer));
 		
 		newImageMask.set(rendererIndex);

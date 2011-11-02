@@ -2,12 +2,13 @@ package br.edu.univercidade.cc.xithcluster.composition;
 
 import java.util.ArrayList;
 import java.util.List;
+import br.edu.univercidade.cc.xithcluster.composition.ColorAndAlphaBuffer.Type;
 
 public class ColorAndAlphaBufferList {
 	
 	private List<ColorAndAlphaBuffer> colorAndAlphaBuffers = new ArrayList<ColorAndAlphaBuffer>();
 	
-	public static ColorAndAlphaBufferList wrap(byte[][] colorAndAlphaBuffersData) {
+	public static ColorAndAlphaBufferList wrap(byte[][] colorAndAlphaBuffersData, Type type) {
 		if (colorAndAlphaBuffersData == null || colorAndAlphaBuffersData.length == 0) {
 			// TODO:
 			throw new IllegalArgumentException();
@@ -16,7 +17,7 @@ public class ColorAndAlphaBufferList {
 		ColorAndAlphaBufferList colorAndAlphaBufferList = new ColorAndAlphaBufferList();
 		
 		for (byte[] colorAndAlphaBufferData : colorAndAlphaBuffersData) {
-			ColorAndAlphaBuffer colorAndAlphaBuffer = ColorAndAlphaBuffer.wrap(colorAndAlphaBufferData);
+			ColorAndAlphaBuffer colorAndAlphaBuffer = ColorAndAlphaBuffer.wrap(colorAndAlphaBufferData, type);
 			colorAndAlphaBufferList.addColorAndAlphaBuffer(colorAndAlphaBuffer);
 		}
 		
