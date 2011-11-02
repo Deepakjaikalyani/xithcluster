@@ -22,7 +22,7 @@ import org.xsocket.connection.IServer;
 import org.xsocket.connection.Server;
 import br.edu.univercidade.cc.xithcluster.SceneManager;
 import br.edu.univercidade.cc.xithcluster.SceneInfo;
-import br.edu.univercidade.cc.xithcluster.distribution.GeometryDistributionStrategy;
+import br.edu.univercidade.cc.xithcluster.distribution.DistributionStrategy;
 import br.edu.univercidade.cc.xithcluster.hud.components.FPSCounter;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.PointOfViewPackager;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.ScenePackager;
@@ -56,7 +56,7 @@ public final class NetworkManager extends OperationSchedulerImpl {
 	
 	private UpdateManager updateManager;
 	
-	private GeometryDistributionStrategy geometryDistributionStrategy;
+	private DistributionStrategy distributionStrategy;
 	
 	private IServer composerServer;
 	
@@ -85,10 +85,10 @@ public final class NetworkManager extends OperationSchedulerImpl {
 	public NetworkManager(String listeningAddress,
 			int renderersConnectionPort,
 			int composerConnectionPort,
-			GeometryDistributionStrategy geometryDistributionStrategy) {
+			DistributionStrategy distributionStrategy) {
 		
 		if (listeningAddress == null || listeningAddress.isEmpty() 
-				|| geometryDistributionStrategy == null)
+				|| distributionStrategy == null)
 		{
 			throw new IllegalArgumentException();
 		}
@@ -96,7 +96,7 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		this.listeningAddress = listeningAddress;
 		this.renderersConnectionPort = renderersConnectionPort;
 		this.composerConnectionPort = composerConnectionPort;
-		this.geometryDistributionStrategy = geometryDistributionStrategy;
+		this.distributionStrategy = distributionStrategy;
 	}
 
 	public void setSceneRenderer(SceneManager sceneManager) {
@@ -194,10 +194,10 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		log.info("Starting a new session");
 		
 		if (trace) {
-			log.trace("Executing " + geometryDistributionStrategy.getClass().getSimpleName() + "...");
+			log.trace("Executing " + distributionStrategy.getClass().getSimpleName() + "...");
 		}
 		
-		distributedScenes = geometryDistributionStrategy.distribute(sceneInfo.getRoot(), renderersConnections.size());
+		distributedScenes = distributionStrategy.distribute(sceneInfo.getRoot(), renderersConnections.size());
 		
 		if (distributedScenes.size() != renderersConnections.size()) {
 			// TODO:

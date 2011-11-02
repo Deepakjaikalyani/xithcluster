@@ -17,6 +17,10 @@ import org.xsocket.connection.NonBlockingConnection;
 import org.xsocket.connection.Server;
 import br.edu.univercidade.cc.xithcluster.CompressionMethod;
 import br.edu.univercidade.cc.xithcluster.Rasterizer;
+import br.edu.univercidade.cc.xithcluster.composition.ColorAndAlphaBuffer;
+import br.edu.univercidade.cc.xithcluster.composition.ColorAndAlphaBufferList;
+import br.edu.univercidade.cc.xithcluster.composition.DepthBuffer;
+import br.edu.univercidade.cc.xithcluster.composition.DepthBufferList;
 import br.edu.univercidade.cc.xithcluster.hud.components.FPSCounter;
 import br.edu.univercidade.cc.xithcluster.utils.Timer;
 
@@ -40,11 +44,11 @@ public final class ComposerNetworkManager {
 	
 	private SessionState sessionState = SessionState.CLOSED;
 	
-	private Map<Integer, RendererHandler> renderersHandlers = new HashMap<Integer, RendererHandler>();
+	private Map<Integer, CompositionOrder> compositionOrderMap = new HashMap<Integer, CompositionOrder>();
 	
-	private List<byte[]> colorAndAlphaBuffers = new ArrayList<byte[]>();
+	private ColorAndAlphaBufferList colorAndAlphaBuffers = ColorAndAlphaBufferList.emptyList();
 	
-	private List<float[]> depthBuffers = new ArrayList<float[]>();
+	private DepthBufferList depthBuffers = DepthBufferList.emptyList();
 	
 	private String renderersConnectionAddress;
 	
@@ -106,30 +110,8 @@ public final class ComposerNetworkManager {
 		started = true;
 	}
 	
-	private List<byte[]> getColorAndAlphaBuffers() {
-		int i;
-		
-		i = 0;
-		for (RendererHandler rendererHandler : renderersHandlers.values()) {
-			colorAndAlphaBuffers.set(i++, rendererHandler.getColorAndAlphaBuffer());
-		}
-		
-		return colorAndAlphaBuffers;
-	}
-	
-	private List<float[]> getDepthBuffers() {
-		int i;
-		
-		i = 0;
-		for (RendererHandler rendererHandler : renderersHandlers.values()) {
-			depthBuffers.set(i++, rendererHandler.getDepthBuffer());
-		}
-		
-		return depthBuffers;
-	}
-	
 	private boolean isSessionReadyToStart() {
-		return !renderersConnections.isEmpty() && renderersConnections.size() == renderersHandlers.size();
+		return !renderersConnections.isEmpty() && renderersConnections.size() == compositionOrderMap.size();
 	}
 	
 	private void startNewSession() {
@@ -146,7 +128,7 @@ public final class ComposerNetworkManager {
 	}
 	
 	private void closeCurrentSession() {
-		renderersHandlers.clear();
+		compositionOrderMap.clear();
 		newImageMask.clear();
 		
 		sessionState = SessionState.CLOSED;
@@ -155,7 +137,7 @@ public final class ComposerNetworkManager {
 	}
 	
 	private boolean areAllSubImagesReceived() {
-		return !renderersHandlers.isEmpty() && newImageMask.cardinality() == renderersHandlers.size();
+		return !compositionOrderMap.isEmpty() && newImageMask.cardinality() == compositionOrderMap.size();
 	}
 	
 	private void finishCurrentFrame() {
@@ -163,7 +145,7 @@ public final class ComposerNetworkManager {
 			log.trace("Finishing current frame: " + currentFrame);
 		}
 		
-		rasterizer.setColorAlphaAndDepthBuffers(getColorAndAlphaBuffers(), getDepthBuffers());
+		rasterizer.setNewImageData(colorAndAlphaBuffers, depthBuffers);
 		
 		try {
 			sendFinishedFrameMessage();
@@ -230,15 +212,15 @@ public final class ComposerNetworkManager {
 			renderersConnections.get(j).setAttachment(j);
 		}
 		
-		renderersHandlers.remove(rendererIndex);
-		colorAndAlphaBuffers.remove(colorAndAlphaBuffers.size() - 1);
-		depthBuffers.remove(depthBuffers.size() - 1);
+		compositionOrderMap.remove(rendererIndex);
+		colorAndAlphaBuffers.remove(rendererIndex);
+		depthBuffers.remove(rendererIndex);
 		
 		log.info("Renderer disconnected");
 	}
 	
 	private void onNewImage(Message message) {
-		RendererHandler rendererHandler;
+		CompositionOrder compositionOrder;
 		int rendererIndex;
 		CompressionMethod compressionMethod;
 		byte[] colorAndAlphaBuffer;
@@ -253,11 +235,11 @@ public final class ComposerNetworkManager {
 		}
 		
 		rendererIndex = getRendererIndex(message.getSource());
-		rendererHandler = renderersHandlers.get(rendererIndex);
+		compositionOrder = compositionOrderMap.get(rendererIndex);
 		
-		if (rendererHandler == null) {
+		if (compositionOrder == null) {
 			// TODO:
-			throw new RuntimeException("Trying to set a new image on a renderer that hasn't informed his composition order");
+			throw new RuntimeException("Trying to set a new image on a renderer didn't send his composition order yet");
 		}
 		
 		switch (compressionMethod) {
@@ -266,8 +248,8 @@ public final class ComposerNetworkManager {
 			break;
 		}
 		
-		rendererHandler.setColorAndAlphaBuffer(colorAndAlphaBuffer);
-		rendererHandler.setDepthBuffer(depthBuffer);
+		colorAndAlphaBuffers.add(rendererIndex, ColorAndAlphaBuffer.wrap(colorAndAlphaBuffer));
+		depthBuffers.add(rendererIndex, DepthBuffer.wrap(depthBuffer));
 		
 		newImageMask.set(rendererIndex);
 	}
@@ -322,11 +304,8 @@ public final class ComposerNetworkManager {
 		
 		rendererIndex = getRendererIndex(message.getSource());
 		
-		if (!renderersHandlers.containsKey(rendererIndex)) {
-			renderersHandlers.put(rendererIndex, new RendererHandler(compositionOrder));
-			
-			colorAndAlphaBuffers.add(null);
-			depthBuffers.add(null);
+		if (!compositionOrderMap.containsKey(rendererIndex)) {
+			compositionOrderMap.put(rendererIndex, new CompositionOrder(compositionOrder));
 			
 			if (trace) {
 				log.trace("Renderer " + rendererIndex + " has composition order " + compositionOrder);

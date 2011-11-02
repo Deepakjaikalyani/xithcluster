@@ -2,10 +2,12 @@ package br.edu.univercidade.cc.xithcluster;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
-import java.util.List;
 import org.apache.log4j.Logger;
 import br.edu.univercidade.cc.xithcluster.communication.ComposerNetworkManager;
+import br.edu.univercidade.cc.xithcluster.composition.ColorAndAlphaBufferList;
+import br.edu.univercidade.cc.xithcluster.composition.CompositionContext;
 import br.edu.univercidade.cc.xithcluster.composition.CompositionStrategy;
+import br.edu.univercidade.cc.xithcluster.composition.DepthBufferList;
 import br.edu.univercidade.cc.xithcluster.hud.components.AWTFPSCounter;
 import br.edu.univercidade.cc.xithcluster.utils.Timer;
 import br.edu.univercidade.cc.xithcluster.utils.Timer.TimeMeasurementUnit;
@@ -30,13 +32,15 @@ public class ComposerLoop implements Runnable, Rasterizer {
 	
 	private int screenHeight;
 	
-	private List<byte[]> colorAndAlphaBuffersCopies;
+	private ColorAndAlphaBufferList colorAndAlphaBuffers;
 	
-	private List<float[]> depthBuffersCopies;
+	private DepthBufferList depthBuffers;
 	
 	private boolean displayFPSCounter;
 	
 	private boolean running = false;
+	
+	private boolean hasNewImage;
 	
 	public ComposerLoop(boolean displayFPSCounter, CompositionStrategy compositionStrategy) {
 		if (compositionStrategy == null) {
@@ -68,13 +72,11 @@ public class ComposerLoop implements Runnable, Rasterizer {
 	public void run() {
 		if (!running) {
 			if (networkManager == null) {
-				// TODO:
-				throw new RuntimeException("Network manager must be set");
+				throw new IllegalStateException("You cannot start the application without a network manager");
 			}
 			
 			if (display == null) {
-				// TODO:
-				throw new RuntimeException("Display must be set");
+				throw new IllegalStateException("You cannot start the application without a display");
 			}
 			
 			showDisplayer();
@@ -147,17 +149,15 @@ public class ComposerLoop implements Runnable, Rasterizer {
 	}
 	
 	private void loopIteration(long startingTime, long elapsedTime) {
-		int[] argbImageData;
-		
 		if (hasNewImage()) {
-			argbImageData = compositionStrategy.compose(screenWidth, 
-					screenHeight, 
-					colorAndAlphaBuffersCopies, 
-					depthBuffersCopies);
+			CompositionContext context = CompositionContext.getInstance(screenWidth, screenHeight);
 			
-			display.setARGBImageData(argbImageData);
+			context.setColorAndAlphaBuffers(colorAndAlphaBuffers);
+			context.setDepthBuffers(depthBuffers);
 			
-			clearBuffersCopies();
+			compositionStrategy.compose(context);
+			
+			display.setPixelBuffer(context.getPixelBuffer().toIntArray());
 		}
 		
 		display.blit();
@@ -165,19 +165,16 @@ public class ComposerLoop implements Runnable, Rasterizer {
 		networkManager.update(startingTime, elapsedTime);
 	}
 	
-	private void clearBuffersCopies() {
-		colorAndAlphaBuffersCopies = null;
-		depthBuffersCopies = null;
-	}
-	
 	private boolean hasNewImage() {
-		return colorAndAlphaBuffersCopies != null && depthBuffersCopies != null;
+		boolean nextImage = hasNewImage;
+		hasNewImage = false;
+		return nextImage;
 	}
 	
 	@Override
 	public void setScreenSize(int screenWidth, int screenHeight) {
 		if (display == null) {
-			throw new IllegalStateException();
+			throw new IllegalStateException("The display cannot be null");
 		}
 		
 		this.screenWidth = screenWidth;
@@ -187,9 +184,15 @@ public class ComposerLoop implements Runnable, Rasterizer {
 	}
 	
 	@Override
-	public void setColorAlphaAndDepthBuffers(List<byte[]> colorAndAlphaBuffers, List<float[]> depthBuffers) {
-		this.colorAndAlphaBuffersCopies = colorAndAlphaBuffers;
-		this.depthBuffersCopies = depthBuffers;
+	public void setNewImageData(ColorAndAlphaBufferList colorAndAlphaBuffers, DepthBufferList depthBuffers) {
+		if (colorAndAlphaBuffers == null || depthBuffers == null) {
+			throw new IllegalArgumentException("Color, alpha and depth buffers cannot be null");
+		}
+		
+		this.colorAndAlphaBuffers = colorAndAlphaBuffers;
+		this.depthBuffers = depthBuffers;
+		
+		hasNewImage = true;
 	}
 	
 }
