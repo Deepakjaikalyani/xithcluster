@@ -1,12 +1,12 @@
 package br.edu.univercidade.cc.xithcluster.composition;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import br.edu.univercidade.cc.xithcluster.composition.ColorAndAlphaBuffer.Type;
 
 public class ColorAndAlphaBufferList {
 	
-	private List<ColorAndAlphaBuffer> colorAndAlphaBuffers = new ArrayList<ColorAndAlphaBuffer>();
+	private Map<Integer, ColorAndAlphaBuffer> colorAndAlphaBuffersMap = new HashMap<Integer, ColorAndAlphaBuffer>();
 	
 	public static ColorAndAlphaBufferList wrap(byte[][] colorAndAlphaBuffersData, Type type) {
 		if (colorAndAlphaBuffersData == null || colorAndAlphaBuffersData.length == 0) {
@@ -16,9 +16,10 @@ public class ColorAndAlphaBufferList {
 		
 		ColorAndAlphaBufferList colorAndAlphaBufferList = new ColorAndAlphaBufferList();
 		
+		int i = 0;
 		for (byte[] colorAndAlphaBufferData : colorAndAlphaBuffersData) {
 			ColorAndAlphaBuffer colorAndAlphaBuffer = ColorAndAlphaBuffer.wrap(colorAndAlphaBufferData, type);
-			colorAndAlphaBufferList.addColorAndAlphaBuffer(colorAndAlphaBuffer);
+			colorAndAlphaBufferList.add(i++, colorAndAlphaBuffer);
 		}
 		
 		return colorAndAlphaBufferList;
@@ -27,20 +28,16 @@ public class ColorAndAlphaBufferList {
 	private ColorAndAlphaBufferList() {
 	}
 	
-	public void addColorAndAlphaBuffer(ColorAndAlphaBuffer colorAndAlphaBuffer) {
-		colorAndAlphaBuffers.add(colorAndAlphaBuffer);
-	}
-	
 	public ColorAndAlphaBuffer getColorAndAlphaBufferByIndex(int index) {
-		if (colorAndAlphaBuffers.isEmpty()) {
+		if (colorAndAlphaBuffersMap.isEmpty()) {
 			throw new IllegalStateException("Color and alpha buffer list not initialized");
 		}
 		
-		if (index >= colorAndAlphaBuffers.size()) {
-			throw new ArrayIndexOutOfBoundsException("Trying to get color and alpha buffer " + index + " but the list has only " + colorAndAlphaBuffers.size() + " buffers");
+		if (index >= colorAndAlphaBuffersMap.size()) {
+			throw new ArrayIndexOutOfBoundsException("Trying to get color and alpha buffer " + index + " but the list has only " + colorAndAlphaBuffersMap.size() + " buffers");
 		}
 		
-		return colorAndAlphaBuffers.get(index);
+		return colorAndAlphaBuffersMap.get(index);
 	}
 	
 	public static ColorAndAlphaBufferList emptyList() {
@@ -48,29 +45,21 @@ public class ColorAndAlphaBufferList {
 	}
 	
 	public void add(int index, ColorAndAlphaBuffer colorAndAlphaBuffer) {
-		if (colorAndAlphaBuffer == null) {
+		if (index < 0 || colorAndAlphaBuffer == null) {
 			// TODO:
 			throw new IllegalArgumentException();
 		}
 		
-		allocateSpaceIfNecessary(index);
-		
-		colorAndAlphaBuffers.set(index, colorAndAlphaBuffer);
-	}
-	
-	private void allocateSpaceIfNecessary(int index) {
-		while (index > colorAndAlphaBuffers.size() - 1) {
-			colorAndAlphaBuffers.add(null);
-		}
+		colorAndAlphaBuffersMap.put(index, colorAndAlphaBuffer);
 	}
 	
 	public void remove(int index) {
-		if (index < 0 || index >= colorAndAlphaBuffers.size()) {
+		if (index < 0 || index >= colorAndAlphaBuffersMap.size()) {
 			// TODO:
 			throw new ArrayIndexOutOfBoundsException();
 		}
 		
-		colorAndAlphaBuffers.remove(index);
+		colorAndAlphaBuffersMap.remove(index);
 	}
 	
 }

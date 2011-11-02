@@ -23,6 +23,8 @@ public class CompositionContext {
 			instance = new CompositionContext(width, height);
 		}
 		
+		instance.clear();
+		
 		return instance;
 	}
 	
@@ -36,6 +38,13 @@ public class CompositionContext {
 		
 		pixelBuffer = new PixelBuffer(this.width, this.height);
 		bufferReadOrder = createBufferReadOrder();
+	}
+	
+	private void clear() {
+		colorAndAlphaBuffers = null;
+		depthBuffers = null;
+		
+		bufferReadOrder.reset();
 	}
 	
 	private BufferReadOrder createBufferReadOrder() {

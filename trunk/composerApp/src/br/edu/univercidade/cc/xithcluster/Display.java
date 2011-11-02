@@ -125,7 +125,7 @@ public class Display {
 	}
 	
 	private void createBackBuffer() {
-		backBuffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		backBuffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 	}
 	
 	public void setPixelBuffer(int[] argbImageData) {
