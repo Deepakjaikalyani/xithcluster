@@ -4,7 +4,7 @@ public class CompositionContext {
 	
 	private static CompositionContext instance = null;
 	
-	private static Class<? extends BufferReadOrder> defaultBufferReadOrderClass = BottomUpLeftToRightBufferReadOrder.class;
+	private static Class<? extends BufferReadOrder> defaultBufferReadOrderClass = DirectBufferReadOrder.class;
 	
 	private int width;
 	

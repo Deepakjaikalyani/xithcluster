@@ -357,7 +357,8 @@ public final class ComposerNetworkManager {
 	}
 	
 	/*
-	 * ================================ Network messages processing loop
+	 * ================================ 
+	 * Network messages processing loop
 	 * ================================
 	 */
 	protected void processMessages(long startingTime, long elapsedTime, Queue<Message> messages) {

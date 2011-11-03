@@ -25,7 +25,7 @@ public class BottomUpLeftToRightBufferReadOrder extends BufferReadOrder {
 		for (int row = 0; row < height; row++) {
 			pixelIndex -= width;
 			for (int column = 0; column < width; column++) {
-				indexes[i++] = pixelIndex++;
+				indexes[i++] = pixelIndex + column;
 			}
 		}
 	}

@@ -54,7 +54,7 @@ public class RendererLoop extends InputAdapterRenderLoop implements Renderer {
 	
 	private DirectByteBufferRenderTarget colorAndAlphaRenderTarget;
 	
-	private List<Animatable> animatableObjects = new ArrayList<Animatable>();
+	private List<Animatable> animatables = new ArrayList<Animatable>();
 	
 	public RendererLoop() {
 		super(DEFAULT_TARGET_FPS);
@@ -187,7 +187,15 @@ public class RendererLoop extends InputAdapterRenderLoop implements Renderer {
 		
 		copyChildrenAndInvalidate(newRoot);
 		
-		registerAllAnimatables(currentRoot);
+		unregisterAnimatables();
+		
+		registerAnimatableChildren(currentRoot);
+	}
+
+	private void unregisterAnimatables() {
+		for (Animatable animatable : animatables) {
+			x3dEnvironment.getOperationScheduler().removeAnimatableObject(animatable);
+		}
 	}
 	
 	public static void copyView(View dest, View src) {
@@ -221,50 +229,57 @@ public class RendererLoop extends InputAdapterRenderLoop implements Renderer {
 		
 		for (Node child : children) {
 			currentRoot.addChild(child);
-
-			// FIXME:
+		}
+		
+		applyLoneChildWorkaround(currentRoot);
+	}
+	
+	/**
+	 * TODO: Describe bug!
+	 */
+	private void applyLoneChildWorkaround(GroupNode group) {
+		boolean hasOnlyOneChild;
+		
+		hasOnlyOneChild = group.numChildren() == 1;
+		
+		for (int i = 0; i < group.numChildren(); i++) {
+			Node child = group.getChild(i);
+			
 			if (child instanceof GroupNode) {
 				applyLoneChildWorkaround((GroupNode) child);
 			}
 		}
-	}
-	
-	private void applyLoneChildWorkaround(GroupNode group) {
-		Node loneChild;
 		
-		if (group.numChildren() == 1) {
-			loneChild = group.getChild(0);
-			
-			if (loneChild instanceof GroupNode) {
-				applyLoneChildWorkaround((GroupNode) loneChild);
-			} else {
-				SceneUtils.addSphere(group, "bug-fix-geom", 0.01f, 5, 5, new Tuple3f(0.0f, 0.0f, 0.0f), new Colorf(0.0f, 0.0f, 0.0f, 0.0f));
-			}
+		if (hasOnlyOneChild) {
+			addInvisibleChild(group);
 		}
 	}
 	
-	public void registerAllAnimatables(GroupNode parent) {
+	private void addInvisibleChild(GroupNode group) {
+		SceneUtils.addSphere(group, "bug-fix-geom", 0.01f, 5, 5, new Tuple3f(0.0f, 0.0f, 0.0f), new Colorf(0.0f, 0.0f, 0.0f, 0.0f));
+	}
+	
+	public void registerAnimatableChildren(GroupNode group) {
 		Node child;
 		
-		if (parent == null) {
+		if (group == null) {
 			throw new IllegalArgumentException();
 		}
 		
-		for (Animatable animatableObject : animatableObjects) {
-			x3dEnvironment.getOperationScheduler().removeAnimatableObject(animatableObject);
-		}
-		
-		int numChildren = parent.numChildren();
-		for (int i = 0; i < numChildren; i++) {
-			child = parent.getChild(i);
+		for (int i = 0; i < group.numChildren(); i++) {
+			child = group.getChild(i);
+			
 			if (child instanceof Animatable) {
-				Animatable animatableObject = (Animatable) child;
-				x3dEnvironment.getOperationScheduler().addAnimatableObject(animatableObject);
-				animatableObjects.add(animatableObject);
+				registerAsAnimatable((Animatable) child);
 			} else if (child instanceof GroupNode) {
-				registerAllAnimatables((GroupNode) child);
+				registerAnimatableChildren((GroupNode) child);
 			}
 		}
+	}
+	
+	private void registerAsAnimatable(Animatable animatable) {
+		x3dEnvironment.getOperationScheduler().addAnimatableObject(animatable);
+		animatables.add(animatable);
 	}
 	
 }
