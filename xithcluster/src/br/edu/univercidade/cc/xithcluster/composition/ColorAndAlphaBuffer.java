@@ -33,7 +33,7 @@ public class ColorAndAlphaBuffer {
 			throw new ArrayIndexOutOfBoundsException("Trying to get pixel " + componentIndex + " but the buffer has only " + data.length + " pixels");
 		}
 		
-		int red, green, blue, alpha;
+		int red, green, blue; //, alpha;
 		switch (type) {
 		case ARGB:
 			//alpha = data[componentIndex];
@@ -56,6 +56,14 @@ public class ColorAndAlphaBuffer {
 	
 	private int getFirstComponentIndex(int pixelIndex) {
 		return pixelIndex << 2;
+	}
+	
+	public boolean hasOnlyZeroes() {
+		for (int pixel : data) {
+			if (pixel != 0) return false;
+		}
+		
+		return true;
 	}
 	
 }

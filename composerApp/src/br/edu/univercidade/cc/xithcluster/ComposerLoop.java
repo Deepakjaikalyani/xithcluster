@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.UnknownHostException;
 import org.apache.log4j.Logger;
 import br.edu.univercidade.cc.xithcluster.communication.ComposerNetworkManager;
+import br.edu.univercidade.cc.xithcluster.composition.BottomUpLeftToRightBufferReadOrder;
 import br.edu.univercidade.cc.xithcluster.composition.ColorAndAlphaBufferList;
 import br.edu.univercidade.cc.xithcluster.composition.CompositionContext;
 import br.edu.univercidade.cc.xithcluster.composition.CompositionStrategy;
@@ -126,6 +127,8 @@ public class ComposerLoop implements Runnable, Rasterizer {
 		
 		Timer.setTimeMeasurementUnit(TimeMeasurementUnit.MILLISECONDS);
 		frameTime = (long) Math.floor(Timer.getTimeDivisor() / TARGET_FPS);
+		
+		CompositionContext.setDefaultBufferReadOrderClass(BottomUpLeftToRightBufferReadOrder.class);
 		
 		lastElapsedTime = 0L;
 		while (running) {

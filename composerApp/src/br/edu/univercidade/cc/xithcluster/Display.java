@@ -125,15 +125,15 @@ public class Display {
 	}
 	
 	private void createBackBuffer() {
-		backBuffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		backBuffer = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 	}
 	
-	public void setPixelBuffer(int[] argbImageData) {
-		if (argbImageData == null || argbImageData.length == 0) {
+	public void setPixelBuffer(int[] pixelBuffer) {
+		if (pixelBuffer == null || pixelBuffer.length == 0) {
 			throw new IllegalArgumentException();
 		}
 		
-		backBuffer.setRGB(0, 0, width, height, argbImageData, 0, width);
+		backBuffer.setRGB(0, 0, width, height, pixelBuffer, 0, width);
 	}
 	
 	public void blit() {
