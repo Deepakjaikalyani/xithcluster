@@ -62,14 +62,13 @@ public final class ComposerNetworkManager {
 	private BitSet newImageMask = new BitSet();
 	
 	private int currentFrame = -1;
-
+	
 	private boolean started = false;
 	
 	private long lastGameTime;
 	
 	public ComposerNetworkManager(String masterListeningAddress, int masterListeningPort, String renderersConnectionAddress, int renderersConnectionPort) {
-		if (masterListeningAddress == null || masterListeningAddress.isEmpty() ||
-				renderersConnectionAddress == null || renderersConnectionAddress.isEmpty()) {
+		if (masterListeningAddress == null || masterListeningAddress.isEmpty() || renderersConnectionAddress == null || renderersConnectionAddress.isEmpty()) {
 			throw new IllegalArgumentException();
 		}
 		
@@ -224,12 +223,12 @@ public final class ComposerNetworkManager {
 		CompositionOrder compositionOrder;
 		int rendererIndex;
 		CompressionMethod compressionMethod;
-		byte[] colorAndAlphaBuffer;
-		float[] depthBuffer;
+		byte[] colorAndAlphaBufferData;
+		float[] depthBufferData;
 		
 		compressionMethod = (CompressionMethod) message.getParameters()[1];
-		colorAndAlphaBuffer = (byte[]) message.getParameters()[2];
-		depthBuffer = (float[]) message.getParameters()[3];
+		colorAndAlphaBufferData = (byte[]) message.getParameters()[2];
+		depthBufferData = (float[]) message.getParameters()[3];
 		
 		if (trace) {
 			log.trace("New image received: " + currentFrame);
@@ -249,8 +248,11 @@ public final class ComposerNetworkManager {
 			break;
 		}
 		
-		colorAndAlphaBuffers.add(rendererIndex, ColorAndAlphaBuffer.wrap(colorAndAlphaBuffer, Type.RGBA));
-		depthBuffers.add(rendererIndex, DepthBuffer.wrap(depthBuffer));
+		ColorAndAlphaBuffer colorAndAlphaBuffer = ColorAndAlphaBuffer.wrap(colorAndAlphaBufferData, Type.RGBA);
+		DepthBuffer depthBuffer = DepthBuffer.wrap(depthBufferData);
+		
+		colorAndAlphaBuffers.add(rendererIndex, colorAndAlphaBuffer);
+		depthBuffers.add(rendererIndex, depthBuffer);
 		
 		newImageMask.set(rendererIndex);
 	}
@@ -355,8 +357,7 @@ public final class ComposerNetworkManager {
 	}
 	
 	/*
-	 * ================================ 
-	 * Network messages processing loop
+	 * ================================ Network messages processing loop
 	 * ================================
 	 */
 	protected void processMessages(long startingTime, long elapsedTime, Queue<Message> messages) {
@@ -460,7 +461,7 @@ public final class ComposerNetworkManager {
 			}
 		}
 	}
-
+	
 	private void updateFPS(long startingTime, long elapsedTime) {
 		double fps;
 		
@@ -474,7 +475,7 @@ public final class ComposerNetworkManager {
 			fpsCounter.update(fps);
 		}
 		
-		lastGameTime = startingTime;		
+		lastGameTime = startingTime;
 	}
-
+	
 }
