@@ -41,7 +41,7 @@ public class EarthAndMoonSample extends SampleApplication {
 		root = new BranchGroup();
 		
 		group = new Group();
-		group.setName("allShapesGrouper");
+		group.setName("allGeometries");
 		root.addChild(group);
 		
 		earthRotation = new GroupRotator(new TransformationDirectives(new Vector3f(0.0f, 1.0f, 0.0f), 0.0f, 0.1f));
@@ -59,10 +59,15 @@ public class EarthAndMoonSample extends SampleApplication {
 											100,
 											new Tuple3f(0.0f, 0.0f, 0.0f), 
 											SceneUtils.loadTexture2D("resources/textures/earth.png"));
-		
-		earth.getAppearance().setMaterial(new Material(true, 1.0f));
 
-		moonRotation = new GroupRotator(new TransformationDirectives(new Vector3f(0.0f, 1.0f, 0.0f), 0.0f, 0.1f));
+		Colorf emissiveColor = new Colorf(1.0f, 1.0f, 1.0f); 
+		Colorf specularColor = new Colorf(1.0f, 1.0f, 1.0f);
+		Material material = new Material(true, 1.0f);
+		material.setEmissiveColor(emissiveColor);
+		material.setSpecularColor(specularColor);
+		earth.getAppearance().setMaterial(material);
+
+		moonRotation = new GroupRotator(new TransformationDirectives(new Vector3f(0.0f, 1.0f, 0.0f), 0.0f, 0.05f));
 		moonGroup = new AnimatableGroup(moonRotation);
 		group.addChild(moonGroup);
 		
@@ -78,7 +83,7 @@ public class EarthAndMoonSample extends SampleApplication {
 											new Tuple3f(4.5f, 0.0f, 0.0f), 
 											SceneUtils.loadTexture2D("resources/textures/moon.png"));
 		
-		moon.getAppearance().setMaterial(new Material(true, 1.0f));
+		moon.getAppearance().setMaterial(material);
 		
 		// Light of the sun
 		
