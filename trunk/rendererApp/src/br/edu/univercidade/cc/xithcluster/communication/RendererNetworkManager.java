@@ -52,19 +52,18 @@ public class RendererNetworkManager extends OperationSchedulerImpl implements Ob
 	
 	private SessionState sessionState = SessionState.CLOSED;
 	
-	private boolean hasSentCurrentFrameCompositor = true;
+	private boolean hasSentCurrentFrameComposer = true;
 	
-	private int currentFrame = -1;
+	private long currentFrame;
 	
-	public RendererNetworkManager(String masterListeningAddress, 
-			int masterListeningPort, 
-			String composerListeningAddress, 
-			int composerListeningPort,
-			int compositionOrder,
-			CompressionMethod compressionMethod) {
-		if (masterListeningAddress == null || masterListeningAddress.isEmpty() || 
-				composerListeningAddress == null || composerListeningAddress.isEmpty() ||
-				compressionMethod == null) {
+	private long clockCount;
+	
+	private long lastClockCount;
+	
+	public RendererNetworkManager(String masterListeningAddress, int masterListeningPort, String composerListeningAddress, int composerListeningPort, int compositionOrder, CompressionMethod compressionMethod) {
+		if (masterListeningAddress == null || masterListeningAddress.isEmpty() || //
+		composerListeningAddress == null || composerListeningAddress.isEmpty() || //
+		compressionMethod == null) {
 			throw new IllegalArgumentException();
 		}
 		
@@ -123,12 +122,12 @@ public class RendererNetworkManager extends OperationSchedulerImpl implements Ob
 		log.info("Current session was closed");
 	}
 	
-	private void sendCurrentFrameToCompositor() {
+	private void sendCurrentFrameToComposer() {
 		byte[] colorAndAlphaBuffer;
 		byte[] depthBuffer;
 		
 		if (trace) {
-			log.trace("Sending current frame to compositor: " + currentFrame);
+			log.trace("Sending current frame to composer: " + currentFrame);
 		}
 		
 		colorAndAlphaBuffer = renderer.getColorAndAlphaBuffer();
@@ -149,13 +148,16 @@ public class RendererNetworkManager extends OperationSchedulerImpl implements Ob
 	}
 	
 	private void onStartFrame(Message message) {
-		currentFrame = (Integer) message.getParameters()[0];
+		currentFrame = (Long) message.getParameters()[0];
+		clockCount = (Long) message.getParameters()[1];
 		
 		if (trace) {
-			log.trace("Start frame received: " + currentFrame);
+			log.trace("Start frame received");
+			log.trace("Current frame: " + currentFrame);
+			log.trace("Clock count: " + clockCount);
 		}
 		
-		hasSentCurrentFrameCompositor = false;
+		hasSentCurrentFrameComposer = false;
 	}
 	
 	private void onUpdate(Message message) {
@@ -312,11 +314,9 @@ public class RendererNetworkManager extends OperationSchedulerImpl implements Ob
 		}
 	}
 	
-	/*
-	 * ================================ 
-	 * Network messages processing loop
-	 * ================================
-	 */
+	// ================================
+	// Network messages processing loop
+	// ================================
 	protected void processMessages(long gameTime, long frameTime, TimingMode timingMode, Queue<Message> messages) {
 		Message message;
 		Message lastUpdateMessage;
@@ -367,7 +367,7 @@ public class RendererNetworkManager extends OperationSchedulerImpl implements Ob
 				onUpdate(lastUpdateMessage);
 			}
 			
-			if (hasSentCurrentFrameCompositor) {
+			if (hasSentCurrentFrameComposer) {
 				/*
 				 * Consider only the first start frame message received.
 				 */
@@ -385,21 +385,26 @@ public class RendererNetworkManager extends OperationSchedulerImpl implements Ob
 				if (firstStartFrameMessage != null) {
 					onStartFrame(firstStartFrameMessage);
 					
-					// Update animations and other scheduled operations
-					updateOperationsSchedule(gameTime, frameTime, timingMode);
+					updateXith3DScheduledOperations();
 				}
 			} else {
-				sendCurrentFrameToCompositor();
+				sendCurrentFrameToComposer();
 				
-				hasSentCurrentFrameCompositor = true;
+				hasSentCurrentFrameComposer = true;
 			}
 		} else if (isSessionReadyToStart()) {
 			startNewSession();
 		}
 	}
 	
-	private void updateOperationsSchedule(long gameTime, long frameTime, TimingMode timingMode) {
-		super.update(gameTime, frameTime, timingMode);
+	private void updateXith3DScheduledOperations() {
+		long frameTime = clockCount - lastClockCount;
+		
+		System.out.println("frameTime:" + frameTime);
+		
+		super.update(clockCount, frameTime, TimingMode.MILLISECONDS);
+		
+		lastClockCount = clockCount;
 	}
 	
 }

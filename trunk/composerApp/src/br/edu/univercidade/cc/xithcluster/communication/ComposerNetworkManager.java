@@ -18,10 +18,10 @@ import org.xsocket.connection.Server;
 import br.edu.univercidade.cc.xithcluster.CompressionMethod;
 import br.edu.univercidade.cc.xithcluster.Rasterizer;
 import br.edu.univercidade.cc.xithcluster.composition.ColorAndAlphaBuffer;
+import br.edu.univercidade.cc.xithcluster.composition.ColorAndAlphaBuffer.Type;
 import br.edu.univercidade.cc.xithcluster.composition.ColorAndAlphaBufferList;
 import br.edu.univercidade.cc.xithcluster.composition.DepthBuffer;
 import br.edu.univercidade.cc.xithcluster.composition.DepthBufferList;
-import br.edu.univercidade.cc.xithcluster.composition.ColorAndAlphaBuffer.Type;
 import br.edu.univercidade.cc.xithcluster.hud.components.FPSCounter;
 import br.edu.univercidade.cc.xithcluster.utils.Timer;
 
@@ -61,14 +61,17 @@ public final class ComposerNetworkManager {
 	
 	private BitSet newImageMask = new BitSet();
 	
-	private int currentFrame = -1;
+	private long currentFrame;
+	
+	private long clockCount;
+	
+	private long lastClockCount;
 	
 	private boolean started = false;
 	
-	private long lastGameTime;
-	
 	public ComposerNetworkManager(String masterListeningAddress, int masterListeningPort, String renderersConnectionAddress, int renderersConnectionPort) {
-		if (masterListeningAddress == null || masterListeningAddress.isEmpty() || renderersConnectionAddress == null || renderersConnectionAddress.isEmpty()) {
+		if (masterListeningAddress == null || masterListeningAddress.isEmpty() || //
+		renderersConnectionAddress == null || renderersConnectionAddress.isEmpty()) {
 			throw new IllegalArgumentException();
 		}
 		
@@ -258,10 +261,13 @@ public final class ComposerNetworkManager {
 	}
 	
 	private void onStartFrame(Message message) {
-		currentFrame = (Integer) message.getParameters()[0];
+		currentFrame = (Long) message.getParameters()[0];
+		clockCount = (Long) message.getParameters()[1];
 		
 		if (trace) {
-			log.trace("Start frame received: " + currentFrame);
+			log.trace("Start frame received");
+			log.trace("Current frame: " + currentFrame);
+			log.trace("Clock count: " + clockCount);
 		}
 		
 		newImageMask.clear();
@@ -356,18 +362,16 @@ public final class ComposerNetworkManager {
 		}
 	}
 	
-	/*
-	 * ================================ 
-	 * Network messages processing loop
-	 * ================================
-	 */
+	// ================================
+	// Network messages processing loop
+	// ================================
 	protected void processMessages(long startingTime, long elapsedTime, Queue<Message> messages) {
 		Message message;
 		Message firstStartFrameMessage;
 		Message lastStartSessionMessage;
 		Iterator<Message> iterator;
 		boolean clusterConfigurationChanged;
-		int frameIndex;
+		long frameIndex;
 		
 		clusterConfigurationChanged = false;
 		iterator = messages.iterator();
@@ -413,7 +417,7 @@ public final class ComposerNetworkManager {
 			while (iterator.hasNext()) {
 				message = iterator.next();
 				if (message.getType() == MessageType.NEW_IMAGE) {
-					frameIndex = (Integer) message.getParameters()[0];
+					frameIndex = (Long) message.getParameters()[0];
 					
 					if (frameIndex == currentFrame) {
 						onNewImage(message);
@@ -427,7 +431,7 @@ public final class ComposerNetworkManager {
 			if (areAllSubImagesReceived()) {
 				finishCurrentFrame();
 				
-				updateFPS(startingTime, elapsedTime);
+				updateFPS();
 			}
 		} else if (sessionState == SessionState.CLOSED) {
 			/*
@@ -463,20 +467,20 @@ public final class ComposerNetworkManager {
 		}
 	}
 	
-	private void updateFPS(long startingTime, long elapsedTime) {
+	private void updateFPS() {
 		double fps;
 		
 		if (fpsCounter == null) {
 			return;
 		}
 		
-		if (lastGameTime > 0) {
-			fps = Timer.getTimeDivisor() / (startingTime - lastGameTime);
+		if (lastClockCount > 0) {
+			fps = Timer.getTimeDivisor() / (clockCount - lastClockCount);
 			
 			fpsCounter.update(fps);
 		}
 		
-		lastGameTime = startingTime;
+		lastClockCount = clockCount;
 	}
 	
 }

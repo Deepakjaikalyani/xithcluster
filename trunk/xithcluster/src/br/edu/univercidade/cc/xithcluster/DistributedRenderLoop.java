@@ -95,6 +95,15 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 	
 	@Override
 	public void begin(RunMode runMode, TimingMode timingMode) {
+		if (runMode == null || timingMode == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		// TODO:
+		if (runMode != RunMode.RUN_IN_SAME_THREAD || timingMode != TimingMode.MILLISECONDS) {
+			System.err.println("Unsupported run and/or timing mode. Using 'RunMode.RUN_IN_SAME_THREAD' and 'TimingMode.MILLISECONDS'.");
+		}
+		
 		if (!isRunning()) {
 			if (updateManager == null) {
 				throw new IllegalStateException("You cannot start the application without an update manager");
@@ -117,7 +126,7 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 			startNetworkManager();
 		}
 		
-		super.begin(runMode, timingMode);
+		super.begin(RunMode.RUN_IN_SAME_THREAD, TimingMode.MILLISECONDS);
 	}
 	
 	private void createSceneAndAddToSceneGraph() {

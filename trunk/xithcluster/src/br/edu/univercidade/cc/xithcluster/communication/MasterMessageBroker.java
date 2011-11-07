@@ -54,7 +54,7 @@ public final class MasterMessageBroker implements IConnectHandler, IDataHandler,
 		return true;
 	}
 	
-	void onFinishedFrameCompleted(INonBlockingConnection connection, int frameIndex) {
+	void onFinishedFrameCompleted(INonBlockingConnection connection, long frameIndex) {
 		MessageQueue.postMessage(new Message(MessageType.FINISHED_FRAME, connection, frameIndex));
 	}
 	
