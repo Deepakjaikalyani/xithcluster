@@ -1,4 +1,4 @@
-package br.edu.univercidade.cc.xithcluster.communication;
+package br.edu.univercidade.cc.xithcluster;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
@@ -20,10 +20,12 @@ import org.xith3d.scenegraph.Node;
 import org.xsocket.connection.INonBlockingConnection;
 import org.xsocket.connection.IServer;
 import org.xsocket.connection.Server;
-import br.edu.univercidade.cc.xithcluster.SceneManager;
-import br.edu.univercidade.cc.xithcluster.SceneInfo;
 import br.edu.univercidade.cc.xithcluster.distribution.DistributionStrategy;
 import br.edu.univercidade.cc.xithcluster.hud.components.FPSCounter;
+import br.edu.univercidade.cc.xithcluster.messages.MasterMessageBroker;
+import br.edu.univercidade.cc.xithcluster.messages.Message;
+import br.edu.univercidade.cc.xithcluster.messages.MessageQueue;
+import br.edu.univercidade.cc.xithcluster.messages.MessageType;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.PointOfViewPackager;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.ScenePackager;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.UpdatesPackager;

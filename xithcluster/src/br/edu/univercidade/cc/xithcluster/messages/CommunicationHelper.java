@@ -1,4 +1,4 @@
-package br.edu.univercidade.cc.xithcluster.communication;
+package br.edu.univercidade.cc.xithcluster.messages;
 
 import java.io.IOException;
 import org.xsocket.connection.INonBlockingConnection;

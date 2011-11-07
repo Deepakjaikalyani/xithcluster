@@ -23,7 +23,6 @@ import org.xith3d.scenegraph.Node;
 import org.xith3d.scenegraph.View;
 import org.xith3d.scenegraph.View.ProjectionPolicy;
 import org.xith3d.utility.events.WindowClosingRenderLoopEnder;
-import br.edu.univercidade.cc.xithcluster.communication.RendererNetworkManager;
 import br.edu.univercidade.cc.xithcluster.utils.SceneUtils;
 
 public class RendererLoop extends InputAdapterRenderLoop implements Renderer {

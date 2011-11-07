@@ -1,4 +1,4 @@
-package br.edu.univercidade.cc.xithcluster.communication;
+package br.edu.univercidade.cc.xithcluster;
 
 import java.io.IOException;
 import java.nio.BufferOverflowException;
@@ -11,9 +11,10 @@ import org.xith3d.loop.opscheduler.impl.OperationSchedulerImpl;
 import org.xsocket.connection.INonBlockingConnection;
 import org.xsocket.connection.NonBlockingConnection;
 import br.edu.univercidade.cc.xithcluster.CompressionMethod;
-import br.edu.univercidade.cc.xithcluster.DeserializationResult;
-import br.edu.univercidade.cc.xithcluster.SceneDeserializer;
-import br.edu.univercidade.cc.xithcluster.Renderer;
+import br.edu.univercidade.cc.xithcluster.messages.Message;
+import br.edu.univercidade.cc.xithcluster.messages.MessageQueue;
+import br.edu.univercidade.cc.xithcluster.messages.MessageType;
+import br.edu.univercidade.cc.xithcluster.messages.RendererMessageBroker;
 
 public class RendererNetworkManager extends OperationSchedulerImpl implements Observer {
 	
@@ -399,8 +400,6 @@ public class RendererNetworkManager extends OperationSchedulerImpl implements Ob
 	
 	private void updateXith3DScheduledOperations() {
 		long frameTime = clockCount - lastClockCount;
-		
-		System.out.println("frameTime:" + frameTime);
 		
 		super.update(clockCount, frameTime, TimingMode.MILLISECONDS);
 		

@@ -3,7 +3,6 @@ package br.edu.univercidade.cc.xithcluster;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import org.apache.log4j.Logger;
-import br.edu.univercidade.cc.xithcluster.communication.ComposerNetworkManager;
 import br.edu.univercidade.cc.xithcluster.composition.BottomUpLeftToRightBufferReadOrder;
 import br.edu.univercidade.cc.xithcluster.composition.ColorAndAlphaBufferList;
 import br.edu.univercidade.cc.xithcluster.composition.CompositionContext;

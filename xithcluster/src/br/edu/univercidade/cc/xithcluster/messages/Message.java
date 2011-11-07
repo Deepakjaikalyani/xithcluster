@@ -1,4 +1,4 @@
-package br.edu.univercidade.cc.xithcluster.communication;
+package br.edu.univercidade.cc.xithcluster.messages;
 
 import org.xsocket.connection.INonBlockingConnection;
 
@@ -12,7 +12,7 @@ public final class Message implements Comparable<Message> {
 	
 	private Object[] parameters;
 	
-	Message(MessageType type, INonBlockingConnection source, Object... parameters) {
+	protected Message(MessageType type, INonBlockingConnection source, Object... parameters) {
 		creationTime = System.nanoTime();
 		
 		this.type = type;

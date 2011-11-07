@@ -1,13 +1,13 @@
-package br.edu.univercidade.cc.xithcluster.communication;
+package br.edu.univercidade.cc.xithcluster.messages;
 
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
 import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.INonBlockingConnection;
-import br.edu.univercidade.cc.xithcluster.communication.ChainedTransactionalDataHandler;
+import br.edu.univercidade.cc.xithcluster.messages.TransactionalDataHandler;
 
-public class SetCompositionOrderDataHandler extends ChainedTransactionalDataHandler<ComposerMessageBroker> {
+public class SetCompositionOrderDataHandler extends TransactionalDataHandler<ComposerMessageBroker> {
 	
 	private int compositionOrder;
 
@@ -24,7 +24,7 @@ public class SetCompositionOrderDataHandler extends ChainedTransactionalDataHand
 	
 	@Override
 	protected void onDataReady(INonBlockingConnection arg0) throws IOException {
-		getNextDataHandler().onSetCompositionOrderCompleted(arg0, compositionOrder);
+		getMessageBroker().onSetCompositionOrderCompleted(arg0, compositionOrder);
 	}
 	
 }

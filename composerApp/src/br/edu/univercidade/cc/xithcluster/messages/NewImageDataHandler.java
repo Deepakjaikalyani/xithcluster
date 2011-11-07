@@ -1,4 +1,4 @@
-package br.edu.univercidade.cc.xithcluster.communication;
+package br.edu.univercidade.cc.xithcluster.messages;
 
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
@@ -6,9 +6,10 @@ import java.nio.channels.ClosedChannelException;
 import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.INonBlockingConnection;
 import br.edu.univercidade.cc.xithcluster.CompressionMethod;
+import br.edu.univercidade.cc.xithcluster.messages.TransactionalDataHandler;
 import br.edu.univercidade.cc.xithcluster.utils.BufferUtils;
 
-public final class NewImageDataHandler extends ChainedTransactionalDataHandler<ComposerMessageBroker> {
+public final class NewImageDataHandler extends TransactionalDataHandler<ComposerMessageBroker> {
 	
 	private long frameIndex;
 	
@@ -34,7 +35,7 @@ public final class NewImageDataHandler extends ChainedTransactionalDataHandler<C
 
 	@Override
 	protected void onDataReady(INonBlockingConnection arg0) throws IOException {
-		getNextDataHandler().onNewImageCompleted(arg0, frameIndex, compressionMethod, colorAndAlphaBuffer, BufferUtils.safeBufferRead(BufferUtils.wrapAsFloatBuffer(depthBuffer)));
+		getMessageBroker().onNewImageCompleted(arg0, frameIndex, compressionMethod, colorAndAlphaBuffer, BufferUtils.safeBufferRead(BufferUtils.wrapAsFloatBuffer(depthBuffer)));
 	}
 
 }
