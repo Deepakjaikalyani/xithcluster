@@ -211,7 +211,7 @@ public class SerializationHelperTest {
 		
 		TEXTURE_IMAGE = new TextureImage2D(TextureImageFormat.RGBA, 256, 256, 256, 265, true, TextureImageInternalFormat.RGBA);
 		try {
-			BufferedImage image = ImageIO.read(new FileInputStream("resources/crate.png"));
+			BufferedImage image = ImageIO.read(new FileInputStream("resources/test/crate.png"));
 			((TextureImage2D) TEXTURE_IMAGE).setImageData(image);
 		} catch (IOException e) {
 			throw new RuntimeException(e);

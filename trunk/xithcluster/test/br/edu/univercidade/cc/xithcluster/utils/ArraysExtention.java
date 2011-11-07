@@ -10,7 +10,7 @@ public final class ArraysExtention {
 		}
 		
 		for (int i = 0; i < array1.length; i++) {
-			if (comparator.compare(array1[i], array2[2]) != 0) {
+			if (comparator.compare(array1[i], array2[i]) != 0) {
 				return false;
 			}
 		}

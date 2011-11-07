@@ -14,7 +14,7 @@ public final class ImageOrderAndZBufferStrategy implements CompositionStrategy {
 			
 			int pixel = colorAndAlphaBuffer.getRGB(pixelIndex);
 			
-			pixelBuffer.put(pixelIndex, pixel);
+			pixelBuffer.add(pixel);
 		}
 	}
 	
