@@ -15,7 +15,7 @@ import br.edu.univercidade.cc.xithcluster.utils.Timer.TimeMeasurementUnit;
 
 public class ComposerLoop implements Runnable, Rasterizer {
 	
-	private static final double TARGET_FPS = 200.0;
+	private static final double TARGET_FPS = 80.0;
 	
 	private static final int FPS_SAMPLES_COLLECTED = 10;
 	

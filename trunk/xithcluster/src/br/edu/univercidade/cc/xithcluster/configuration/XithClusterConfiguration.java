@@ -10,6 +10,8 @@ public final class XithClusterConfiguration extends Configuration {
 	
 	private int composerConnectionPort;
 	
+	private boolean enableDebuggingScreen;
+	
 	private int targetScreenWidth;
 	
 	private int targetScreenHeight;
@@ -26,6 +28,10 @@ public final class XithClusterConfiguration extends Configuration {
 	
 	public int getComposerConnectionPort() {
 		return composerConnectionPort;
+	}
+	
+	public boolean isDebuggingScreenEnabled() {
+		return enableDebuggingScreen;
 	}
 	
 	public int getTargetScreenWidth() {
@@ -52,9 +58,10 @@ public final class XithClusterConfiguration extends Configuration {
 		
 		renderersConnectionPort = convertToIntegerSafely("renderersConnectionPort", args[1]);
 		composerConnectionPort = convertToIntegerSafely("composerConnectionPort", args[2]);
-		targetScreenWidth = convertToIntegerSafely("targetScreenWidth", args[3]);
-		targetScreenHeight = convertToIntegerSafely("targetScreenHeight", args[4]);
-		targetFPS = convertToFloatSafely("targetFPS", args[5]);
+		enableDebuggingScreen = convertToBooleanSafely("enableDebuggingScreen", args[3]);
+		targetScreenWidth = convertToIntegerSafely("targetScreenWidth", args[4]);
+		targetScreenHeight = convertToIntegerSafely("targetScreenHeight", args[5]);
+		targetFPS = convertToFloatSafely("targetFPS", args[6]);
 	}
 	
 	@Override
@@ -66,16 +73,17 @@ public final class XithClusterConfiguration extends Configuration {
 		listeningAddress = getParameterAndCheckIfNullOrEmptyString(properties, "listening.address");
 		renderersConnectionPort = getParameterAndConvertToIntegerSafely(properties, "renderers.connection.port");
 		composerConnectionPort = getParameterAndConvertToIntegerSafely(properties, "composer.connection.port");
+		enableDebuggingScreen = getParameterAndConvertToBooleanSafely(properties, "enable.debugging.screen");
 		targetScreenWidth = getParameterAndConvertToIntegerSafely(properties, "screen.width");
 		targetScreenHeight = getParameterAndConvertToIntegerSafely(properties, "screen.height");
 		targetFPS = getParameterAndConvertToFloatSafely(properties, "target.fps");
 	}
-
+	
 	@Override
 	protected int getArgsLength() {
-		return 6;
+		return 7;
 	}
-
+	
 	@Override
 	protected String getPropertiesFileName() {
 		return "xithcluster.properties";

@@ -192,6 +192,14 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 	}
 	
 	@Override
+	protected void renderNextFrame(long gameTime, long frameTime, TimingMode timingMode) {
+		// TODO: Check if really optimizes something...
+		if (debuggingCanvas != null) {
+			super.renderNextFrame(gameTime, frameTime, timingMode);
+		}
+	}
+
+	@Override
 	public void onKeyPressed(KeyPressedEvent e, Key key) {
 		processInput(key);
 		
