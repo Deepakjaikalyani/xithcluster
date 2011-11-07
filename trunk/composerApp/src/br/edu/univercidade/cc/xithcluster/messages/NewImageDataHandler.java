@@ -6,10 +6,10 @@ import java.nio.channels.ClosedChannelException;
 import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.INonBlockingConnection;
 import br.edu.univercidade.cc.xithcluster.CompressionMethod;
-import br.edu.univercidade.cc.xithcluster.messages.TransactionalDataHandler;
+import br.edu.univercidade.cc.xithcluster.messages.MessageHandler;
 import br.edu.univercidade.cc.xithcluster.utils.BufferUtils;
 
-public final class NewImageDataHandler extends TransactionalDataHandler<ComposerMessageBroker> {
+public final class NewImageDataHandler extends MessageHandler<ComposerMessageBroker> {
 	
 	private long frameIndex;
 	

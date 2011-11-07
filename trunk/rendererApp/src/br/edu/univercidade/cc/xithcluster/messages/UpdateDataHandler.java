@@ -5,9 +5,9 @@ import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
 import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.INonBlockingConnection;
-import br.edu.univercidade.cc.xithcluster.messages.TransactionalDataHandler;
+import br.edu.univercidade.cc.xithcluster.messages.MessageHandler;
 
-public final class UpdateDataHandler extends TransactionalDataHandler<RendererMessageBroker> {
+public final class UpdateDataHandler extends MessageHandler<RendererMessageBroker> {
 	
 	private byte[] updatesData;
 	
