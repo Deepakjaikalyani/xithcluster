@@ -7,7 +7,7 @@
     <target name="build.jar">
         <jar destfile="dist/rendererApp.jar">
             <manifest>
-                <attribute name="Main-Class" value="br.edu.univercidade.cc.xithcluster.RendererApp"/>
+                <attribute name="Main-Class" value="br.edu.univercidade.cc.xithcluster.RendererApplication"/>
                 <attribute name="Class-Path" value=". lib/log4j-1.2.16.jar lib/xSocket-2.8.14.jar lib/gluegen-rt.jar lib/jagatoo.jar lib/jinput.jar lib/joal.jar lib/jogl.jar lib/joode.jar lib/jops.jar lib/lwjgl.jar lib/openmali.jar lib/vorbis.jar lib/xpal-joode.jar lib/xith3d.jar"/>
             </manifest>
             <fileset dir="bin">
