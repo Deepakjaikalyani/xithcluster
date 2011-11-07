@@ -118,7 +118,7 @@ public abstract class SampleApplication {
 			System.exit(-1);
 		}
 		
-		distributedRenderLoop = new DistributedRenderLoop(xithClusterConfiguration.getTargetFPS(), xithClusterConfiguration.getTargetScreenWidth(), xithClusterConfiguration.getTargetScreenHeight(), true, sceneCreationCallback);
+		distributedRenderLoop = new DistributedRenderLoop(xithClusterConfiguration.getTargetFPS(), xithClusterConfiguration.getTargetScreenWidth(), xithClusterConfiguration.getTargetScreenHeight(), xithClusterConfiguration.isDebuggingScreenEnabled(), sceneCreationCallback);
 		
 		new Xith3DEnvironment(eyePosition, viewFocus, upDirection, distributedRenderLoop);
 		
@@ -135,12 +135,12 @@ public abstract class SampleApplication {
 		distributedRenderLoop.addProcessInputCallback(processInputCallback);
 		
 		distributedRenderLoop.getOperationScheduler().addInterval(new Interval(1000L) {
-
+			
 			@Override
 			protected void onIntervalHit(long gameTime, long frameTime, TimingMode timingMode) {
 				oneSecondTick();
 			}
-
+			
 		});
 		
 		distributedRenderLoop.begin();
@@ -160,7 +160,7 @@ public abstract class SampleApplication {
 	}
 	
 	private void printCommandLineHelp() {
-		System.err.println("java -jar " + getJARName() + " <listeningAddress> <renderersConnectionPort> <composerConnectionPort> <targetScreenWidth> <targetScreenHeight> <targetFPS>");
+		System.err.println("java -jar " + getJARName() + " <listeningAddress> <renderersConnectionPort> <composerConnectionPort> <enableDebuggingScreen> <targetScreenWidth> <targetScreenHeight> <targetFPS>");
 	}
 	
 }

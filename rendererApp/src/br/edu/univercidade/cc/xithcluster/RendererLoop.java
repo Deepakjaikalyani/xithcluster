@@ -28,7 +28,7 @@ import br.edu.univercidade.cc.xithcluster.utils.SceneUtils;
 
 public class RendererLoop extends InputAdapterRenderLoop implements Renderer {
 	
-	private static final float DEFAULT_TARGET_FPS = 200.0f;
+	private static final float DEFAULT_TARGET_FPS = 80.0f;
 	
 	private static final Colorf BACKGROUND_COLOR = Colorf.BLACK;
 	

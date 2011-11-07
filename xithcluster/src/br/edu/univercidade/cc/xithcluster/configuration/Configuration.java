@@ -104,7 +104,7 @@ public abstract class Configuration {
 		return convertToBooleanSafely(parameterName, properties.getProperty(parameterName));
 	}
 	
-	private static boolean convertToBooleanSafely(String parameterName, String value) throws BadParameterException {
+	protected static boolean convertToBooleanSafely(String parameterName, String value) throws BadParameterException {
 		try {
 			return Boolean.parseBoolean(value);
 		} catch (NumberFormatException e) {
