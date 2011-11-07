@@ -9,7 +9,7 @@ import org.xsocket.connection.INonBlockingConnection;
 
 public class FinishedFrameDataHandler extends ChainedTransactionalDataHandler<MasterMessageBroker> {
 
-	private int frameIndex;
+	private long frameIndex;
 	
 	public FinishedFrameDataHandler(MasterMessageBroker nextDataHandler) {
 		super(nextDataHandler);
@@ -17,7 +17,7 @@ public class FinishedFrameDataHandler extends ChainedTransactionalDataHandler<Ma
 
 	@Override
 	protected boolean onHandleData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
-		frameIndex = arg0.readInt();
+		frameIndex = arg0.readLong();
 		
 		return true;
 	}

@@ -10,7 +10,7 @@ import br.edu.univercidade.cc.xithcluster.utils.BufferUtils;
 
 public final class NewImageDataHandler extends ChainedTransactionalDataHandler<ComposerMessageBroker> {
 	
-	private int frameIndex;
+	private long frameIndex;
 	
 	private CompressionMethod compressionMethod;
 	
@@ -24,7 +24,7 @@ public final class NewImageDataHandler extends ChainedTransactionalDataHandler<C
 
 	@Override
 	protected boolean onHandleData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
-		frameIndex = arg0.readInt();
+		frameIndex = arg0.readLong();
 		compressionMethod = CompressionMethod.values()[arg0.readInt()];
 		colorAndAlphaBuffer = arg0.readBytesByLength(arg0.readInt());
 		depthBuffer = arg0.readBytesByLength(arg0.readInt());

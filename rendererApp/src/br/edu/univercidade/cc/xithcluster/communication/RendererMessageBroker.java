@@ -50,8 +50,8 @@ public final class RendererMessageBroker implements IDataHandler {
 		MessageQueue.postMessage(new Message(MessageType.UPDATE, connection, updatesData));
 	}
 	
-	void onStartFrameCompleted(INonBlockingConnection connection, int frameIndex) {
-		MessageQueue.postMessage(new Message(MessageType.START_FRAME, connection, frameIndex));
+	void onStartFrameCompleted(INonBlockingConnection connection, long frameIndex, long clockCount) {
+		MessageQueue.postMessage(new Message(MessageType.START_FRAME, connection, frameIndex, clockCount));
 	}
 
 }

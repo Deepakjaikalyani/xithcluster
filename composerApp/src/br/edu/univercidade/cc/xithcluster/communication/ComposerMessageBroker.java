@@ -79,7 +79,7 @@ public class ComposerMessageBroker implements IConnectHandler, IDataHandler, IDi
 		MessageQueue.postMessage(new Message(MessageType.START_SESSION, connection, screenWidth, screenHeight, targetFPS));
 	}
 	
-	void onNewImageCompleted(INonBlockingConnection connection, int frameIndex, CompressionMethod compressionMethod, byte[] colorAndAlphaBuffer, float[] depthBuffer) {
+	void onNewImageCompleted(INonBlockingConnection connection, long frameIndex, CompressionMethod compressionMethod, byte[] colorAndAlphaBuffer, float[] depthBuffer) {
 		MessageQueue.postMessage(new Message(MessageType.NEW_IMAGE, connection, frameIndex, compressionMethod, colorAndAlphaBuffer, depthBuffer));
 	}
 
@@ -87,8 +87,8 @@ public class ComposerMessageBroker implements IConnectHandler, IDataHandler, IDi
 		MessageQueue.postMessage(new Message(MessageType.SET_COMPOSITION_ORDER, connection, compositionOrder));
 	}
 	
-	void onStartFrameCompleted(INonBlockingConnection connection, int frameIndex) {
-		MessageQueue.postMessage(new Message(MessageType.START_FRAME, connection, frameIndex));
+	void onStartFrameCompleted(INonBlockingConnection connection, long frameIndex, long clockCount) {
+		MessageQueue.postMessage(new Message(MessageType.START_FRAME, connection, frameIndex, clockCount));
 	}
 
 }

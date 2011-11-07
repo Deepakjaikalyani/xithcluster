@@ -62,6 +62,15 @@ public class RendererLoop extends InputAdapterRenderLoop implements Renderer {
 	
 	@Override
 	public void begin(RunMode runMode, TimingMode timingMode) {
+		if (runMode == null || timingMode == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		// TODO:
+		if (runMode != RunMode.RUN_IN_SAME_THREAD || timingMode != TimingMode.MILLISECONDS) {
+			System.err.println("Unsupported run and/or timing mode. Using 'RunMode.RUN_IN_SAME_THREAD' and 'TimingMode.MILLISECONDS'.");
+		}
+		
 		if (!isRunning()) {
 			if (networkManager == null) {
 				// TODO:
@@ -84,7 +93,7 @@ public class RendererLoop extends InputAdapterRenderLoop implements Renderer {
 		
 		log.info("Renderer started successfully.");
 		
-		super.begin(runMode, timingMode);
+		super.begin(RunMode.RUN_IN_SAME_THREAD, TimingMode.MILLISECONDS);
 	}
 	
 	public void setNetworkManager(RendererNetworkManager networkManager) {
@@ -191,7 +200,7 @@ public class RendererLoop extends InputAdapterRenderLoop implements Renderer {
 		
 		registerAnimatableChildren(currentRoot);
 	}
-
+	
 	private void unregisterAnimatables() {
 		for (Animatable animatable : animatables) {
 			x3dEnvironment.getOperationScheduler().removeAnimatableObject(animatable);

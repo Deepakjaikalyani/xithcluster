@@ -80,16 +80,11 @@ public final class NetworkManager extends OperationSchedulerImpl {
 	
 	private boolean forceFrameStart = false;
 	
-	private long lastGameTime = 0L;
+	private long lastClockCount = 0L;
 	
-	public NetworkManager(String listeningAddress,
-			int renderersConnectionPort,
-			int composerConnectionPort,
-			DistributionStrategy distributionStrategy) {
-		
-		if (listeningAddress == null || listeningAddress.isEmpty() 
-				|| distributionStrategy == null)
-		{
+	public NetworkManager(String listeningAddress, int renderersConnectionPort, int composerConnectionPort, DistributionStrategy distributionStrategy) {
+		if (listeningAddress == null || listeningAddress.isEmpty() //
+				|| distributionStrategy == null) {
 			throw new IllegalArgumentException();
 		}
 		
@@ -98,7 +93,7 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		this.composerConnectionPort = composerConnectionPort;
 		this.distributionStrategy = distributionStrategy;
 	}
-
+	
 	public void setSceneRenderer(SceneManager sceneManager) {
 		if (sceneManager == null) {
 			throw new IllegalArgumentException();
@@ -300,7 +295,7 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		log.info("Current session closed");
 	}
 	
-	private void startNewFrame() {
+	private void startNewFrame(long clockCount) {
 		if (trace) {
 			log.trace("Starting new frame");
 		}
@@ -312,13 +307,14 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		
 		if (trace) {
 			log.trace("currentFrame=" + currentFrame);
+			log.trace("clockCount=" + clockCount);
 		}
 		
 		try {
-			sendStartFrameMessage(composerConnection, currentFrame);
+			sendStartFrameMessage(composerConnection, currentFrame, clockCount);
 			
 			for (INonBlockingConnection rendererConnection : renderersConnections) {
-				sendStartFrameMessage(rendererConnection, currentFrame);
+				sendStartFrameMessage(rendererConnection, currentFrame, clockCount);
 			}
 		} catch (IOException e) {
 			// TODO:
@@ -327,13 +323,13 @@ public final class NetworkManager extends OperationSchedulerImpl {
 	}
 	
 	private void onFinishedFrame(Message message) {
-		int frameIndex;
+		long frameIndex;
 		
 		if (trace) {
 			log.trace("Finished frame received");
 		}
 		
-		frameIndex = (Integer) message.getParameters()[0];
+		frameIndex = (Long) message.getParameters()[0];
 		
 		if (currentFrame == frameIndex) {
 			if (trace) {
@@ -470,11 +466,12 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		rendererConnection.flush();
 	}
 	
-	private void sendStartFrameMessage(INonBlockingConnection connection, int frameIndex) throws BufferOverflowException, IOException {
+	private void sendStartFrameMessage(INonBlockingConnection connection, long frameIndex, long clockCount) throws BufferOverflowException, IOException {
 		connection.write(MessageType.START_FRAME.ordinal());
 		connection.flush();
 		
 		connection.write(frameIndex);
+		connection.write(clockCount);
 		connection.flush();
 	}
 	
@@ -488,13 +485,11 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		
 		MessageQueue.stopReadingMessages();
 	}
-
-	/*
-	 * ================================ 
-	 * Network messages processing loop
-	 * ================================
-	 */
-	private void processMessages(long gameTime, long frameTime, TimingMode timingMode, Queue<Message> messages) {
+	
+	// ================================
+	// Network messages processing loop
+	// ================================
+	private void processMessages(long clockCount, long frameTime, TimingMode timingMode, Queue<Message> messages) {
 		Message message;
 		Iterator<Message> iterator;
 		boolean clusterConfigurationChanged;
@@ -535,12 +530,11 @@ public final class NetworkManager extends OperationSchedulerImpl {
 				}
 				
 				if (finishedFrame || forceFrameStart) {
-					startNewFrame();
+					startNewFrame(clockCount);
 					
-					// Update animations and other scheduled operations
-					updateOperationsSchedule(gameTime, frameTime, timingMode);
+					updateXith3DScheduledOperations(clockCount, frameTime, timingMode);
 					
-					updateFPS(gameTime, frameTime, timingMode);
+					updateFPS(clockCount, frameTime, timingMode);
 				}
 				
 				if (updateManager.hasPendingUpdates()) {
@@ -563,7 +557,7 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		}
 	}
 	
-	private void updateFPS(long gameTime, long frameTime, TimingMode timingMode) {
+	private void updateFPS(long clockCount, long frameTime, TimingMode timingMode) {
 		long elapsedTime;
 		double fps;
 		
@@ -571,21 +565,21 @@ public final class NetworkManager extends OperationSchedulerImpl {
 			return;
 		}
 		
-		if (lastGameTime > 0) {
-			elapsedTime = gameTime - lastGameTime;
+		if (lastClockCount > 0) {
+			elapsedTime = clockCount - lastClockCount;
 			
 			fps = timingMode.getDivisor() / elapsedTime;
 			
 			fpsCounter.update(fps);
 		}
 		
-		lastGameTime = gameTime;
+		lastClockCount = clockCount;
 	}
 	
-	private void updateOperationsSchedule(long gameTime, long frameTime, TimingMode timingMode) {
+	private void updateXith3DScheduledOperations(long gameTime, long frameTime, TimingMode timingMode) {
 		super.update(gameTime, frameTime, timingMode);
 	}
-
+	
 	public void addUpdateManager(UpdateManager updateManager) {
 		if (updateManager == null) {
 			throw new IllegalArgumentException();

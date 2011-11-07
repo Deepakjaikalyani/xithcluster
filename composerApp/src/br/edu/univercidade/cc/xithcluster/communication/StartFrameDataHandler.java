@@ -10,7 +10,9 @@ import br.edu.univercidade.cc.xithcluster.communication.ChainedTransactionalData
 
 public class StartFrameDataHandler extends ChainedTransactionalDataHandler<ComposerMessageBroker> {
 
-	private int frameIndex;
+	private long frameIndex;
+	
+	private long clockCount;
 	
 	public StartFrameDataHandler(ComposerMessageBroker nextDataHandler) {
 		super(nextDataHandler);
@@ -18,14 +20,15 @@ public class StartFrameDataHandler extends ChainedTransactionalDataHandler<Compo
 
 	@Override
 	protected boolean onHandleData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
-		frameIndex = arg0.readInt();
+		frameIndex = arg0.readLong();
+		clockCount = arg0.readLong();
 		
 		return true;
 	}
 
 	@Override
 	protected void onDataReady(INonBlockingConnection arg0) throws IOException {
-		getNextDataHandler().onStartFrameCompleted(arg0, frameIndex);
+		getNextDataHandler().onStartFrameCompleted(arg0, frameIndex, clockCount);
 	}
 	
 }
