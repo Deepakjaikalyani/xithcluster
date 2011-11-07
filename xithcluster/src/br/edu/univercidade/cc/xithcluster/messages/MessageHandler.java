@@ -7,13 +7,13 @@ import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.IDataHandler;
 import org.xsocket.connection.INonBlockingConnection;
 
-public abstract class TransactionalDataHandler<T extends IDataHandler> implements IDataHandler {
+public abstract class MessageHandler<T extends IDataHandler> implements IDataHandler {
 	
 	protected static final String STRING_DELIMITER = "\r\n";
 	
 	private T messageBroker;
 	
-	public TransactionalDataHandler(T nextDataHandler) {
+	public MessageHandler(T nextDataHandler) {
 		this.messageBroker = nextDataHandler;
 	}
 	
