@@ -16,11 +16,11 @@ public class PixelBufferTest {
 	public void testReadWritePixels() {
 		PixelBuffer pixelBuffer = new PixelBuffer(WIDTH, HEIGHT);
 		
-		for (int i = 50; i < 100; i++) {
-			pixelBuffer.put(i, 0xff00ff00);
+		for (int i = 0; i < 50; i++) {
+			pixelBuffer.add(0xff00ff00);
 		}
 		
-		for (int i = 50; i < 100; i++) {
+		for (int i = 0; i < 50; i++) {
 			assertEquals(0xff00ff00, pixelBuffer.get(i));
 		}
 	}

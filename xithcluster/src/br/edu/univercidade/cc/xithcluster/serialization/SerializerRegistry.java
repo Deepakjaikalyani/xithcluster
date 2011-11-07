@@ -9,7 +9,9 @@ import org.xith3d.schedops.movement.AnimatableGroup;
 import br.edu.univercidade.cc.xithcluster.nodes.lights.DirectionalLight;
 import br.edu.univercidade.cc.xithcluster.nodes.lights.SpotLight;
 import br.edu.univercidade.cc.xithcluster.nodes.primitives.Cube;
+import br.edu.univercidade.cc.xithcluster.nodes.primitives.Cylinder;
 import br.edu.univercidade.cc.xithcluster.nodes.primitives.Rectangle;
+import br.edu.univercidade.cc.xithcluster.nodes.primitives.Ring;
 import br.edu.univercidade.cc.xithcluster.nodes.primitives.Sphere;
 
 public final class SerializerRegistry {
@@ -20,15 +22,22 @@ public final class SerializerRegistry {
 	
 	// FIXME:
 	static {
+		// Primitives
 		register(Cube.class, CubeSerializer.class);
 		register(Sphere.class, SphereSerializer.class);
 		register(Rectangle.class, RectangleSerializer.class);
-		register(DirectionalLight.class, LightSerializer.class);
-		register(SpotLight.class, LightSerializer.class);
+		register(Ring.class, RingSerializer.class);
+		register(Cylinder.class, CylinderSerializer.class);
+		
+		// Groups
 		register(TransformGroup.class, TransformGroupSerializer.class);
 		register(AnimatableGroup.class, AnimatableGroupSerializer.class);
 		register(BranchGroup.class, BranchGroupSerializer.class);
 		register(Group.class, GroupSerializer.class);
+		
+		// Lights
+		register(DirectionalLight.class, LightSerializer.class);
+		register(SpotLight.class, LightSerializer.class);
 	}
 	
 	static void register(Class<?> nodeClass, Class<? extends Serializer<?>> registeredClass) {

@@ -7,7 +7,9 @@ import org.jagatoo.input.devices.components.Key;
 import org.jagatoo.input.events.KeyPressedEvent;
 import org.openmali.vecmath2.Tuple3f;
 import org.xith3d.base.Xith3DEnvironment;
+import org.xith3d.loop.UpdatingThread.TimingMode;
 import org.xith3d.loop.opscheduler.Animator;
+import org.xith3d.loop.opscheduler.Interval;
 import org.xith3d.scenegraph.BranchGroup;
 import br.edu.univercidade.cc.xithcluster.callbacks.ProcessInputCallback;
 import br.edu.univercidade.cc.xithcluster.callbacks.SceneCreationCallback;
@@ -59,6 +61,13 @@ public abstract class SampleApplication {
 		upDirection = DEFAULT_UP_DIRECTION;
 	}
 	
+	public SampleApplication(Tuple3f eyePosition) {
+		super();
+		this.eyePosition = eyePosition;
+		this.viewFocus = DEFAULT_VIEW_FOCUS;
+		upDirection = DEFAULT_UP_DIRECTION;
+	}
+	
 	public SampleApplication(Tuple3f eyePosition, Tuple3f viewFocus) {
 		super();
 		this.eyePosition = eyePosition;
@@ -78,6 +87,10 @@ public abstract class SampleApplication {
 	protected abstract BranchGroup createSceneRoot(Animator animator);
 	
 	protected void keyPressed(KeyPressedEvent event, Key key) {
+		// Empty method
+	}
+	
+	protected void oneSecondTick() {
 		// Empty method
 	}
 	
@@ -120,6 +133,15 @@ public abstract class SampleApplication {
 		distributedRenderLoop.setNetworkManager(networkManager);
 		
 		distributedRenderLoop.addProcessInputCallback(processInputCallback);
+		
+		distributedRenderLoop.getOperationScheduler().addInterval(new Interval(1000L) {
+
+			@Override
+			protected void onIntervalHit(long gameTime, long frameTime, TimingMode timingMode) {
+				oneSecondTick();
+			}
+
+		});
 		
 		distributedRenderLoop.begin();
 	}

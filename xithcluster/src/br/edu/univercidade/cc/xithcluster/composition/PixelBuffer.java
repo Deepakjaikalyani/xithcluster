@@ -6,6 +6,8 @@ public class PixelBuffer {
 	
 	private int height;
 	
+	private int lastPixelIndex;
+	
 	private int[] pixels;
 	
 	public PixelBuffer(int width, int height) {
@@ -31,14 +33,6 @@ public class PixelBuffer {
 		this.pixels = pixels;
 	}
 	
-	public void put(int i, int pixel) {
-		if (i >= pixels.length) {
-			throw new ArrayIndexOutOfBoundsException("Trying to set pixel " + i + " but there's only " + pixels.length + " pixels in this buffer");
-		}
-		
-		pixels[i] = pixel;
-	}
-
 	public int get(int i) {
 		return pixels[i];
 	}
@@ -67,12 +61,20 @@ public class PixelBuffer {
 		}
 	}
 	
+	public void reset() {
+		lastPixelIndex = 0;
+	}
+	
 	private int getPixel(int x, int y) {
 		return pixels[(y * width) + x];
 	}
 	
 	public int[] toIntArray() {
 		return pixels;
+	}
+
+	public void add(int pixel) {
+		pixels[lastPixelIndex++] = pixel;
 	}
 	
 }

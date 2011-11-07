@@ -23,7 +23,7 @@ public class CompositionContext {
 			instance = new CompositionContext(width, height);
 		}
 		
-		instance.clear();
+		instance.reset();
 		
 		return instance;
 	}
@@ -40,11 +40,16 @@ public class CompositionContext {
 		bufferReadOrder = createBufferReadOrder();
 	}
 	
-	private void clear() {
+	private void reset() {
 		colorAndAlphaBuffers = null;
 		depthBuffers = null;
+		pixelBuffer.reset();
 		
-		bufferReadOrder.reset();
+		if (bufferReadOrder.getClass() != CompositionContext.defaultBufferReadOrderClass) {
+			bufferReadOrder = createBufferReadOrder();
+		} else {
+			bufferReadOrder.reset();
+		}
 	}
 	
 	private BufferReadOrder createBufferReadOrder() {

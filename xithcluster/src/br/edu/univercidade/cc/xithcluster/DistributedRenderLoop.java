@@ -38,7 +38,7 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 	
 	private SceneCreationCallback sceneCreationCallback;
 	
-	private List<ProcessInputCallback> processInputCallbacks;
+	private List<ProcessInputCallback> processInputCallbacks = new ArrayList<ProcessInputCallback>();
 	
 	public DistributedRenderLoop(float targetFPS, int targetScreenWidth, int targetScreenHeight, boolean enableDebuggingScreen, SceneCreationCallback sceneCreationCallback) {
 		super(targetFPS);
@@ -48,12 +48,8 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 		}
 		
 		this.targetScreenDimension = new Dimension(targetScreenWidth, targetScreenHeight);
-		
 		this.enableDebuggingScreen = enableDebuggingScreen;
-		
 		this.sceneCreationCallback = sceneCreationCallback;
-		
-		this.processInputCallbacks = new ArrayList<ProcessInputCallback>();
 	}
 	
 	public void setUpdateManager(UpdateManager updateManager) {
