@@ -6,7 +6,6 @@ import org.apache.log4j.xml.DOMConfigurator;
 import org.jagatoo.input.InputSystemException;
 import org.openmali.vecmath2.Tuple3f;
 import org.xith3d.base.Xith3DEnvironment;
-import br.edu.univercidade.cc.xithcluster.communication.RendererNetworkManager;
 import br.edu.univercidade.cc.xithcluster.configuration.CommandLineParsingException;
 import br.edu.univercidade.cc.xithcluster.configuration.PropertiesFileLoadingException;
 import br.edu.univercidade.cc.xithcluster.configuration.RendererConfiguration;

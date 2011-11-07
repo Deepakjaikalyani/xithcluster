@@ -1,4 +1,4 @@
-package br.edu.univercidade.cc.xithcluster.communication;
+package br.edu.univercidade.cc.xithcluster;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -16,13 +16,17 @@ import org.xsocket.connection.IServer;
 import org.xsocket.connection.NonBlockingConnection;
 import org.xsocket.connection.Server;
 import br.edu.univercidade.cc.xithcluster.CompressionMethod;
-import br.edu.univercidade.cc.xithcluster.Rasterizer;
 import br.edu.univercidade.cc.xithcluster.composition.ColorAndAlphaBuffer;
 import br.edu.univercidade.cc.xithcluster.composition.ColorAndAlphaBuffer.Type;
 import br.edu.univercidade.cc.xithcluster.composition.ColorAndAlphaBufferList;
 import br.edu.univercidade.cc.xithcluster.composition.DepthBuffer;
 import br.edu.univercidade.cc.xithcluster.composition.DepthBufferList;
 import br.edu.univercidade.cc.xithcluster.hud.components.FPSCounter;
+import br.edu.univercidade.cc.xithcluster.messages.ComposerMessageBroker;
+import br.edu.univercidade.cc.xithcluster.messages.CompositionOrder;
+import br.edu.univercidade.cc.xithcluster.messages.Message;
+import br.edu.univercidade.cc.xithcluster.messages.MessageQueue;
+import br.edu.univercidade.cc.xithcluster.messages.MessageType;
 import br.edu.univercidade.cc.xithcluster.utils.Timer;
 
 public final class ComposerNetworkManager {

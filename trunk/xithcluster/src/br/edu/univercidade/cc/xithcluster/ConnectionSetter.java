@@ -1,4 +1,4 @@
-package br.edu.univercidade.cc.xithcluster.communication;
+package br.edu.univercidade.cc.xithcluster;
 
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.GroupNode;

@@ -1,4 +1,4 @@
-package br.edu.univercidade.cc.xithcluster.communication;
+package br.edu.univercidade.cc.xithcluster.messages;
 
 public enum MessageType {
 	

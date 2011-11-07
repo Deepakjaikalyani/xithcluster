@@ -3,7 +3,6 @@ package br.edu.univercidade.cc.xithcluster;
 import java.io.File;
 import java.io.IOException;
 import org.apache.log4j.xml.DOMConfigurator;
-import br.edu.univercidade.cc.xithcluster.communication.ComposerNetworkManager;
 import br.edu.univercidade.cc.xithcluster.configuration.CommandLineParsingException;
 import br.edu.univercidade.cc.xithcluster.configuration.ComposerConfiguration;
 import br.edu.univercidade.cc.xithcluster.configuration.PropertiesFileLoadingException;

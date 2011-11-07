@@ -18,7 +18,6 @@ import org.xith3d.ui.hud.HUD;
 import org.xith3d.utility.events.WindowClosingRenderLoopEnder;
 import br.edu.univercidade.cc.xithcluster.callbacks.ProcessInputCallback;
 import br.edu.univercidade.cc.xithcluster.callbacks.SceneCreationCallback;
-import br.edu.univercidade.cc.xithcluster.communication.NetworkManager;
 import br.edu.univercidade.cc.xithcluster.hud.components.HUDFPSCounter;
 import br.edu.univercidade.cc.xithcluster.update.UpdateManager;
 

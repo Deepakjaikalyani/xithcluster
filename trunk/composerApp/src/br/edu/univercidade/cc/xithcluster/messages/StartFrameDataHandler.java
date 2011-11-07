@@ -1,30 +1,34 @@
-package br.edu.univercidade.cc.xithcluster.communication;
+package br.edu.univercidade.cc.xithcluster.messages;
 
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
 import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.INonBlockingConnection;
+import br.edu.univercidade.cc.xithcluster.messages.TransactionalDataHandler;
 
 
-public class FinishedFrameDataHandler extends ChainedTransactionalDataHandler<MasterMessageBroker> {
+public class StartFrameDataHandler extends TransactionalDataHandler<ComposerMessageBroker> {
 
 	private long frameIndex;
 	
-	public FinishedFrameDataHandler(MasterMessageBroker nextDataHandler) {
+	private long clockCount;
+	
+	public StartFrameDataHandler(ComposerMessageBroker nextDataHandler) {
 		super(nextDataHandler);
 	}
 
 	@Override
 	protected boolean onHandleData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
 		frameIndex = arg0.readLong();
+		clockCount = arg0.readLong();
 		
 		return true;
 	}
 
 	@Override
 	protected void onDataReady(INonBlockingConnection arg0) throws IOException {
-		getNextDataHandler().onFinishedFrameCompleted(arg0, frameIndex);
+		getMessageBroker().onStartFrameCompleted(arg0, frameIndex, clockCount);
 	}
 	
 }

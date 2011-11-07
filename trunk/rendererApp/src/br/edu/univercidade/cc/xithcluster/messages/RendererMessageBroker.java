@@ -1,4 +1,4 @@
-package br.edu.univercidade.cc.xithcluster.communication;
+package br.edu.univercidade.cc.xithcluster.messages;
 
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
@@ -7,6 +7,10 @@ import org.apache.log4j.Logger;
 import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.IDataHandler;
 import org.xsocket.connection.INonBlockingConnection;
+import br.edu.univercidade.cc.xithcluster.messages.CommunicationHelper;
+import br.edu.univercidade.cc.xithcluster.messages.Message;
+import br.edu.univercidade.cc.xithcluster.messages.MessageQueue;
+import br.edu.univercidade.cc.xithcluster.messages.MessageType;
 
 public final class RendererMessageBroker implements IDataHandler {
 
