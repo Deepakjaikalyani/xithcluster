@@ -6,13 +6,21 @@ import org.openmali.vecmath2.Vector3f;
 import org.xith3d.loop.opscheduler.Animator;
 import org.xith3d.scenegraph.BranchGroup;
 import org.xith3d.scenegraph.Group;
+import org.xith3d.scenegraph.Transform;
+import org.xith3d.scenegraph.TransformGroup;
 import org.xith3d.schedops.movement.AnimatableGroup;
-import org.xith3d.schedops.movement.GroupRotator;
+import org.xith3d.schedops.movement.GroupTranslator;
 import org.xith3d.schedops.movement.TransformationDirectives;
 import br.edu.univercidade.cc.xithcluster.SampleApplication;
 import br.edu.univercidade.cc.xithcluster.utils.SceneUtils;
 
 public class HanoiTowerSample extends SampleApplication {
+	
+	private static final int STOP_CYLINDER3_FROM_GOING_UP = 2;
+
+	private int counter = 0;
+	
+	private AnimatableGroup cylinder3GoingUp;
 	
 	@Override
 	protected String getJARName() {
@@ -20,35 +28,42 @@ public class HanoiTowerSample extends SampleApplication {
 	}
 	
 	@Override
+	protected void oneSecondTick() {
+		switch (counter++) {
+		case STOP_CYLINDER3_FROM_GOING_UP:
+			cylinder3GoingUp.stopAnimation();
+			break;
+		}
+	}
+
+	@Override
 	protected BranchGroup createSceneRoot(Animator animator) {
 		BranchGroup root;
 		Group group;
-		AnimatableGroup animatableGroup;
-		GroupRotator groupRotator;
+		GroupTranslator groupTranslator;
 		
 		root = new BranchGroup();
-		
-		group = new Group();
-		group.setName("allShapesGrouper");
+
+		Transform transform;
+		transform = new Transform();
+		transform.setTranslation(new Tuple3f(0.0f, -1.0f, -2.0f));
+		group = new TransformGroup(transform.getTransform());
+		group.setName("allGeometries");
 		root.addChild(group);
 		
-		groupRotator = new GroupRotator(new TransformationDirectives(new Vector3f(0.0f, 1.0f, 0.0f), 0.0f, 1.0f));
-		animatableGroup = new AnimatableGroup(groupRotator);
-		group.addChild(animatableGroup);
+		groupTranslator = new GroupTranslator(new TransformationDirectives(new Vector3f(0.0f, 1.0f, 0.0f), 0.0f, 1.0f));
+		cylinder3GoingUp = new AnimatableGroup(groupTranslator);
+		group.addChild(cylinder3GoingUp);
 		
-		animator.addAnimatableObject(animatableGroup);
+		animator.addAnimatableObject(cylinder3GoingUp);
 		
-		SceneUtils.addRectangle(group, "floor", 3.0f, 3.0f, new Tuple3f(0.0f, -1.0f, -1.0f), new Tuple3f(90.0f, 0.0f, 0.0f), SceneUtils.loadTexture2D("resources/textures/floor.png"));
+		SceneUtils.addCylinder(group, "pole1", 0.1f, 2.0f, 1.0f, false, 30, new Tuple3f(0.0f, 1.0f, 0.0f), new Tuple3f(0.0f, 0.0f, 0.0f), Colorf.BROWN);
+		SceneUtils.addCylinder(group, "pole2", 0.1f, 2.0f, 1.0f, false, 30, new Tuple3f(-2.0f, 1.0f, 0.0f), new Tuple3f(0.0f, 0.0f, 0.0f), Colorf.BROWN);
+		SceneUtils.addCylinder(group, "pole3", 0.1f, 2.0f, 1.0f, false, 30, new Tuple3f(2.0f, 1.0f, 0.0f), new Tuple3f(0.0f, 0.0f, 0.0f), Colorf.BROWN);
 		
-		
-		// Shapes
-		
-		SceneUtils.addCube(group, "cube1", 0.75f, new Tuple3f(0.0f, 0.3f, -0.5f), new Tuple3f(-35.0f, 20.0f, 0.0f), Colorf.RED);
-		SceneUtils.addCube(animatableGroup, "cube2", 0.4f, new Tuple3f(-1.0f, 0.3f, -0.5f), new Tuple3f(25.0f, 0.0f, 0.0f), SceneUtils.loadTexture2D("resources/textures/crate.png"));
-		
-		SceneUtils.addSphere(group, "sphere1", 0.2f, 20, 20, new Tuple3f(0.7f, 0.2f, 0.3f), Colorf.GREEN);
-		SceneUtils.addSphere(group, "sphere2", 0.1f, 20, 20, new Tuple3f(0.55f, -0.2f, 0.2f), Colorf.BLUE);
-		SceneUtils.addSphere(group, "sphere3", 0.75f, 20, 20, new Tuple3f(-0.75f, 0.0f, -2.0f), Colorf.BROWN);
+		SceneUtils.addCylinder(group, "cylinder1", 1.0f, 0.3f, 1.0f, false, 50, new Tuple3f(0.0f, 0.0f, 0.0f), new Tuple3f(0.0f, 0.0f, 0.0f), Colorf.GREEN);
+		SceneUtils.addCylinder(group, "cylinder2", 0.66f, 0.3f, 1.0f, false, 50, new Tuple3f(0.0f, 0.3f, 0.0f), new Tuple3f(0.0f, 0.0f, 0.0f), Colorf.GREEN);
+		SceneUtils.addCylinder(cylinder3GoingUp, "cylinder3", 0.33f, 0.3f, 1.0f, false, 50, new Tuple3f(0.0f, 0.6f, 0.0f), new Tuple3f(0.0f, 0.0f, 0.0f), Colorf.GREEN);
 		
 		// Lights
 		
