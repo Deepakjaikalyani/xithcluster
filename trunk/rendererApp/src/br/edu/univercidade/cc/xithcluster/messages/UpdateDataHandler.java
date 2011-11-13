@@ -16,7 +16,7 @@ public final class UpdateDataHandler extends MessageHandler<RendererMessageBroke
 	}
 	
 	@Override
-	protected boolean onHandleData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
+	protected boolean fetchData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
 		updatesData = arg0.readBytesByLength(arg0.readInt());
 		
 		return true;

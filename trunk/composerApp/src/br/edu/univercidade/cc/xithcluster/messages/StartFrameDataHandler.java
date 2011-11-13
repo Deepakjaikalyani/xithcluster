@@ -19,7 +19,7 @@ public class StartFrameDataHandler extends MessageHandler<ComposerMessageBroker>
 	}
 
 	@Override
-	protected boolean onHandleData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
+	protected boolean fetchData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
 		frameIndex = arg0.readLong();
 		clockCount = arg0.readLong();
 		

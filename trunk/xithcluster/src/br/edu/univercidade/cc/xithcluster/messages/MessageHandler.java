@@ -2,52 +2,45 @@ package br.edu.univercidade.cc.xithcluster.messages;
 
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
-import java.nio.channels.ClosedChannelException;
-import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.IDataHandler;
 import org.xsocket.connection.INonBlockingConnection;
 
-public abstract class MessageHandler<T extends IDataHandler> implements IDataHandler {
+public abstract class MessageHandler implements IDataHandler {
 	
-	protected static final String STRING_DELIMITER = "\r\n";
+	private MessageBroker messageBroker;
 	
-	private T messageBroker;
-	
-	public MessageHandler(T nextDataHandler) {
-		this.messageBroker = nextDataHandler;
+	public MessageHandler(MessageBroker messageBroker) {
+		this.messageBroker = messageBroker;
 	}
 	
-	public T getMessageBroker() {
-		return messageBroker;
-	}
+	protected abstract void fetchData(INonBlockingConnection arg0) throws IOException;
 	
-	protected abstract boolean onHandleData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException;
-	
-	protected abstract void onDataReady(INonBlockingConnection arg0) throws IOException;
+	protected abstract Message assembleMessage();
 	
 	@Override
-	public boolean onData(INonBlockingConnection connection) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
-		boolean handleResult;
+	public boolean onData(INonBlockingConnection connection) throws IOException {
+		fetchDataTransactionally(connection);
 		
+		notifyMessageBroker(connection);
+		
+		return true;
+	}
+	
+	private void fetchDataTransactionally(INonBlockingConnection connection) throws IOException {
 		connection.markReadPosition();
 		try {
-			handleResult = onHandleData(connection);
+			fetchData(connection);
 			
 			connection.removeReadMark();
 		} catch (BufferUnderflowException e) {
 			connection.resetToReadMark();
-			return true;
+			
+			throw e;
 		}
-		
-		onDataReady(connection);
-		
-		restoreConnectionHandlerToMessageBroker(connection);
-		
-		return handleResult;
 	}
 	
-	protected void restoreConnectionHandlerToMessageBroker(INonBlockingConnection connection) throws IOException {
-		connection.setHandler(messageBroker);
+	private void notifyMessageBroker(INonBlockingConnection connection) throws IOException {
+		messageBroker.messageHandlerCallback(this, connection);
 	}
 	
 }

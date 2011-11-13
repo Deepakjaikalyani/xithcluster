@@ -2,52 +2,36 @@ package br.edu.univercidade.cc.xithcluster.messages;
 
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
-import java.nio.channels.ClosedChannelException;
 import org.apache.log4j.Logger;
 import org.xsocket.MaxReadSizeExceededException;
-import org.xsocket.connection.IConnectHandler;
-import org.xsocket.connection.IDataHandler;
-import org.xsocket.connection.IDisconnectHandler;
 import org.xsocket.connection.INonBlockingConnection;
 import br.edu.univercidade.cc.xithcluster.CompressionMethod;
-import br.edu.univercidade.cc.xithcluster.messages.CommunicationHelper;
-import br.edu.univercidade.cc.xithcluster.messages.Message;
-import br.edu.univercidade.cc.xithcluster.messages.MessageQueue;
-import br.edu.univercidade.cc.xithcluster.messages.MessageType;
 
-public class ComposerMessageBroker implements IConnectHandler, IDataHandler, IDisconnectHandler {
+public class ComposerMessageBroker extends MessageBroker {
 	
-	private final Logger log = Logger.getLogger(ComposerMessageBroker.class);
+	private Logger log = Logger.getLogger(ComposerMessageBroker.class);
 	
 	private int masterListeningPort;
 	
 	public ComposerMessageBroker(int masterListeningPort) {
 		this.masterListeningPort = masterListeningPort;
 	}
-
+	
 	private boolean isMyOwnConnection(INonBlockingConnection arg0) {
 		return arg0.getRemotePort() == masterListeningPort;
 	}
 	
 	@Override
-	public boolean onConnect(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, MaxReadSizeExceededException {
+	protected boolean handleComponentConnection(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, MaxReadSizeExceededException {
 		if (!isMyOwnConnection(arg0)) {
-			MessageQueue.postMessage(new Message(MessageType.CONNECTED, arg0));
+			enqueueMessage(new Message(MessageType.CONNECTED, arg0));
 		}
 		
 		return true;
 	}
 	
 	@Override
-	public boolean onData(INonBlockingConnection connection) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
-		MessageType messageType;
-		
-		messageType = CommunicationHelper.safelyReadMessageType(connection);
-		
-		if (messageType == null) {
-			return true;
-		}
-		
+	protected boolean receiveMessage(INonBlockingConnection connection, MessageType messageType) throws IOException {
 		switch (messageType) {
 		case START_SESSION:
 			connection.setHandler(new StartSessionDataHandler(this));
@@ -73,26 +57,26 @@ public class ComposerMessageBroker implements IConnectHandler, IDataHandler, IDi
 	}
 	
 	@Override
-	public boolean onDisconnect(INonBlockingConnection connection) throws IOException {
-		MessageQueue.postMessage(new Message(MessageType.DISCONNECTED, connection));
+	protected boolean handleComponentDisconnection(INonBlockingConnection connection) throws IOException {
+		enqueueMessage(new Message(MessageType.DISCONNECTED, connection));
 		
 		return true;
 	}
 	
 	void onStartSessionCompleted(INonBlockingConnection connection, int screenWidth, int screenHeight, double targetFPS) {
-		MessageQueue.postMessage(new Message(MessageType.START_SESSION, connection, screenWidth, screenHeight, targetFPS));
+		enqueueMessage(new Message(MessageType.START_SESSION, connection, screenWidth, screenHeight, targetFPS));
 	}
 	
 	void onNewImageCompleted(INonBlockingConnection connection, long frameIndex, CompressionMethod compressionMethod, byte[] colorAndAlphaBuffer, float[] depthBuffer) {
-		MessageQueue.postMessage(new Message(MessageType.NEW_IMAGE, connection, frameIndex, compressionMethod, colorAndAlphaBuffer, depthBuffer));
+		enqueueMessage(new Message(MessageType.NEW_IMAGE, connection, frameIndex, compressionMethod, colorAndAlphaBuffer, depthBuffer));
 	}
-
+	
 	void onSetCompositionOrderCompleted(INonBlockingConnection connection, int compositionOrder) {
-		MessageQueue.postMessage(new Message(MessageType.SET_COMPOSITION_ORDER, connection, compositionOrder));
+		enqueueMessage(new Message(MessageType.SET_COMPOSITION_ORDER, connection, compositionOrder));
 	}
 	
 	void onStartFrameCompleted(INonBlockingConnection connection, long frameIndex, long clockCount) {
-		MessageQueue.postMessage(new Message(MessageType.START_FRAME, connection, frameIndex, clockCount));
+		enqueueMessage(new Message(MessageType.START_FRAME, connection, frameIndex, clockCount));
 	}
-
+	
 }

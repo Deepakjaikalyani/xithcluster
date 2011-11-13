@@ -9,14 +9,14 @@ public final class MessageQueue {
 	
 	private static final int INITIAL_CAPACITY = 1024;
 
-	private static Lock primaryBufferLock = new ReentrantLock();
+	private Lock primaryBufferLock = new ReentrantLock();
 	
-	private static final Queue<Message> primaryBuffer = new PriorityQueue<Message>(INITIAL_CAPACITY);
+	private final Queue<Message> primaryBuffer = new PriorityQueue<Message>(INITIAL_CAPACITY);
 	
-	private static final Queue<Message> secondaryBuffer = new PriorityQueue<Message>(INITIAL_CAPACITY);
+	private final Queue<Message> secondaryBuffer = new PriorityQueue<Message>(INITIAL_CAPACITY);
 
 	
-	public static void postMessage(Message message) {
+	public void postMessage(Message message) {
 		if (primaryBufferLock.tryLock()) {
 			primaryBuffer.add(message);
 			primaryBufferLock.unlock();
@@ -27,7 +27,7 @@ public final class MessageQueue {
 		}
 	}
 	
-	public static Queue<Message> startReadingMessages() {
+	public Queue<Message> startReadingMessages() {
 		primaryBufferLock.lock();
 		
 		// copying secondary buffer
@@ -41,7 +41,7 @@ public final class MessageQueue {
 		return primaryBuffer;
 	}
 	
-	public static void stopReadingMessages() {
+	public void stopReadingMessages() {
 		primaryBufferLock.unlock();
 	}
 	

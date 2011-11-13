@@ -16,7 +16,7 @@ public class SetCompositionOrderDataHandler extends MessageHandler<ComposerMessa
 	}
 	
 	@Override
-	protected boolean onHandleData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
+	protected boolean fetchData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
 		compositionOrder = arg0.readInt();
 		
 		return true;
