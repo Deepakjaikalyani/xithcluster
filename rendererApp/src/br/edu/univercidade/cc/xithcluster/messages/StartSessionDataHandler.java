@@ -26,7 +26,7 @@ public final class StartSessionDataHandler extends MessageHandler<RendererMessag
 	}
 	
 	@Override
-	protected boolean onHandleData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
+	protected boolean fetchData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
 		id = arg0.readInt();
 		screenWidth = arg0.readInt();
 		screenHeight = arg0.readInt();

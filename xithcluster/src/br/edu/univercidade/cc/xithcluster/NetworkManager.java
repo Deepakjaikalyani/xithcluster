@@ -8,30 +8,26 @@ import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Queue;
 import org.apache.log4j.Logger;
 import org.xith3d.loop.opscheduler.impl.OperationSchedulerImpl;
 import org.xith3d.scenegraph.BranchGroup;
-import org.xith3d.scenegraph.Node;
 import org.xsocket.connection.INonBlockingConnection;
-import org.xsocket.connection.IServer;
 import org.xsocket.connection.Server;
 import br.edu.univercidade.cc.xithcluster.distribution.DistributionStrategy;
 import br.edu.univercidade.cc.xithcluster.hud.components.FPSCounter;
+import br.edu.univercidade.cc.xithcluster.messages.ComponentConnectedMessage;
+import br.edu.univercidade.cc.xithcluster.messages.ComposerConnectedMessage;
+import br.edu.univercidade.cc.xithcluster.messages.FinishedFrameMessage;
 import br.edu.univercidade.cc.xithcluster.messages.MasterMessageBroker;
-import br.edu.univercidade.cc.xithcluster.messages.Message;
-import br.edu.univercidade.cc.xithcluster.messages.MessageQueue;
-import br.edu.univercidade.cc.xithcluster.messages.MessageType;
+import br.edu.univercidade.cc.xithcluster.messages.MessageBroker;
+import br.edu.univercidade.cc.xithcluster.messages.RendererConnectedMessage;
+import br.edu.univercidade.cc.xithcluster.messages.RendererStartSessionMessage;
+import br.edu.univercidade.cc.xithcluster.messages.SessionStartedMessage;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.PointOfViewPackager;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.ScenePackager;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.UpdatesPackager;
-import br.edu.univercidade.cc.xithcluster.update.PendingUpdate;
 import br.edu.univercidade.cc.xithcluster.update.UpdateManager;
-import br.edu.univercidade.cc.xithcluster.update.PendingUpdate.Type;
 
 public final class NetworkManager extends OperationSchedulerImpl {
 	
@@ -40,7 +36,7 @@ public final class NetworkManager extends OperationSchedulerImpl {
 	// TODO: May be a naive optimization...
 	private boolean trace = log.isTraceEnabled();
 	
-	private MasterMessageBroker masterMessageBroker = new MasterMessageBroker();
+	private MessageBroker messageBroker = new MasterMessageBroker();
 	
 	private UpdatesPackager updatesPackager = new UpdatesPackager();
 	
@@ -60,9 +56,9 @@ public final class NetworkManager extends OperationSchedulerImpl {
 	
 	private DistributionStrategy distributionStrategy;
 	
-	private IServer composerServer;
+	private Server composerServer;
 	
-	private IServer renderersServer;
+	private Server renderersServer;
 	
 	private INonBlockingConnection composerConnection;
 	
@@ -83,6 +79,8 @@ public final class NetworkManager extends OperationSchedulerImpl {
 	private boolean forceFrameStart = false;
 	
 	private long lastClockCount = 0L;
+
+	private List<Renderer> renderers = new ArrayList<Renderer>();
 	
 	public NetworkManager(String listeningAddress, int renderersConnectionPort, int composerConnectionPort, DistributionStrategy distributionStrategy) {
 		if (listeningAddress == null || listeningAddress.isEmpty() //
@@ -123,59 +121,22 @@ public final class NetworkManager extends OperationSchedulerImpl {
 			throw new RuntimeException("Update manager must be set");
 		}
 		
-		renderersServer = new Server(listeningAddress, renderersConnectionPort, masterMessageBroker);
-		composerServer = new Server(listeningAddress, composerConnectionPort, masterMessageBroker);
+		// TODO: Test if Server can be correctly created passing a null handler
+		// to his constructor!
+		renderersServer = new Server(listeningAddress, renderersConnectionPort, null);
+		messageBroker.handleServerConnection(renderersServer);
+		composerServer = new Server(listeningAddress, composerConnectionPort, null);
+		messageBroker.handleServerConnection(composerServer);
 		
 		renderersServer.start();
 		composerServer.start();
 	}
 	
 	private void sendPendingUpdates() {
-		Map<INonBlockingConnection, List<PendingUpdate>> updatesPerRenderer;
-		INonBlockingConnection rendererConnection;
-		List<PendingUpdate> updates;
-		
-		log.info("Sending " + updateManager.getPendingUpdates().size() + " pending update(s)");
-		
-		// FIXME: Optimize
-		updatesPerRenderer = new HashMap<INonBlockingConnection, List<PendingUpdate>>();
-		for (PendingUpdate pendingUpdate : updateManager.getPendingUpdates()) {
-			// TODO:
-			if (pendingUpdate.getType() == Type.NODE_ADDED || pendingUpdate.getType() == Type.NODE_REMOVED) {
-				rendererConnection = (INonBlockingConnection) ((Node) pendingUpdate.getTarget()).getUserData(ConnectionSetter.CONNECTION_USER_DATA);
-			} else {
-				rendererConnection = null;
-			}
-			
-			if (rendererConnection != null) {
-				updates = updatesPerRenderer.get(rendererConnection);
-				
-				if (updates == null) {
-					updates = new ArrayList<PendingUpdate>();
-					updatesPerRenderer.put(rendererConnection, updates);
-				}
-				
-				updates.add(pendingUpdate);
-			}
+		SortedUpdateShares sortedUpdateShares = updateManager.sortUpdates(getNumberOfRenderers());
+		for (Renderer renderer : renderers) {
+			sendUpdateMessageToRenderer(renderer, sortedUpdateShares.nextUpdateShare());
 		}
-		
-		for (int i = 0; i < renderersConnections.size(); i++) {
-			rendererConnection = renderersConnections.get(i);
-			updates = updatesPerRenderer.get(rendererConnection);
-			
-			if (updates != null) {
-				try {
-					sendUpdateMessageToRenderer(rendererConnection, updatesPackager.serialize(updates));
-					
-					log.info(updates.size() + " update(s) were sent to renderer " + getRendererIndex(rendererConnection));
-				} catch (IOException e) {
-					// TODO:
-					throw new RuntimeException("Error sending pending updates", e);
-				}
-			}
-		}
-		
-		log.info("Pending updates sent successfully");
 	}
 	
 	private void distributeScene() {
@@ -244,25 +205,25 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		}
 	}
 	
-	private int getRendererIndex(INonBlockingConnection rendererConnection) {
-		Integer rendererId;
-		
-		rendererId = (Integer) rendererConnection.getAttachment();
-		
-		return rendererId.intValue();
-	}
+	// private int getRendererIndex(INonBlockingConnection rendererConnection) {
+	// Integer rendererId;
+	//
+	// rendererId = (Integer) rendererConnection.getAttachment();
+	//
+	// return rendererId.intValue();
+	// }
+	//
+	// private void setRendererIndex(INonBlockingConnection arg0) {
+	// arg0.setAttachment(renderersConnections.size());
+	// }
 	
-	private void setRendererIndex(INonBlockingConnection arg0) {
-		arg0.setAttachment(renderersConnections.size());
-	}
-	
-	private boolean isThereAtLeastOneRendererAndOneComposer() {
-		return !renderersConnections.isEmpty() && composerConnection != null;
-	}
-	
-	private boolean isThereAlreadyAConnectedComposer() {
-		return composerConnection != null;
-	}
+	// private boolean isThereAtLeastOneRendererAndOneComposer() {
+	// return !renderersConnections.isEmpty() && composerConnection != null;
+	// }
+	//
+	// private boolean isThereAlreadyAConnectedComposer() {
+	// return composerConnection != null;
+	// }
 	
 	private void tryToDistributeTheScene() {
 		sessionState = SessionState.STARTING;
@@ -276,9 +237,10 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		}
 	}
 	
-	private boolean isSessionReadyToStart() {
-		return composerSessionStarted && renderersSessionStartedMask.cardinality() == renderersConnections.size();
-	}
+	// private boolean isSessionReadyToStart() {
+	// return composerSessionStarted &&
+	// renderersSessionStartedMask.cardinality() == renderersConnections.size();
+	// }
 	
 	private void startNewSession() {
 		sessionState = SessionState.STARTED;
@@ -313,10 +275,10 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		}
 		
 		try {
-			sendStartFrameMessage(composerConnection, currentFrame, clockCount);
+			sendStartFrameMessage(composer);
 			
-			for (INonBlockingConnection rendererConnection : renderersConnections) {
-				sendStartFrameMessage(rendererConnection, currentFrame, clockCount);
+			for (Renderer renderer : renderers) {
+				sendStartFrameMessage(renderer);
 			}
 		} catch (IOException e) {
 			// TODO:
@@ -324,15 +286,15 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		}
 	}
 	
-	private void onFinishedFrame(Message message) {
-		long frameIndex;
-		
+	private void onFinishedFrame(FinishedFrameMessage message) {
 		if (trace) {
 			log.trace("Finished frame received");
 		}
 		
-		frameIndex = (Long) message.getParameters()[0];
+		message.update(this);
+	}
 		
+	public void updateFrameIndex(long frameIndex) {
 		if (currentFrame == frameIndex) {
 			if (trace) {
 				log.trace("Finished current frame: " + currentFrame);
@@ -346,217 +308,220 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		}
 	}
 	
-	private void onConnected(INonBlockingConnection arg0) {
-		if (isRendererConnection(arg0)) {
-			onRendererConnected(arg0);
-			
-			log.info("New renderer connected");
-		} else if (isComposerConnection(arg0)) {
-			if (isThereAlreadyAConnectedComposer()) {
-				log.error("There can be only one composer");
-			} else {
-				onComposerConnected(arg0);
-				
-				log.info("New composer connected");
-			}
-		} else {
-			log.error("Unknown connection refused");
-		}
-	}
+	// private void onConnected(INonBlockingConnection arg0) {
+	// if (isRendererConnection(arg0)) {
+	// onRendererConnected(arg0);
+	//
+	// log.info("New renderer connected");
+	// } else if (isComposerConnection(arg0)) {
+	// if (isThereAlreadyAConnectedComposer()) {
+	// log.error("There can be only one composer");
+	// } else {
+	// onComposerConnected(arg0);
+	//
+	// log.info("New composer connected");
+	// }
+	// } else {
+	// log.error("Unknown connection refused");
+	// }
+	// }
 	
-	private void onRendererConnected(INonBlockingConnection arg0) {
-		INonBlockingConnection rendererConnection;
+	// private void onRendererConnected(INonBlockingConnection arg0) {
+	// INonBlockingConnection rendererConnection;
+	//
+	// rendererConnection = arg0;
+	//
+	// setRendererIndex(rendererConnection);
+	// renderersConnections.add(rendererConnection);
+	//
+	// rendererConnection.setAutoflush(false);
+	// }
+	//
+	// private void onComposerConnected(INonBlockingConnection arg0) {
+	// composerConnection = arg0;
+	// composerConnection.setAutoflush(false);
+	// }
+	
+	private void onRendererConnected(RendererConnectedMessage message) {
+		Renderer renderer = new Renderer(message.getSourceConnection());
 		
-		rendererConnection = arg0;
+		addComponent(renderer);
+	}
+	
+	private void addComponent(Component component) {
+	// TODO:
+	}
+
+	private void onComposerConnected(ComposerConnectedMessage message) {
+		Composer composer = new Composer(message.getSourceConnection());
 		
-		setRendererIndex(rendererConnection);
-		renderersConnections.add(rendererConnection);
-		
-		rendererConnection.setAutoflush(false);
+		addComponent(composer);
 	}
 	
-	private void onComposerConnected(INonBlockingConnection arg0) {
-		composerConnection = arg0;
-		composerConnection.setAutoflush(false);
-	}
-	
-	private boolean isRendererConnection(INonBlockingConnection arg0) {
-		return arg0.getLocalPort() == renderersConnectionPort;
-	}
-	
-	private boolean isComposerConnection(INonBlockingConnection arg0) {
-		return arg0.getLocalPort() == composerConnectionPort;
-	}
-	
-	private void onSessionStarted(Message message) {
-		INonBlockingConnection connection;
-		
+	private void onSessionStarted(SessionStartedMessage message) {
 		if (trace) {
 			log.trace("Session started received");
 		}
 		
-		connection = message.getSource();
-		if (isRendererConnection(connection)) {
-			renderersSessionStartedMask.set(getRendererIndex(connection));
-		} else if (isComposerConnection(connection)) {
-			composerSessionStarted = true;
+		Component component = getComponentById(message.getComponentId());
+		
+		if (component == null) {
+			throw new AssertionError("Component connection cannot be null");
 		}
+		
+		component.sessionStarted();
 	}
 	
-	private void onDisconnected(INonBlockingConnection arg0) {
-		if (isRendererConnection(arg0)) {
-			onRendererDisconnect(arg0);
-			
-			log.info("Renderer disconnected");
-		} else if (isComposerConnection(arg0)) {
-			onComposerDisconnect();
-			
-			log.info("Composer disconnected");
-		} else {
-			// TODO:
-			throw new AssertionError("Should never happen!");
-		}
+	private Component getComponentById(int componentId) {
+		// TODO:
+		return null;
+	}
+
+	private void onDisconnected(ComponentConnectedMessage message) {
+		Component component = getComponentById(message.getComponentId());
+		
+		component.invalidateSession();
 	}
 	
-	private void onComposerDisconnect() {
-		composerConnection = null;
+	private void sendStartSessionMessageToRenderer(Component component) throws BufferOverflowException, ClosedChannelException, SocketTimeoutException, IOException {
+		SceneData sceneData = sceneManager.getSceneData();
+		
+		RendererStartSessionMessage message = new RendererStartSessionMessage(sceneData);
+		
+		message.sendTo(component);
+		
+		// rendererConnection.write(MessageType.START_SESSION.ordinal());
+		// rendererConnection.flush();
+		//
+		// rendererConnection.write(getRendererIndex(rendererConnection));
+		// rendererConnection.write(sceneManager.getScreenSize().width);
+		// rendererConnection.write(sceneManager.getScreenSize().height);
+		// rendererConnection.write(sceneManager.getTargetFPS());
+		// rendererConnection.write(pointOfViewData.length);
+		// rendererConnection.write(pointOfViewData);
+		// rendererConnection.write(sceneData.length);
+		// rendererConnection.write(sceneData);
+		// rendererConnection.flush();
 	}
 	
-	private void onRendererDisconnect(INonBlockingConnection arg0) {
-		int rendererIndex;
+	// private void sendStartSessionMessageToComposer() throws
+	// BufferOverflowException, ClosedChannelException, SocketTimeoutException,
+	// IOException {
+	// composerConnection.write(MessageType.START_SESSION.ordinal());
+	// composerConnection.flush();
+	//
+	// composerConnection.write(sceneManager.getScreenSize().width);
+	// composerConnection.write(sceneManager.getScreenSize().height);
+	// composerConnection.write(sceneManager.getTargetFPS());
+	// composerConnection.flush();
+	// }
+	
+	private void sendUpdateMessage(Renderer renderer, UpdateData updateData) throws BufferOverflowException, IOException {
+		UpdateMessage message = new UpdateMessage(updateData);
 		
-		rendererIndex = getRendererIndex(arg0);
+		message.sendTo(renderer);
 		
-		renderersSessionStartedMask.clear(rendererIndex);
-		
-		renderersConnections.remove(rendererIndex);
-		for (int j = rendererIndex; j < renderersConnections.size(); j++) {
-			renderersConnections.get(j).setAttachment(j);
-		}
+		// rendererConnection.write(MessageType.UPDATE.ordinal());
+		// rendererConnection.flush();
+		//
+		// rendererConnection.write(updateData);
+		// rendererConnection.flush();
 	}
 	
-	private void sendStartSessionMessageToRenderer(INonBlockingConnection rendererConnection, byte[] pointOfViewData, byte[] sceneData) throws BufferOverflowException, ClosedChannelException, SocketTimeoutException, IOException {
-		rendererConnection.write(MessageType.START_SESSION.ordinal());
-		rendererConnection.flush();
+	private void sendStartFrameMessage(Component component) throws BufferOverflowException, IOException {
+		StartFrameMessage message = new StartFrameMessage(frameIndex, clockCount);
 		
-		rendererConnection.write(getRendererIndex(rendererConnection));
-		rendererConnection.write(sceneManager.getScreenSize().width);
-		rendererConnection.write(sceneManager.getScreenSize().height);
-		rendererConnection.write(sceneManager.getTargetFPS());
-		rendererConnection.write(pointOfViewData.length);
-		rendererConnection.write(pointOfViewData);
-		rendererConnection.write(sceneData.length);
-		rendererConnection.write(sceneData);
-		rendererConnection.flush();
-	}
-	
-	private void sendStartSessionMessageToComposer() throws BufferOverflowException, ClosedChannelException, SocketTimeoutException, IOException {
-		composerConnection.write(MessageType.START_SESSION.ordinal());
-		composerConnection.flush();
-		
-		composerConnection.write(sceneManager.getScreenSize().width);
-		composerConnection.write(sceneManager.getScreenSize().height);
-		composerConnection.write(sceneManager.getTargetFPS());
-		composerConnection.flush();
-	}
-	
-	private void sendUpdateMessageToRenderer(INonBlockingConnection rendererConnection, byte[] updateData) throws BufferOverflowException, IOException {
-		rendererConnection.write(MessageType.UPDATE.ordinal());
-		rendererConnection.flush();
-		
-		rendererConnection.write(updateData);
-		rendererConnection.flush();
-	}
-	
-	private void sendStartFrameMessage(INonBlockingConnection connection, long frameIndex, long clockCount) throws BufferOverflowException, IOException {
-		connection.write(MessageType.START_FRAME.ordinal());
-		connection.flush();
-		
-		connection.write(frameIndex);
-		connection.write(clockCount);
-		connection.flush();
+		message.sendTo(component);
+		// connection.write(MessageType.START_FRAME.ordinal());
+		// connection.flush();
+		//
+		// connection.write(frameIndex);
+		// connection.write(clockCount);
+		// connection.flush();
 	}
 	
 	@Override
 	public void update(long gameTime, long frameTime, TimingMode timingMode) {
-		Queue<Message> messages;
+		// Queue<Message> messages;
+		//
+		// messages = MessageQueue.startReadingMessages();
 		
-		messages = MessageQueue.startReadingMessages();
+		messageBroker.processMessages(this, gameTime, frameTime, timingMode);
 		
-		processMessages(gameTime, frameTime, timingMode, messages);
-		
-		MessageQueue.stopReadingMessages();
+		// MessageQueue.stopReadingMessages();
 	}
 	
 	// ================================
 	// Network messages processing loop
 	// ================================
-	private void processMessages(long clockCount, long frameTime, TimingMode timingMode, Queue<Message> messages) {
-		Message message;
-		Iterator<Message> iterator;
-		boolean clusterConfigurationChanged;
-		
-		if (sessionState == SessionState.STARTED || sessionState == SessionState.CLOSED) {
-			clusterConfigurationChanged = false;
-			iterator = messages.iterator();
-			while (iterator.hasNext()) {
-				message = iterator.next();
-				if (message.getType() == MessageType.CONNECTED) {
-					onConnected(message.getSource());
-				} else if (message.getType() == MessageType.DISCONNECTED) {
-					onDisconnected(message.getSource());
-				} else {
-					continue;
-				}
-				
-				clusterConfigurationChanged = true;
-				iterator.remove();
-			}
-			
-			if (clusterConfigurationChanged) {
-				if (sessionState == SessionState.STARTED) {
-					closeCurrentSession();
-				}
-				
-				if (sessionState == SessionState.CLOSED && isThereAtLeastOneRendererAndOneComposer()) {
-					tryToDistributeTheScene();
-				}
-			} else {
-				iterator = messages.iterator();
-				while (iterator.hasNext()) {
-					message = iterator.next();
-					if (message.getType() == MessageType.FINISHED_FRAME) {
-						onFinishedFrame(message);
-						iterator.remove();
-					}
-				}
-				
-				if (finishedFrame || forceFrameStart) {
-					startNewFrame(clockCount);
-					
-					updateXith3DScheduledOperations(clockCount, frameTime, timingMode);
-					
-					updateFPS(clockCount, frameTime, timingMode);
-				}
-				
-				if (updateManager.hasPendingUpdates()) {
-					sendPendingUpdates();
-				}
-			}
-		} else if (sessionState == SessionState.STARTING) {
-			iterator = messages.iterator();
-			while (iterator.hasNext()) {
-				message = iterator.next();
-				if (message.getType() == MessageType.SESSION_STARTED) {
-					onSessionStarted(message);
-					iterator.remove();
-				}
-			}
-			
-			if (isSessionReadyToStart()) {
-				startNewSession();
-			}
-		}
+	private void processMessages(long clockCount, long frameTime, TimingMode timingMode) {
+		// Message message;
+		// Iterator<Message> iterator;
+		// boolean clusterConfigurationChanged;
+		//
+		// if (sessionState == SessionState.STARTED || sessionState ==
+		// SessionState.CLOSED) {
+		// clusterConfigurationChanged = false;
+		// iterator = messages.iterator();
+		// while (iterator.hasNext()) {
+		// message = iterator.next();
+		// if (message.getType() == MessageType.CONNECTED) {
+		// onConnected(message.getSource());
+		// } else if (message.getType() == MessageType.DISCONNECTED) {
+		// onDisconnected(message.getSource());
+		// } else {
+		// continue;
+		// }
+		//
+		// clusterConfigurationChanged = true;
+		// iterator.remove();
+		// }
+		//
+		// if (clusterConfigurationChanged) {
+		// if (sessionState == SessionState.STARTED) {
+		// closeCurrentSession();
+		// }
+		//
+		// if (sessionState == SessionState.CLOSED &&
+		// isThereAtLeastOneRendererAndOneComposer()) {
+		// tryToDistributeTheScene();
+		// }
+		// } else {
+		// iterator = messages.iterator();
+		// while (iterator.hasNext()) {
+		// message = iterator.next();
+		// if (message.getType() == MessageType.FINISHED_FRAME) {
+		// onFinishedFrame(message);
+		// iterator.remove();
+		// }
+		// }
+		//
+		// if (finishedFrame || forceFrameStart) {
+		// startNewFrame(clockCount);
+		//
+		// updateXith3DScheduledOperations(clockCount, frameTime, timingMode);
+		//
+		// updateFPS(clockCount, frameTime, timingMode);
+		// }
+		//
+		// if (updateManager.hasPendingUpdates()) {
+		// sendPendingUpdates();
+		// }
+		// }
+		// } else if (sessionState == SessionState.STARTING) {
+		// iterator = messages.iterator();
+		// while (iterator.hasNext()) {
+		// message = iterator.next();
+		// if (message.getType() == MessageType.SESSION_STARTED) {
+		// onSessionStarted(message);
+		// iterator.remove();
+		// }
+		// }
+		//
+		// if (isSessionReadyToStart()) {
+		// startNewSession();
+		// }
+		// }
 	}
 	
 	private void updateFPS(long clockCount, long frameTime, TimingMode timingMode) {

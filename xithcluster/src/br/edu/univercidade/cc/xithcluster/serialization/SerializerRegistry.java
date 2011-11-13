@@ -16,9 +16,9 @@ import br.edu.univercidade.cc.xithcluster.nodes.primitives.Sphere;
 
 public final class SerializerRegistry {
 	
-	private static Map<Class<?>, Class<? extends Serializer<?>>> classRegistry = new HashMap<Class<?>, Class<? extends Serializer<?>>>();
+	private static Map<Class<?>, Class<? extends Serializer<?>>> serializersMap = new HashMap<Class<?>, Class<? extends Serializer<?>>>();
 	
-	private static Map<Class<?>, Serializer<?>> cache = new HashMap<Class<?>, Serializer<?>>();
+	private static Map<Class<?>, Serializer<?>> serializersCache = new HashMap<Class<?>, Serializer<?>>();
 	
 	// FIXME:
 	static {
@@ -41,22 +41,21 @@ public final class SerializerRegistry {
 	}
 	
 	static void register(Class<?> nodeClass, Class<? extends Serializer<?>> registeredClass) {
-		if (classRegistry.containsKey(nodeClass)) {
+		if (serializersMap.containsKey(nodeClass)) {
 			// TODO:
 			throw new RuntimeException("There's already a registered serializer for class '" + nodeClass.getName() + "'");
 		}
 		
-		classRegistry.put(nodeClass, registeredClass);
+		serializersMap.put(nodeClass, registeredClass);
 	}
 	
 	@SuppressWarnings("rawtypes")
 	public static Serializer getSerializer(Class<?> clazz) {
-		Class<? extends Serializer<?>> serializerClass;
 		Serializer<?> serializer = null;
 		
 		try {
-			if ((serializer = cache.get(clazz)) == null) {
-				serializerClass = classRegistry.get(clazz);
+			if ((serializer = serializersCache.get(clazz)) == null) {
+				Class<? extends Serializer<?>> serializerClass = serializersMap.get(clazz);
 				
 				if (serializerClass == null) {
 					// TODO:
@@ -64,7 +63,7 @@ public final class SerializerRegistry {
 				}
 				
 				serializer = serializerClass.newInstance();
-				cache.put(clazz, serializer);
+				serializersCache.put(clazz, serializer);
 			}
 		} catch (InstantiationException e) {
 			// TODO:
@@ -76,4 +75,5 @@ public final class SerializerRegistry {
 		
 		return serializer;
 	}
+	
 }

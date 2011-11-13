@@ -24,7 +24,7 @@ public final class NewImageDataHandler extends MessageHandler<ComposerMessageBro
 	}
 
 	@Override
-	protected boolean onHandleData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
+	protected boolean fetchData(INonBlockingConnection arg0) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
 		frameIndex = arg0.readLong();
 		compressionMethod = CompressionMethod.values()[arg0.readInt()];
 		colorAndAlphaBuffer = arg0.readBytesByLength(arg0.readInt());

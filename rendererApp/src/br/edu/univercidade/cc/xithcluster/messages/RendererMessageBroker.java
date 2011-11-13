@@ -1,31 +1,15 @@
 package br.edu.univercidade.cc.xithcluster.messages;
 
 import java.io.IOException;
-import java.nio.BufferUnderflowException;
-import java.nio.channels.ClosedChannelException;
 import org.apache.log4j.Logger;
-import org.xsocket.MaxReadSizeExceededException;
-import org.xsocket.connection.IDataHandler;
 import org.xsocket.connection.INonBlockingConnection;
-import br.edu.univercidade.cc.xithcluster.messages.CommunicationHelper;
-import br.edu.univercidade.cc.xithcluster.messages.Message;
-import br.edu.univercidade.cc.xithcluster.messages.MessageQueue;
-import br.edu.univercidade.cc.xithcluster.messages.MessageType;
 
-public final class RendererMessageBroker implements IDataHandler {
-
-	private final Logger log = Logger.getLogger(RendererMessageBroker.class);
+public final class RendererMessageBroker extends MessageBroker {
+	
+	private Logger log = Logger.getLogger(RendererMessageBroker.class);
 	
 	@Override
-	public boolean onData(INonBlockingConnection connection) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
-		MessageType messageType;
-		
-		messageType = CommunicationHelper.safelyReadMessageType(connection);
-		
-		if (messageType == null) {
-			return true;
-		}
-		
+	public boolean receiveMessage(INonBlockingConnection connection, MessageType messageType) throws IOException {
 		switch (messageType) {
 		case START_SESSION:
 			connection.setHandler(new StartSessionDataHandler(this));
@@ -45,17 +29,17 @@ public final class RendererMessageBroker implements IDataHandler {
 			return false;
 		}
 	}
-
+	
 	void onStartSessionCompleted(INonBlockingConnection connection, int id, int screenWidth, int screenHeight, double targetFPS, byte[] pointOfViewData, byte[] sceneData) throws IOException {
-		MessageQueue.postMessage(new Message(MessageType.START_SESSION, connection, id, screenWidth, screenHeight, targetFPS, pointOfViewData, sceneData));
+		enqueueMessage(new Message(MessageType.START_SESSION, connection, id, screenWidth, screenHeight, targetFPS, pointOfViewData, sceneData));
 	}
-
+	
 	void onUpdateCompleted(INonBlockingConnection connection, byte[] updatesData) throws IOException {
-		MessageQueue.postMessage(new Message(MessageType.UPDATE, connection, updatesData));
+		enqueueMessage(new Message(MessageType.UPDATE, connection, updatesData));
 	}
 	
 	void onStartFrameCompleted(INonBlockingConnection connection, long frameIndex, long clockCount) {
-		MessageQueue.postMessage(new Message(MessageType.START_FRAME, connection, frameIndex, clockCount));
+		enqueueMessage(new Message(MessageType.START_FRAME, connection, frameIndex, clockCount));
 	}
-
+	
 }
