@@ -12,7 +12,8 @@ import org.xsocket.connection.INonBlockingConnection;
 import org.xsocket.connection.NonBlockingConnection;
 import br.edu.univercidade.cc.xithcluster.CompressionMethod;
 import br.edu.univercidade.cc.xithcluster.messages.Message;
-import br.edu.univercidade.cc.xithcluster.messages.MessageQueue;
+import br.edu.univercidade.cc.xithcluster.messages.Message;
+import br.edu.univercidade.cc.xithcluster.messages.ProcessableQueue;
 import br.edu.univercidade.cc.xithcluster.messages.MessageType;
 import br.edu.univercidade.cc.xithcluster.messages.RendererMessageBroker;
 
@@ -299,11 +300,11 @@ public class RendererNetworkManager extends OperationSchedulerImpl implements Ob
 		
 		checkMasterNodeConnection();
 		
-		messages = MessageQueue.startReadingMessages();
+		messages = ProcessableQueue.startProcessingQueue();
 		
 		processMessages(gameTime, frameTime, timingMode, messages);
 		
-		MessageQueue.stopReadingMessages();
+		ProcessableQueue.stopProcessingQueue();
 	}
 	
 	private void checkMasterNodeConnection() {

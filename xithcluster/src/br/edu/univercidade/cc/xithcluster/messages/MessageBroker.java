@@ -4,54 +4,49 @@ import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
 import org.xsocket.MaxReadSizeExceededException;
-import org.xsocket.connection.IConnectHandler;
 import org.xsocket.connection.IDataHandler;
-import org.xsocket.connection.IDisconnectHandler;
 import org.xsocket.connection.INonBlockingConnection;
 import org.xsocket.connection.Server;
+import br.edu.univercidade.cc.xithcluster.ConnectionHandlingFacade;
+import br.edu.univercidade.cc.xithcluster.ConnectionStateChange;
+import br.edu.univercidade.cc.xithcluster.DataListener;
 import br.edu.univercidade.cc.xithcluster.utils.ObjectBucket;
 
 public abstract class MessageBroker {
 	
-	private class MessageBrokerConnectionHandler implements IConnectHandler, IDisconnectHandler, IDataHandler {
-		
-		@Override
-		public boolean onConnect(INonBlockingConnection connection) throws IOException, BufferUnderflowException, MaxReadSizeExceededException {
-			MessageBroker.this.handleComponentConnection(connection);
-			
-			return true;
-		}
-		
-		@Override
-		public boolean onDisconnect(INonBlockingConnection connection) throws IOException {
-			MessageBroker.this.handleComponentDisconnection(connection);
-			
-			return true;
-		}
-		
-		@Override
-		public boolean onData(INonBlockingConnection connection) throws IOException, BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException {
-			MessageType messageType;
-			
-			messageType = readMessageType(connection);
-			
-			if (messageType == null) {
-				// TODO:
-				throw new AssertionError("Message type should never be null");
-			}
-			
-			delegateMessageHandling(connection, messageType);
-			
-			return true;
-		}
-		
-	}
+	protected ProcessableQueue<ConnectionStateChange> connectionStateNotificationQueue = new ProcessableQueue<ConnectionStateChange>();
 	
-	protected MessageQueue messageQueue = new MessageQueue();
-	
-	private MessageBrokerConnectionHandler messageBrokerConnectionHandler = new MessageBrokerConnectionHandler();
+	protected ProcessableQueue<Message> messageQueue = new ProcessableQueue<Message>();
 	
 	private ObjectBucket<MessageType, MessageHandler> messageHandlerBucket = new ObjectBucket<MessageType, MessageHandler>();
+	
+	private MessageProcessor messageProcessor;
+	
+	protected MessageBroker(MessageProcessor messageProcessor) {
+		if (messageProcessor == null) {
+			throw new IllegalArgumentException();
+		}
+		
+		this.messageProcessor = messageProcessor;
+		
+		ConnectionHandlingFacade.getInstance().addDataListener(new DataListener() {
+			
+			@Override
+			public void handleData(INonBlockingConnection connection) throws IOException {
+				MessageType messageType;
+				
+				messageType = readMessageType(connection);
+				
+				if (messageType == null) {
+					// TODO:
+					throw new AssertionError("Message type should never be null");
+				}
+				
+				delegateMessageHandling(connection, messageType);
+			}
+			
+		});
+	}
 	
 	protected void register(MessageType messageType, Class<? extends MessageHandler> messageHandlerClass) {
 		if (messageType == null || messageHandlerClass == null) {
@@ -86,24 +81,8 @@ public abstract class MessageBroker {
 		}
 	}
 	
-	public void handleConnection(INonBlockingConnection connection) throws IOException {
-		if (connection == null || !connection.isOpen()) {
-			throw new IllegalArgumentException();
-		}
-		
-		restoreConnectionHandlerToDefault(connection);
-	}
-	
 	protected void enqueueMessage(Message message) {
-		messageQueue.postMessage(message);
-	}
-	
-	protected void handleComponentConnection(INonBlockingConnection connection) throws IOException {
-		enqueueMessage(new ComponentConnectedMessage(connection));
-	}
-	
-	protected void handleComponentDisconnection(INonBlockingConnection connection) throws IOException {
-		enqueueMessage(new ComponentDisconnectedMessage(connection));
+		messageQueue.add(message);
 	}
 	
 	private void delegateMessageHandling(INonBlockingConnection connection, MessageType messageType) throws IOException {
@@ -135,13 +114,15 @@ public abstract class MessageBroker {
 	private void restoreConnectionHandlerToDefault(INonBlockingConnection connection) throws IOException {
 		connection.setHandler(messageBrokerConnectionHandler);
 	}
-
-	public void handleServerConnection(Server server) {
-		if (server == null) {
-			throw new IllegalArgumentException();
+	
+	public void notifyMessageProcessor() {
+		messageQueue.startProcessingQueue();
+		
+		for (Message message : messageQueue) {
+			messageProcessor.processMessage(message);
 		}
 		
-		server.setHandler(messageBrokerConnectionHandler);
+		messageQueue.stopProcessingQueue();
 	}
 	
 }

@@ -25,7 +25,8 @@ import br.edu.univercidade.cc.xithcluster.hud.components.FPSCounter;
 import br.edu.univercidade.cc.xithcluster.messages.ComposerMessageBroker;
 import br.edu.univercidade.cc.xithcluster.messages.CompositionOrder;
 import br.edu.univercidade.cc.xithcluster.messages.Message;
-import br.edu.univercidade.cc.xithcluster.messages.MessageQueue;
+import br.edu.univercidade.cc.xithcluster.messages.Message;
+import br.edu.univercidade.cc.xithcluster.messages.ProcessableQueue;
 import br.edu.univercidade.cc.xithcluster.messages.MessageType;
 import br.edu.univercidade.cc.xithcluster.utils.Timer;
 
@@ -350,11 +351,11 @@ public final class ComposerNetworkManager {
 		
 		checkMasterNodeConnection();
 		
-		messages = MessageQueue.startReadingMessages();
+		messages = ProcessableQueue.startProcessingQueue();
 		
 		processMessages(startingTime, elapsedTime, messages);
 		
-		MessageQueue.stopReadingMessages();
+		ProcessableQueue.stopProcessingQueue();
 	}
 	
 	private void checkMasterNodeConnection() {
