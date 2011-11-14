@@ -206,7 +206,7 @@ public class DistributedRenderLoop extends InputAdapterRenderLoop implements Sce
 			super.renderNextFrame(gameTime, frameTime, timingMode);
 		}
 	}
-
+	
 	@Override
 	public void onKeyPressed(KeyPressedEvent e, Key key) {
 		processInput(key);

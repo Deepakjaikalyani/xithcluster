@@ -1,5 +1,7 @@
 package br.edu.univercidade.cc.xithcluster.messages;
 
+import br.edu.univercidade.cc.xithcluster.Component;
+
 public class FinishedFrameMessage extends Message {
 	
 	private long frameIndex;
@@ -11,6 +13,11 @@ public class FinishedFrameMessage extends Message {
 	
 	public long getFrameIndex() {
 		return frameIndex;
+	}
+
+	@Override
+	public void sendTo(Component component) {
+		
 	}
 	
 }
