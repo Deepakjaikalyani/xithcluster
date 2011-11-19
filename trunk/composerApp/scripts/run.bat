@@ -1,1 +1,0 @@
-java -Djava.library.path=%CD%\lib\native\windows-i586 -jar composerApp.jar
