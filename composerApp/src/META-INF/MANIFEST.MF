@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Class-Path: . lib/log4j.jar li b/jibx-run.jar 
+ lib/xsocket.jar lib/openmali.jar lib/lwjgl.jar lib/jops.jar 
+ lib/stax-api.jar lib/xpal-joode.jar lib/jagatoo.jar 
+ lib/jogl.jar lib/stax-impl.jar lib/joal.jar lib/jinput.jar 
+ lib/joode.jar lib/gluegen-rt.jar lib/vorbis.jar lib/xith3d.jar
+Main-Class: br.edu.univercidade.cc.xithcluster.ComposerApp
+
