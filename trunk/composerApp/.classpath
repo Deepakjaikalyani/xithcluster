@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="/xithcluster/lib/log4j-1.2.16.jar"/>
+	<classpathentry kind="lib" path="/xithcluster/lib/xSocket-2.8.14.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/xithcluster"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

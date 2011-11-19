@@ -1,0 +1,1 @@
+java -Djava.library.path=%CD%\lib\native\windows-i586 -jar rendererApp.jar
