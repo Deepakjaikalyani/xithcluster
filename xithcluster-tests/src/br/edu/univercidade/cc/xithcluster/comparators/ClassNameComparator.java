@@ -1,4 +1,4 @@
-package br.edu.univercidade.cc.xithcluster.messages;
+package br.edu.univercidade.cc.xithcluster.comparators;
 
 import java.util.Comparator;
 

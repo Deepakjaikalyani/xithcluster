@@ -19,6 +19,8 @@ import org.junit.Test;
 import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.INonBlockingConnection;
 
+import br.edu.univercidade.cc.xithcluster.comparators.ClassNameComparator;
+
 public class MasterMessageBrokerTest {
 	
 	private MasterMessageBroker masterMessageBroker;

@@ -21,6 +21,8 @@ import org.junit.Test;
 import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.INonBlockingConnection;
 
+import br.edu.univercidade.cc.xithcluster.comparators.ClassNameComparator;
+
 public class RendererMessageBrokerTest {
 	
 	private RendererMessageBroker rendererMessageBroker;
@@ -32,7 +34,7 @@ public class RendererMessageBrokerTest {
 		rendererMessageBroker = new RendererMessageBroker();
 		connectionMock = createMock(INonBlockingConnection.class);
 	}
-	
+
 	@Test
 	public void testShouldPostSessionStartedMessage() throws BufferUnderflowException, ClosedChannelException, MaxReadSizeExceededException, IOException {
 		expectToReadMessageType(MessageType.SESSION_STARTED);
