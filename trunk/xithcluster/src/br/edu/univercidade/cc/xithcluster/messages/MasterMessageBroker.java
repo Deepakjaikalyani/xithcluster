@@ -37,7 +37,9 @@ public final class MasterMessageBroker implements IConnectHandler, IDataHandler,
 			
 			return true;
 		case FINISHED_FRAME:
-			connection.setHandler(new FinishedFrameDataHandler(this));
+			MessageHandler<MasterMessageBroker> messageHandler = new FinishedFrameDataHandler(this);
+			connection.setHandler(messageHandler);
+			messageHandler.onData(connection);
 			
 			return true;
 		default:
