@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<!--
+This script was adapted from:
+http://www.vogella.de/articles/ApacheAnt/article.html#junit4
+-->
+<project name="xithcluster-tests" default="run-all-tests" basedir="../">
+	<!-- Sets variables which can later be used. -->
+	<!-- The value of a property is accessed via ${} -->
+	<property name="src.dir" location="src" />
+
+	<property name="build.dir" location="build" />
+
+	<!-- Variables used for JUnit testin -->
+	<property name="test.dir" location="src" />
+	<property name="test.report.dir" location="testreport" />
+
+	<!-- Define the classpath which includes the junit.jar and the classes after compiling-->
+	<path id="xithcluster.class.path">
+		<pathelement location="lib/junit-4.8.2.jar" />
+		<pathelement location="lib/hamcrest-all-1.3.0RC2.jar" />
+		<pathelement location="lib/easymock-3.1.jar" />
+		<pathelement location="lib/gluegen-rt.jar" />
+		<pathelement location="lib/jagatoo.jar" />
+		<pathelement location="lib/jibx-run.jar" />
+		<pathelement location="lib/jinput.jar" />
+		<pathelement location="lib/joal.jar" />
+		<pathelement location="lib/jogl.jar" />
+		<pathelement location="lib/joode.jar" />
+		<pathelement location="lib/jops.jar" />
+		<pathelement location="lib/log4j-1.2.16.jar" />
+		<pathelement location="lib/lwjgl.jar" />
+		<pathelement location="lib/openmali.jar" />
+		<pathelement location="lib/org.eclipse.jdt.annotation.null_0.9.0.jar" />
+		<pathelement location="lib/vorbis.jar" />
+		<pathelement location="lib/xith3d.jar" />
+		<pathelement location="lib/xpal-joode.jar" />
+		<pathelement location="lib/xSocket-2.8.14.jar" />
+		<pathelement location="${build.dir}" />
+	</path>
+
+
+	<!-- Deletes the existing build, docs and dist directory-->
+	<target name="clean">
+		<delete dir="${build.dir}" />
+		<delete dir="${test.report.dir}" />
+	</target>
+
+	<!-- Creates the  build, docs and dist directory-->
+	<target name="makedir">
+		<mkdir dir="${build.dir}" />
+		<mkdir dir="${test.report.dir}" />
+	</target>
+
+	<!-- Compiles the java code (including the usage of library for JUnit -->
+	<target name="compile" depends="clean, makedir">
+		<javac srcdir="${src.dir}:../xithcluster/src:../rendererApp/src:../composerApp/src" destdir="${build.dir}">
+			<classpath refid="xithcluster.class.path" />
+		</javac>
+
+	</target>
+
+	<!-- Run the JUnit Tests -->
+	<!-- Output is XML, could also be plain-->
+	<target name="junit" depends="compile">
+		<junit printsummary="on" fork="true" haltonfailure="no">
+			<classpath refid="xithcluster.class.path" />
+			<formatter type="xml" />
+			<batchtest todir="${test.report.dir}">
+				<fileset dir="${src.dir}">
+					<include name="**/*Test*.java" />
+				</fileset>
+			</batchtest>
+		</junit>
+	</target>
+
+	<target name="run-all-tests" depends="compile, junit">
+	</target>
+
+</project>

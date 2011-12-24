@@ -4,7 +4,7 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/hamcrest-all-1.3.0RC2.jar"/>
 	<classpathentry kind="lib" path="lib/easymock-3.1.jar"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>
+	<classpathentry kind="lib" path="lib/org.eclipse.jdt.annotation.null_0.9.0.jar"/>
 	<classpathentry kind="lib" path="lib/gluegen-rt.jar"/>
 	<classpathentry kind="lib" path="lib/jagatoo.jar"/>
 	<classpathentry kind="lib" path="lib/jibx-run.jar"/>
@@ -23,5 +23,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/composerApp"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/rendererApp"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/xithcluster"/>
+	<classpathentry kind="lib" path="lib/junit-4.8.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
