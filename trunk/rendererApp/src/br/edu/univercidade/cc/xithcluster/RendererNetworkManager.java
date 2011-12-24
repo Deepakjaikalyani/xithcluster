@@ -94,7 +94,7 @@ public class RendererNetworkManager extends OperationSchedulerImpl implements Ob
 	}
 	
 	private boolean isSessionReadyToStart() {
-		return sessionState == SessionState.STARTING && deserializationResult != null;
+		return sessionState == SessionState.OPENING && deserializationResult != null;
 	}
 	
 	private void startNewSession() {
@@ -112,12 +112,12 @@ public class RendererNetworkManager extends OperationSchedulerImpl implements Ob
 		
 		log.info("Scene deserialized with success");
 		
-		sessionState = SessionState.STARTED;
+		sessionState = SessionState.OPENED;
 		
 		log.info("Session started successfully");
 	}
 	
-	private void closeCurrentSession() {
+	private void closeSession() {
 		sessionState = SessionState.CLOSED;
 		
 		log.info("Current session was closed");
@@ -193,7 +193,7 @@ public class RendererNetworkManager extends OperationSchedulerImpl implements Ob
 			throw new RuntimeException("Error reading start session message parameters", t);
 		}
 		
-		sessionState = SessionState.STARTING;
+		sessionState = SessionState.OPENING;
 		
 		if (trace) {
 			log.trace("rendererId=" + rendererId);
@@ -342,9 +342,9 @@ public class RendererNetworkManager extends OperationSchedulerImpl implements Ob
 			onStartSession(lastStartSessionMessage);
 		}
 		
-		if (sessionState == SessionState.STARTED) {
+		if (sessionState == SessionState.OPENED) {
 			if (!composerConnection.isOpen()) {
-				closeCurrentSession();
+				closeSession();
 				return;
 			}
 			

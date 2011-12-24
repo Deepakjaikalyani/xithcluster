@@ -27,7 +27,8 @@ import br.edu.univercidade.cc.xithcluster.utils.BufferUtilsTest;
 		ImageOrderAndZBufferStrategyTest.class,
 		ComposerMessageBrokerTest.class,
 		MasterMessageBrokerTest.class,
-		RendererMessageBrokerTest.class
+		RendererMessageBrokerTest.class,
+		NetworkManagerTest.class
 })
 public class AllTests {
 	
