@@ -1,5 +1,6 @@
 package br.edu.univercidade.cc.xithcluster.messages;
 
+import static br.edu.univercidade.cc.xithcluster.utils.SimpleAssertions.assertNotNull;
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
@@ -10,10 +11,6 @@ import org.xsocket.connection.IDataHandler;
 import org.xsocket.connection.IDisconnectHandler;
 import org.xsocket.connection.INonBlockingConnection;
 import br.edu.univercidade.cc.xithcluster.CompressionMethod;
-import br.edu.univercidade.cc.xithcluster.messages.CommunicationHelper;
-import br.edu.univercidade.cc.xithcluster.messages.Message;
-import br.edu.univercidade.cc.xithcluster.messages.MessageQueue;
-import br.edu.univercidade.cc.xithcluster.messages.MessageType;
 
 public class ComposerMessageBroker implements IConnectHandler, IDataHandler, IDisconnectHandler {
 	
@@ -24,7 +21,7 @@ public class ComposerMessageBroker implements IConnectHandler, IDataHandler, IDi
 	public ComposerMessageBroker(int masterListeningPort) {
 		this.masterListeningPort = masterListeningPort;
 	}
-
+	
 	private boolean isMyOwnConnection(INonBlockingConnection arg0) {
 		return arg0.getRemotePort() == masterListeningPort;
 	}
@@ -50,19 +47,19 @@ public class ComposerMessageBroker implements IConnectHandler, IDataHandler, IDi
 		
 		switch (messageType) {
 		case START_SESSION:
-			connection.setHandler(new StartSessionDataHandler(this));
+			setMessageHandler(connection, new StartSessionDataHandler(this));
 			
 			return true;
 		case SET_COMPOSITION_ORDER:
-			connection.setHandler(new SetCompositionOrderDataHandler(this));
+			setMessageHandler(connection, new SetCompositionOrderDataHandler(this));
 			
 			return true;
 		case START_FRAME:
-			connection.setHandler(new StartFrameDataHandler(this));
+			setMessageHandler(connection, new StartFrameDataHandler(this));
 			
 			return true;
 		case NEW_IMAGE:
-			connection.setHandler(new NewImageDataHandler(this));
+			setMessageHandler(connection, new NewImageDataHandler(this));
 			
 			return true;
 		default:
@@ -70,6 +67,13 @@ public class ComposerMessageBroker implements IConnectHandler, IDataHandler, IDi
 			
 			return false;
 		}
+	}
+	
+	private void setMessageHandler(INonBlockingConnection connection, MessageHandler<?> messageHandler) throws IOException, ClosedChannelException, MaxReadSizeExceededException {
+		assertNotNull(connection, messageHandler);
+		
+		connection.setHandler(messageHandler);
+		messageHandler.onData(connection);
 	}
 	
 	@Override
@@ -86,7 +90,7 @@ public class ComposerMessageBroker implements IConnectHandler, IDataHandler, IDi
 	void onNewImageCompleted(INonBlockingConnection connection, long frameIndex, CompressionMethod compressionMethod, byte[] colorAndAlphaBuffer, float[] depthBuffer) {
 		MessageQueue.postMessage(new Message(MessageType.NEW_IMAGE, connection, frameIndex, compressionMethod, colorAndAlphaBuffer, depthBuffer));
 	}
-
+	
 	void onSetCompositionOrderCompleted(INonBlockingConnection connection, int compositionOrder) {
 		MessageQueue.postMessage(new Message(MessageType.SET_COMPOSITION_ORDER, connection, compositionOrder));
 	}
@@ -94,5 +98,5 @@ public class ComposerMessageBroker implements IConnectHandler, IDataHandler, IDi
 	void onStartFrameCompleted(INonBlockingConnection connection, long frameIndex, long clockCount) {
 		MessageQueue.postMessage(new Message(MessageType.START_FRAME, connection, frameIndex, clockCount));
 	}
-
+	
 }

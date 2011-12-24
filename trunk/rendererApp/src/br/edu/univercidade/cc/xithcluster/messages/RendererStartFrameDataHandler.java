@@ -8,13 +8,13 @@ import org.xsocket.connection.INonBlockingConnection;
 import br.edu.univercidade.cc.xithcluster.messages.MessageHandler;
 
 
-public class StartFrameDataHandler extends MessageHandler<RendererMessageBroker> {
+public class RendererStartFrameDataHandler extends MessageHandler<RendererMessageBroker> {
 
 	private long frameIndex;
 	
 	private long clockCount;
 
-	public StartFrameDataHandler(RendererMessageBroker nextDataHandler) {
+	public RendererStartFrameDataHandler(RendererMessageBroker nextDataHandler) {
 		super(nextDataHandler);
 	}
 
