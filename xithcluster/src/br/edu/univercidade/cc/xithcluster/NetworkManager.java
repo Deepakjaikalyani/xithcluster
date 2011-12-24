@@ -265,7 +265,7 @@ public final class NetworkManager extends OperationSchedulerImpl {
 	}
 	
 	private void tryToDistributeTheScene() {
-		sessionState = SessionState.STARTING;
+		sessionState = SessionState.OPENING;
 		
 		try {
 			distributeScene();
@@ -281,14 +281,14 @@ public final class NetworkManager extends OperationSchedulerImpl {
 	}
 	
 	private void startNewSession() {
-		sessionState = SessionState.STARTED;
+		sessionState = SessionState.OPENED;
 		
 		log.info("Session started successfully");
 		
 		forceFrameStart = true;
 	}
 	
-	private void closeCurrentSession() {
+	private void closeSession() {
 		sessionState = SessionState.CLOSED;
 		
 		renderersSessionStartedMask.clear();
@@ -496,7 +496,7 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		Iterator<Message> iterator;
 		boolean clusterConfigurationChanged;
 		
-		if (sessionState == SessionState.STARTED || sessionState == SessionState.CLOSED) {
+		if (sessionState == SessionState.OPENED || sessionState == SessionState.CLOSED) {
 			clusterConfigurationChanged = false;
 			iterator = messages.iterator();
 			while (iterator.hasNext()) {
@@ -514,8 +514,8 @@ public final class NetworkManager extends OperationSchedulerImpl {
 			}
 			
 			if (clusterConfigurationChanged) {
-				if (sessionState == SessionState.STARTED) {
-					closeCurrentSession();
+				if (sessionState == SessionState.OPENED) {
+					closeSession();
 				}
 				
 				if (sessionState == SessionState.CLOSED && isThereAtLeastOneRendererAndOneComposer()) {
@@ -543,7 +543,7 @@ public final class NetworkManager extends OperationSchedulerImpl {
 					sendPendingUpdates();
 				}
 			}
-		} else if (sessionState == SessionState.STARTING) {
+		} else if (sessionState == SessionState.OPENING) {
 			iterator = messages.iterator();
 			while (iterator.hasNext()) {
 				message = iterator.next();

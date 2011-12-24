@@ -15,7 +15,6 @@ import org.xsocket.connection.INonBlockingConnection;
 import org.xsocket.connection.IServer;
 import org.xsocket.connection.NonBlockingConnection;
 import org.xsocket.connection.Server;
-import br.edu.univercidade.cc.xithcluster.CompressionMethod;
 import br.edu.univercidade.cc.xithcluster.composition.ColorAndAlphaBuffer;
 import br.edu.univercidade.cc.xithcluster.composition.ColorAndAlphaBuffer.Type;
 import br.edu.univercidade.cc.xithcluster.composition.ColorAndAlphaBufferList;
@@ -121,7 +120,7 @@ public final class ComposerNetworkManager {
 		return !renderersConnections.isEmpty() && renderersConnections.size() == compositionOrderMap.size();
 	}
 	
-	private void startNewSession() {
+	private void openSession() {
 		try {
 			sendSessionStartedMessage();
 		} catch (IOException e) {
@@ -129,12 +128,12 @@ public final class ComposerNetworkManager {
 			throw new RuntimeException("Error notifying master node that session started successfully", e);
 		}
 		
-		sessionState = SessionState.STARTED;
+		sessionState = SessionState.OPENED;
 		
 		log.info("Session started successfully");
 	}
 	
-	private void closeCurrentSession() {
+	private void closeSession() {
 		compositionOrderMap.clear();
 		newImageMask.clear();
 		
@@ -143,7 +142,7 @@ public final class ComposerNetworkManager {
 		log.info("Current session was closed");
 	}
 	
-	private boolean areAllSubImagesReceived() {
+	private boolean hasReceivedAllImages() {
 		return !compositionOrderMap.isEmpty() && newImageMask.cardinality() == compositionOrderMap.size();
 	}
 	
@@ -300,7 +299,7 @@ public final class ComposerNetworkManager {
 		
 		// TODO: Configure target FPS!
 		
-		sessionState = SessionState.STARTING;
+		sessionState = SessionState.OPENING;
 		
 		log.info("Waiting for renderer's composition order");
 	}
@@ -393,9 +392,9 @@ public final class ComposerNetworkManager {
 			iterator.remove();
 		}
 		
-		if (sessionState == SessionState.STARTED) {
+		if (sessionState == SessionState.OPENED) {
 			if (clusterConfigurationChanged) {
-				closeCurrentSession();
+				closeSession();
 				return;
 			}
 			
@@ -432,7 +431,7 @@ public final class ComposerNetworkManager {
 				}
 			}
 			
-			if (areAllSubImagesReceived()) {
+			if (hasReceivedAllImages()) {
 				finishCurrentFrame();
 				
 				updateFPS();
@@ -455,7 +454,7 @@ public final class ComposerNetworkManager {
 			if (lastStartSessionMessage != null) {
 				onStartSession(lastStartSessionMessage);
 			}
-		} else if (sessionState == SessionState.STARTING) {
+		} else if (sessionState == SessionState.OPENING) {
 			iterator = messages.iterator();
 			while (iterator.hasNext()) {
 				message = iterator.next();
@@ -466,7 +465,7 @@ public final class ComposerNetworkManager {
 			}
 			
 			if (isSessionReadyToStart()) {
-				startNewSession();
+				openSession();
 			}
 		}
 	}
