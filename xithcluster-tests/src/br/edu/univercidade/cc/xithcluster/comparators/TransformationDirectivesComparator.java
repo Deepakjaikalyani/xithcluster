@@ -19,27 +19,33 @@ public class TransformationDirectivesComparator implements Comparator<Transforma
 		if (o1.getUserAxis() == null) {
 			c = CompareUtils.compareTo(o1.getInitValueX(), o2.getInitValueX());
 			
-			if (c != 0) return c;
+			if (c != 0)
+				return c;
 			
 			c = CompareUtils.compareTo(o1.getInitValueY(), o2.getInitValueY());
 			
-			if (c != 0) return c;
+			if (c != 0)
+				return c;
 			
 			c = CompareUtils.compareTo(o1.getInitValueZ(), o2.getInitValueZ());
 			
-			if (c != 0) return c;
+			if (c != 0)
+				return c;
 			
 			c = CompareUtils.compareTo(o1.getSpeedX(), o2.getSpeedX());
 			
-			if (c != 0) return c;
+			if (c != 0)
+				return c;
 			
 			c = CompareUtils.compareTo(o1.getSpeedY(), o2.getSpeedY());
 			
-			if (c != 0) return c;
+			if (c != 0)
+				return c;
 			
 			c = CompareUtils.compareTo(o1.getSpeedZ(), o2.getSpeedZ());
 			
-			if (c != 0) return c;
+			if (c != 0)
+				return c;
 			
 			if (o1.getAxisOrder() == null) {
 				if (o1.getAxisOrder() == null) {
@@ -54,15 +60,18 @@ public class TransformationDirectivesComparator implements Comparator<Transforma
 			
 			return c;
 		} else {
-			if (o2.getUserAxis() == null) return 1;
+			if (o2.getUserAxis() == null)
+				return 1;
 			
 			c = CompareUtils.compareTo(o1.getUserAxis().length(), o2.getUserAxis().length());
 			
-			if (c != 0) return c;
+			if (c != 0)
+				return c;
 			
 			c = CompareUtils.compareTo(o1.getInitValueUser(), o2.getInitValueUser());
 			
-			if (c != 0) return c;
+			if (c != 0)
+				return c;
 			
 			c = CompareUtils.compareTo(o1.getSpeedUser(), o2.getSpeedUser());
 			
