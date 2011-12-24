@@ -1,5 +1,6 @@
 package br.edu.univercidade.cc.xithcluster.messages;
 
+import static br.edu.univercidade.cc.xithcluster.utils.SimpleAssertions.assertNotNull;
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
@@ -7,10 +8,6 @@ import org.apache.log4j.Logger;
 import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.IDataHandler;
 import org.xsocket.connection.INonBlockingConnection;
-import br.edu.univercidade.cc.xithcluster.messages.CommunicationHelper;
-import br.edu.univercidade.cc.xithcluster.messages.Message;
-import br.edu.univercidade.cc.xithcluster.messages.MessageQueue;
-import br.edu.univercidade.cc.xithcluster.messages.MessageType;
 
 public final class RendererMessageBroker implements IDataHandler {
 
@@ -25,18 +22,18 @@ public final class RendererMessageBroker implements IDataHandler {
 		if (messageType == null) {
 			return true;
 		}
-		
+
 		switch (messageType) {
 		case START_SESSION:
-			connection.setHandler(new StartSessionDataHandler(this));
+			setMessageHandler(connection, new RendererStartSessionDataHandler(this));
 			
 			return true;
 		case START_FRAME:
-			connection.setHandler(new StartFrameDataHandler(this));
+			setMessageHandler(connection, new RendererStartFrameDataHandler(this));
 			
 			return true;
 		case UPDATE:
-			connection.setHandler(new UpdateDataHandler(this));
+			setMessageHandler(connection, new UpdateDataHandler(this));
 			
 			return true;
 		default:
@@ -44,6 +41,13 @@ public final class RendererMessageBroker implements IDataHandler {
 			
 			return false;
 		}
+	}
+
+	private void setMessageHandler(INonBlockingConnection connection, MessageHandler<?> messageHandler) throws IOException, ClosedChannelException, MaxReadSizeExceededException {
+		assertNotNull(connection, messageHandler);
+		
+		connection.setHandler(messageHandler);
+		messageHandler.onData(connection);
 	}
 
 	void onStartSessionCompleted(INonBlockingConnection connection, int id, int screenWidth, int screenHeight, double targetFPS, byte[] pointOfViewData, byte[] sceneData) throws IOException {

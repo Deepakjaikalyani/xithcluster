@@ -7,7 +7,7 @@ import org.xsocket.MaxReadSizeExceededException;
 import org.xsocket.connection.INonBlockingConnection;
 import br.edu.univercidade.cc.xithcluster.messages.MessageHandler;
 
-public final class StartSessionDataHandler extends MessageHandler<RendererMessageBroker> {
+public final class RendererStartSessionDataHandler extends MessageHandler<RendererMessageBroker> {
 	
 	private int id;
 	
@@ -21,7 +21,7 @@ public final class StartSessionDataHandler extends MessageHandler<RendererMessag
 	
 	private byte[] sceneData;
 	
-	public StartSessionDataHandler(RendererMessageBroker nextDataHandler) {
+	public RendererStartSessionDataHandler(RendererMessageBroker nextDataHandler) {
 		super(nextDataHandler);
 	}
 	
