@@ -1,0 +1,10 @@
+<html>
+	<head>
+		<title>GroupSerializer</title>
+	</head>
+	<body>
+		<h2>GroupSerializer</h2>
+		<ul>
+		</ul>
+	</body>
+</html>

@@ -1,0 +1,46 @@
+<html>
+	<head>
+		<title>SerializationHelper</title>
+	</head>
+	<body>
+		<h2>SerializationHelper</h2>
+		<ul>
+			<li>Write read enum</li>
+			<li>Write read vector3f</li>
+			<li>Write read point</li>
+			<li>Write read tuple3f</li>
+			<li>Write read color</li>
+			<li>Write read transform3 d</li>
+			<li>Write read matrix4f</li>
+			<li>Write read string</li>
+			<li>Write read vector4f</li>
+			<li>Write read class</li>
+			<li>Write read class by type</li>
+			<li>Write read geom nio float data</li>
+			<li>Write read float array</li>
+			<li>Write read byte array</li>
+			<li>Write read geom nio int data</li>
+			<li>Write read int array</li>
+			<li>Write read material</li>
+			<li>Write read transparency attributes</li>
+			<li>Write read coloring attributes</li>
+			<li>Write read line attributes</li>
+			<li>Write read point attributes</li>
+			<li>Write read polygon attributes</li>
+			<li>Write read rendering attributes</li>
+			<li>Write read stencil function separate</li>
+			<li>Write read stencil operation separate</li>
+			<li>Write read stencil mask separate</li>
+			<li>Write read texture unit</li>
+			<li>Write read texture</li>
+			<li>Write read texture attributes</li>
+			<li>Write read tex coord generation</li>
+			<li>Write read bit set</li>
+			<li>Write read tuple2f</li>
+			<li>Write read geometry</li>
+			<li>Write read bounds</li>
+			<li>Write read group animator</li>
+			<li>Write read transformation directives</li>
+		</ul>
+	</body>
+</html>
