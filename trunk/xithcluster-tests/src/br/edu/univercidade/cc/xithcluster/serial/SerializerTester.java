@@ -19,10 +19,10 @@ public abstract class SerializerTester<T extends Node> {
 	}
 	
 	@SuppressWarnings({
-	"unchecked", "rawtypes"
+			"unchecked", "rawtypes"
 	})
 	@Test
-	public void testSerialization() throws IOException {
+	public void testShouldDeserializeSerializationResult() throws IOException {
 		T target;
 		Serializer serializer;
 		
