@@ -1,6 +1,6 @@
 package br.edu.univercidade.cc.xithcluster.messages;
 
-import static br.edu.univercidade.cc.xithcluster.utils.SimpleAssertions.assertNotNull;
+import static br.edu.univercidade.cc.xithcluster.utils.SimpleAssertions.assertNonNull;
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.nio.channels.ClosedChannelException;
@@ -44,7 +44,7 @@ public final class RendererMessageBroker implements IDataHandler {
 	}
 
 	private void setMessageHandler(INonBlockingConnection connection, MessageHandler<?> messageHandler) throws IOException, ClosedChannelException, MaxReadSizeExceededException {
-		assertNotNull(connection, messageHandler);
+		assertNonNull(connection, messageHandler);
 		
 		connection.setHandler(messageHandler);
 		messageHandler.onData(connection);
