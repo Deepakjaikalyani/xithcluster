@@ -1,4 +1,0 @@
-<h2>BranchGroupSerializer</h2>
-	<ul>
-	</ul>
-

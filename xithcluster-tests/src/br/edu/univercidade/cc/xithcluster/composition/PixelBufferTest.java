@@ -1,10 +1,10 @@
 package br.edu.univercidade.cc.xithcluster.composition;
 
+import static br.edu.univercidade.cc.xithcluster.utils.AssertExtention.assertPixelBufferRegion;
+import static org.junit.Assert.assertEquals;
 import java.io.IOException;
 import org.junit.Test;
 import br.edu.univercidade.cc.xithcluster.utils.ImageUtil;
-import static br.edu.univercidade.cc.xithcluster.utils.AssertExtention.assertPixelBufferRegion;
-import static org.junit.Assert.assertEquals;
 
 public class PixelBufferTest {
 	
@@ -13,7 +13,7 @@ public class PixelBufferTest {
 	private static final int HEIGHT = 120;
 	
 	@Test
-	public void testReadWritePixels() {
+	public void testReadAndWritePixelsDirectly() {
 		PixelBuffer pixelBuffer = new PixelBuffer(WIDTH, HEIGHT);
 		
 		for (int i = 0; i < 50; i++) {
