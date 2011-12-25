@@ -27,7 +27,7 @@ public class PixelBufferTest {
 	
 	@Test
 	public void testReadPixelRegion() throws IOException {
-		String filePath = "resources/test/image1.png";
+		String filePath = "resources/image1.png";
 		
 		PixelBuffer pixelBuffer1 = new PixelBuffer(WIDTH, HEIGHT, ImageUtils.readImageDataAsIntArray(filePath));
 		PixelBuffer pixelBuffer2 = new PixelBuffer(WIDTH, HEIGHT, ImageUtils.readImageDataAsIntArray(filePath));
