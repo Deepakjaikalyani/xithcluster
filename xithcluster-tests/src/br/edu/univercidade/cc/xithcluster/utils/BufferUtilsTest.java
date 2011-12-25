@@ -20,7 +20,7 @@ public class BufferUtilsTest {
 	}
 	
 	@Test
-	public void testSafeFloatBufferRead() {
+	public void testShouldConvertFloatBufferToFloatArray() {
 		FloatBuffer buffer;
 		
 		buffer = FloatBuffer.allocate(128);
@@ -32,7 +32,7 @@ public class BufferUtilsTest {
 	}
 	
 	@Test
-	public void testSafeIntBufferRead() {
+	public void testShouldConvertIntBufferToIntArray() {
 		FloatBuffer buffer;
 		
 		buffer = FloatBuffer.allocate(128);
@@ -44,12 +44,12 @@ public class BufferUtilsTest {
 	}
 	
 	@Test
-	public void testFloatBufferEquals() {
+	public void testShouldCompareFloatBuffers() {
 		fail();
 	}
 	
 	@Test
-	public void testIntBufferEquals() {
+	public void testShouldCompareIntBuffers() {
 		fail();
 	}
 	
