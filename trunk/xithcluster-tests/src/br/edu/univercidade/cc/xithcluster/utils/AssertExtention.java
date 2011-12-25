@@ -47,7 +47,7 @@ public final class AssertExtention {
 		int[] expectedPixelRegion = expectedPixelBuffer.getPixelRegion(x, y, width, height);
 		int[] actualPixelRegion = actualPixelBuffer.getPixelRegion(x, y, width, height);
 		
-		if (!ArraysExtention.equals(expectedPixelRegion, actualPixelRegion, comparator))
+		if (!ArraysUtils.equals(expectedPixelRegion, actualPixelRegion, comparator))
 			throw new AssertionError("Expected:\n" + printPixelRegion(width, height, expectedPixelRegion) + "\nGot:\n" + printPixelRegion(width, height, actualPixelRegion));
 	}
 	
