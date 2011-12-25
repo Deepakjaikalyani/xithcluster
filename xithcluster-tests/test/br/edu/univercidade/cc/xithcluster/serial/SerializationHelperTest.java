@@ -87,7 +87,7 @@ import br.edu.univercidade.cc.xithcluster.utils.PrivateAccessor;
 public class SerializationHelperTest {
 	
 	private static final float[] GEOMETRY1_TEXTURE_COORDINATE = new float[] {
-	3.0f, 5.0f, 7.0f
+			3.0f, 5.0f, 7.0f
 	};
 	
 	private static final int SIZE_OF_FLOAT = 32;
@@ -213,7 +213,7 @@ public class SerializationHelperTest {
 		
 		TEXTURE_IMAGE = new TextureImage2D(TextureImageFormat.RGBA, 256, 256, 256, 265, true, TextureImageInternalFormat.RGBA);
 		try {
-			BufferedImage image = ImageIO.read(new FileInputStream("resources/test/crate.png"));
+			BufferedImage image = ImageIO.read(new FileInputStream("resources/crate.png"));
 			((TextureImage2D) TEXTURE_IMAGE).setImageData(image);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -277,7 +277,7 @@ public class SerializationHelperTest {
 		geometryDataContainer.setTextureCoordinate(1, 0, GEOMETRY1_TEXTURE_COORDINATE);
 		geometryDataContainer.setTextureCoordinate(2, 0, GEOMETRY1_TEXTURE_COORDINATE);
 		PrivateAccessor.setPrivateField(geometryDataContainer, "vertexAttribs", new GeomNioFloatData[] {
-		GEOM_NIO_FLOAT_DATA, GEOM_NIO_FLOAT_DATA, GEOM_NIO_FLOAT_DATA
+				GEOM_NIO_FLOAT_DATA, GEOM_NIO_FLOAT_DATA, GEOM_NIO_FLOAT_DATA
 		});
 		geometryDataContainer.setStripCounts(INT_ARRAY);
 		PrivateAccessor.setPrivateField(geometryDataContainer, "texCoordSetMap", INT_ARRAY);

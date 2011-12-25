@@ -16,12 +16,12 @@ public class ImageOrderAndZBufferStrategyTest {
 	private static final int WIDTH = 160;
 	
 	private static final String[] IMAGES_FILES = {
-			"resources/test/image1.png",
-			"resources/test/image2.png",
-			"resources/test/image3.png"
+			"resources/image1.png",
+			"resources/image2.png",
+			"resources/image3.png"
 	};
 	
-	private static String COMPOSITION_RESULT_FILE = "resources/test/compositionResult1.png";
+	private static String COMPOSITION_RESULT_FILE = "resources/compositionResult1.png";
 	
 	private CompositionContext context;
 	
@@ -56,13 +56,13 @@ public class ImageOrderAndZBufferStrategyTest {
 		compositionStrategy.compose(context);
 		
 		PixelBuffer actualPixelBuffer = context.getPixelBuffer();
-		int[] actualPixelBufferData = actualPixelBuffer.toIntArray();
 		int[] expectedPixelBufferData = ImageUtils.readImageDataAsIntArray(COMPOSITION_RESULT_FILE);
 		PixelBuffer expectedPixelBuffer = new PixelBuffer(WIDTH, HEIGHT, expectedPixelBufferData);
 		
 		// DEBUG:
-		ImageUtils.dumpImageDataToFile(WIDTH, HEIGHT, actualPixelBufferData, "tmp/actual-compositionResult1.png");
-		ImageUtils.dumpImageDataToFile(WIDTH, HEIGHT, expectedPixelBufferData, "tmp/expected-compositionResult1.png");
+		// int[] actualPixelBufferData = actualPixelBuffer.toIntArray();
+		// ImageUtils.dumpImageDataToFile(WIDTH, HEIGHT, actualPixelBufferData, "tmp/actual-compositionResult1.png");
+		// ImageUtils.dumpImageDataToFile(WIDTH, HEIGHT, expectedPixelBufferData, "tmp/expected-compositionResult1.png");
 		
 		// Asserting critical pixel regions that must be equal
 		NearColorComparator comparator = new NearColorComparator(10000);
