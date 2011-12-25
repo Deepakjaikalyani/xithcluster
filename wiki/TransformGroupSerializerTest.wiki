@@ -1,4 +1,0 @@
-<h2>TransformGroupSerializer</h2>
-	<ul>
-	</ul>
-
