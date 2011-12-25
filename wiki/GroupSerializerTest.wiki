@@ -1,4 +1,0 @@
-<h2>GroupSerializer</h2>
-	<ul>
-	</ul>
-
