@@ -9,7 +9,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import javax.imageio.ImageIO;
 
-public final class ImageUtil {
+public final class ImageUtils {
 	
 	public static byte[] readImageDataAsByteArray(String imageFilePath) throws IOException {
 		if (imageFilePath == null || imageFilePath.isEmpty()) {
