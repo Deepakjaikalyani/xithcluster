@@ -7,7 +7,7 @@ http://www.vogella.de/articles/ApacheAnt/article.html#run-all-tests4
 
 	<property name="svnant.dir" location="svnant" />
 
-	<property name="test.dir" location="src" />
+	<property name="test.dir" location="test" />
 
 	<property name="build.dir" location="build" />
 
