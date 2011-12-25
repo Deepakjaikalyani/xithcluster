@@ -1,0 +1,6 @@
+<h2>PixelBuffer</h2>
+	<ul>
+		<li>Read write pixels</li>
+		<li>Read pixel region</li>
+	</ul>
+
