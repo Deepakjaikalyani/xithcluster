@@ -1,21 +1,38 @@
 <?xml version="1.0"?>
 <!--
 This script was adapted from:
-http://www.vogella.de/articles/ApacheAnt/article.html#junit4
+http://www.vogella.de/articles/ApacheAnt/article.html#run-all-tests4
 -->
-<project name="xithcluster-tests" default="run-all-tests" basedir="../">
-	<!-- Sets variables which can later be used. -->
-	<!-- The value of a property is accessed via ${} -->
-	<property name="src.dir" location="src" />
+<project name="xithcluster-tests" default="run-all-tests-and-testdox" basedir=".">
+
+	<property name="svnant.dir" location="svnant" />
+
+	<property name="test.dir" location="src" />
 
 	<property name="build.dir" location="build" />
 
-	<!-- Variables used for JUnit testin -->
-	<property name="test.dir" location="src" />
-	<property name="test.report.dir" location="testreport" />
+	<property name="test.wiki.dir" location="testwiki" />
 
-	<!-- Define the classpath which includes the junit.jar and the classes after compiling -->
-	<path id="xithcluster.class.path">
+	<!-- testdox task -->
+	<typedef name="testdox" classname="com.thoughtworks.testdox.ant.TestDoxTask" />
+	<!-- testdox task -->
+
+	<!-- svnant tasks -->
+	<path id="svnant.path">
+		<pathelement location="${svnant.dir}/svnant.jar" />
+		<pathelement location="${svnant.dir}/svnClientAdapter.jar" />
+		<pathelement location="${svnant.dir}/ganymed.jar" />
+		<pathelement location="${svnant.dir}/svnkit.jar" />
+	</path>
+
+	<typedef resource="org/tigris/subversion/svnant/svnantlib.xml" classpathref="svnant.path" />
+	<!-- svnant tasks -->
+
+	<!-- google code settings -->
+	<svnSetting id="google.code.settings" svnkit="true" javahl="false" username="pboechat" password="v8n9f3a4" failonerror="false" />
+	<!-- google code settings -->
+
+	<path id="libraries.path">
 		<pathelement location="lib/junit-4.8.2.jar" />
 		<pathelement location="lib/hamcrest-all-1.3.0RC2.jar" />
 		<pathelement location="lib/easymock-3.1.jar" />
@@ -38,48 +55,53 @@ http://www.vogella.de/articles/ApacheAnt/article.html#junit4
 		<pathelement location="${build.dir}" />
 	</path>
 
-
-	<!-- Deletes the existing build, docs and dist directory -->
 	<target name="clean">
 		<delete dir="${build.dir}" />
-		<delete dir="${test.report.dir}" />
+		<delete dir="${test.wiki.dir}" />
 	</target>
 
-	<!-- Creates the  build, docs and dist directory -->
 	<target name="makedir">
 		<mkdir dir="${build.dir}" />
-		<mkdir dir="${test.report.dir}" />
+		<mkdir dir="${test.wiki.dir}" />
 	</target>
 
-	<!-- Compiles the java code (including the usage of library for JUnit -->
 	<target name="compile" depends="clean, makedir">
-		<javac srcdir="${src.dir}:../xithcluster/src:../rendererApp/src:../composerApp/src" destdir="${build.dir}">
-			<classpath refid="xithcluster.class.path" />
+		<javac srcdir="src:../xithcluster/src:../rendererApp/src:../composerApp/src" destdir="${build.dir}">
+			<classpath refid="libraries.path" />
 		</javac>
 	</target>
 
-	<!-- Run the JUnit Tests -->
-	<!-- Output is XML, could also be plain -->
-	<target name="junit" depends="compile">
+	<target name="run-all-tests" depends="compile">
 		<junit printsummary="on" fork="true" haltonfailure="no">
-			<classpath refid="xithcluster.class.path" />
-			<formatter type="xml" />
+			<classpath refid="libraries.path" />
+			<!--<formatter type="xml" />
 			<batchtest todir="${test.report.dir}">
-				<fileset dir="${src.dir}">
+				<fileset dir="${test.dir}">
 					<include name="**/*Test*.java" />
 				</fileset>
-			</batchtest>
+			</batchtest>-->
 		</junit>
 	</target>
 
-	<target name="run-all-tests" depends="compile, junit">
+	<target name="run-testdox" depends="clean, makedir">
+		<testdox dir="${test.dir}" output="${test.wiki.dir}" formats="wiki" />
 	</target>
 
-	<!-- Run TestDox -->
-	<!-- Output is XML -->
-	<target name="run-testdox" depends="clean, makedir">
-		<typedef name="testdox" classname="com.thoughtworks.testdox.ant.TestDoxTask" />
-		<testdox dir="${src.dir}" output="${test.report.dir}/testdox.xml" />
+	<target name="run-all-tests-and-testdox" depends="compile, run-all-tests, run-testdox">
+	</target>
+
+	<target name="import-test-wiki-to-google-code" depends="run-testdox">
+		<svn refid="google.code.settings">
+			<delete url="https://xithcluster.googlecode.com/svn/wiki" message="Deleting wiki files." force="true">
+				<fileset dir=".">
+					<filename name="*Test*.wiki" />
+				</fileset>
+			</delete>
+		</svn>
+
+		<svn refid="google.code.settings">
+			<import path="${test.wiki.dir}" url="https://xithcluster.googlecode.com/svn/wiki" message="Updating wiki files." />
+		</svn>
 	</target>
 
 </project>
