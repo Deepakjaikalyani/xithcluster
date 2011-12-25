@@ -1,0 +1,5 @@
+<h2>ImageOrderAndZBufferStrategy</h2>
+	<ul>
+		<li>Should compose overlaping shapes correctly</li>
+	</ul>
+

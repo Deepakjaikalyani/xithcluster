@@ -12,7 +12,6 @@ import java.util.Arrays;
 
 public final class BufferUtils {
 	
-	
 	private static boolean useDirectBuffers = true;
 	
 	private static ByteOrder byteOrder = ByteOrder.LITTLE_ENDIAN;
@@ -223,11 +222,11 @@ public final class BufferUtils {
 	public static boolean equals(IntBuffer arg0, IntBuffer arg1) {
 		return Arrays.equals(safeBufferRead(arg0), safeBufferRead(arg1));
 	}
-
+	
 	public static boolean equals(ByteBuffer arg0, ByteBuffer arg1) {
 		return Arrays.equals(safeBufferRead(arg0), safeBufferRead(arg1));
 	}
-
+	
 	public static FloatBuffer wrapAsFloatBuffer(byte[] arg0) {
 		return BufferUtils.wrapAndRewind(arg0).asFloatBuffer();
 	}
