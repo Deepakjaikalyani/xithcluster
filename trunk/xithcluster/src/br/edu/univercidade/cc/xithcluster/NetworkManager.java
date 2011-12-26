@@ -30,8 +30,8 @@ import br.edu.univercidade.cc.xithcluster.serialization.packagers.PointOfViewPac
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.ScenePackager;
 import br.edu.univercidade.cc.xithcluster.serialization.packagers.UpdatesPackager;
 import br.edu.univercidade.cc.xithcluster.update.PendingUpdate;
-import br.edu.univercidade.cc.xithcluster.update.UpdateManager;
 import br.edu.univercidade.cc.xithcluster.update.PendingUpdate.Type;
+import br.edu.univercidade.cc.xithcluster.update.UpdateManager;
 
 public final class NetworkManager extends OperationSchedulerImpl {
 	
@@ -70,7 +70,7 @@ public final class NetworkManager extends OperationSchedulerImpl {
 	
 	private List<INonBlockingConnection> renderersConnections = Collections.synchronizedList(new ArrayList<INonBlockingConnection>());
 	
-	private SessionState sessionState = SessionState.CLOSED;
+	protected SessionState sessionState = SessionState.CLOSED;
 	
 	private boolean composerSessionStarted = false;
 	
@@ -85,8 +85,8 @@ public final class NetworkManager extends OperationSchedulerImpl {
 	private long lastClockCount = 0L;
 	
 	public NetworkManager(String listeningAddress, int renderersConnectionPort, int composerConnectionPort, DistributionStrategy distributionStrategy) {
-		if (listeningAddress == null || listeningAddress.isEmpty() //
-				|| distributionStrategy == null) {
+		if (listeningAddress == null || listeningAddress.isEmpty() ||
+				distributionStrategy == null) {
 			throw new IllegalArgumentException();
 		}
 		
@@ -491,7 +491,7 @@ public final class NetworkManager extends OperationSchedulerImpl {
 	// ================================
 	// Network messages processing loop
 	// ================================
-	private void processMessages(long clockCount, long frameTime, TimingMode timingMode, Queue<Message> messages) {
+	protected void processMessages(long clockCount, long frameTime, TimingMode timingMode, Queue<Message> messages) {
 		Message message;
 		Iterator<Message> iterator;
 		boolean clusterConfigurationChanged;
@@ -536,7 +536,7 @@ public final class NetworkManager extends OperationSchedulerImpl {
 					
 					updateXith3DScheduledOperations(clockCount, frameTime, timingMode);
 					
-					updateFPS(clockCount, frameTime, timingMode);
+					updateFPS(clockCount, timingMode);
 				}
 				
 				if (updateManager.hasPendingUpdates()) {
@@ -559,7 +559,7 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		}
 	}
 	
-	private void updateFPS(long clockCount, long frameTime, TimingMode timingMode) {
+	private void updateFPS(long clockCount, TimingMode timingMode) {
 		long elapsedTime;
 		double fps;
 		
