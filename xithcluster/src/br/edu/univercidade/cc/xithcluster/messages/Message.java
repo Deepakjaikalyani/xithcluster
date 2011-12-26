@@ -12,7 +12,7 @@ public final class Message implements Comparable<Message> {
 	
 	private Object[] parameters;
 	
-	protected Message(MessageType type, INonBlockingConnection source, Object... parameters) {
+	public Message(MessageType type, INonBlockingConnection source, Object... parameters) {
 		creationTime = System.nanoTime();
 		
 		this.type = type;
