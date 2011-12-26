@@ -7,6 +7,7 @@ import static org.easymock.EasyMock.verify;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.fail;
+import java.util.Arrays;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import org.junit.Before;
@@ -35,14 +36,9 @@ public class NetworkManagerTest {
 	
 	@Test
 	public void testShouldAssignRendererIdWhenANewRendererConnects() {
-		expect(connectionMock.getLocalPort()).andReturn(RENDERERS_CONNECTION_PORT);
-		connectionMock.setAttachment(0);
-		connectionMock.setAutoflush(false);
-		replay(connectionMock);
+		expectToReadNewRendererConnection();
 		
-		Queue<Message> messages = new PriorityQueue<Message>(1);
-		
-		messages.add(new Message(MessageType.CONNECTED, connectionMock));
+		Queue<Message> messages = new PriorityQueue<Message>(Arrays.asList(new Message(MessageType.CONNECTED, connectionMock)));
 		
 		networkManager.sessionState = SessionState.OPENED;
 		
@@ -55,12 +51,16 @@ public class NetworkManagerTest {
 		verify(connectionMock);
 	}
 	
-	@Test
-	public void testShouldCloseSessionWhenANewRendererConnects() {
+	private void expectToReadNewRendererConnection() {
 		expect(connectionMock.getLocalPort()).andReturn(RENDERERS_CONNECTION_PORT);
 		connectionMock.setAttachment(0);
 		connectionMock.setAutoflush(false);
 		replay(connectionMock);
+	}
+	
+	@Test
+	public void testShouldCloseSessionWhenANewRendererConnects() {
+		expectToReadNewRendererConnection();
 		
 		Queue<Message> messages = new PriorityQueue<Message>(1);
 		
