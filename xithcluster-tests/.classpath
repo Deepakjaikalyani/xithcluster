@@ -21,6 +21,8 @@
 	<classpathentry kind="lib" path="lib/xith3d.jar"/>
 	<classpathentry kind="lib" path="lib/xpal-joode.jar"/>
 	<classpathentry kind="lib" path="lib/xSocket-2.8.14.jar"/>
+	<classpathentry kind="lib" path="lib/cglib-nodep-2.1_3.jar"/>
+	<classpathentry kind="lib" path="lib/objenesis-1.2.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/composerApp"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/rendererApp"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/xithcluster"/>

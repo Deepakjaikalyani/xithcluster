@@ -44,9 +44,9 @@ public final class NetworkManager extends OperationSchedulerImpl {
 	
 	private UpdatesPackager updatesPackager = new UpdatesPackager();
 	
-	private PointOfViewPackager pointOfViewPackager = new PointOfViewPackager();
+	protected PointOfViewPackager pointOfViewPackager = new PointOfViewPackager();
 	
-	private ScenePackager scenePackager = new ScenePackager();
+	protected ScenePackager scenePackager = new ScenePackager();
 	
 	private String listeningAddress;
 	
@@ -54,17 +54,17 @@ public final class NetworkManager extends OperationSchedulerImpl {
 	
 	private int composerConnectionPort;
 	
-	private SceneManager sceneManager;
+	protected SceneManager sceneManager;
 	
 	private UpdateManager updateManager;
 	
-	private DistributionStrategy distributionStrategy;
+	protected DistributionStrategy distributionStrategy;
 	
 	private IServer composerServer;
 	
 	private IServer renderersServer;
 	
-	private INonBlockingConnection composerConnection;
+	protected INonBlockingConnection composerConnection;
 	
 	private FPSCounter fpsCounter;
 	
@@ -264,7 +264,7 @@ public final class NetworkManager extends OperationSchedulerImpl {
 		return composerConnection != null;
 	}
 	
-	private void tryToDistributeTheScene() {
+	private void openSession() {
 		sessionState = SessionState.OPENING;
 		
 		try {
@@ -278,14 +278,6 @@ public final class NetworkManager extends OperationSchedulerImpl {
 	
 	private boolean isSessionReadyToStart() {
 		return composerSessionStarted && renderersSessionStartedMask.cardinality() == renderersConnections.size();
-	}
-	
-	private void startNewSession() {
-		sessionState = SessionState.OPENED;
-		
-		log.info("Session started successfully");
-		
-		forceFrameStart = true;
 	}
 	
 	private void closeSession() {
@@ -492,71 +484,103 @@ public final class NetworkManager extends OperationSchedulerImpl {
 	// Network messages processing loop
 	// ================================
 	protected void processMessages(long clockCount, long frameTime, TimingMode timingMode, Queue<Message> messages) {
+		if (sessionState == SessionState.OPENING) {
+			processMessageForOpeningSessionState(messages);
+		} else if (sessionState == SessionState.OPENED || sessionState == SessionState.CLOSED) {
+			processMessageForOpenedOrClosedSessionState(clockCount, frameTime, timingMode, messages);
+		}
+	}
+	
+	private void processMessageForOpeningSessionState(Queue<Message> messages) {
 		Message message;
 		Iterator<Message> iterator;
-		boolean clusterConfigurationChanged;
 		
-		if (sessionState == SessionState.OPENED || sessionState == SessionState.CLOSED) {
-			clusterConfigurationChanged = false;
-			iterator = messages.iterator();
-			while (iterator.hasNext()) {
-				message = iterator.next();
-				if (message.getType() == MessageType.CONNECTED) {
-					onConnected(message.getSource());
-				} else if (message.getType() == MessageType.DISCONNECTED) {
-					onDisconnected(message.getSource());
-				} else {
-					continue;
-				}
-				
-				clusterConfigurationChanged = true;
+		iterator = messages.iterator();
+		while (iterator.hasNext()) {
+			message = iterator.next();
+			if (message.getType() == MessageType.SESSION_STARTED) {
+				onSessionStarted(message);
 				iterator.remove();
 			}
+		}
+		
+		if (isSessionReadyToStart()) {
+			sessionState = SessionState.OPENED;
 			
+			log.info("Session started successfully");
+			
+			forceFrameStart = true;
+		}
+	}
+	
+	private void processMessageForOpenedOrClosedSessionState(long clockCount, long frameTime, TimingMode timingMode, Queue<Message> messages) {
+		boolean clusterConfigurationChanged = processConnectAndDisconnectMessages(messages);
+		
+		if (sessionState == SessionState.OPENED) {
 			if (clusterConfigurationChanged) {
-				if (sessionState == SessionState.OPENED) {
-					closeSession();
-				}
+				closeSession();
 				
-				if (sessionState == SessionState.CLOSED && isThereAtLeastOneRendererAndOneComposer()) {
-					tryToDistributeTheScene();
-				}
-			} else {
-				iterator = messages.iterator();
-				while (iterator.hasNext()) {
-					message = iterator.next();
-					if (message.getType() == MessageType.FINISHED_FRAME) {
-						onFinishedFrame(message);
-						iterator.remove();
-					}
-				}
+				// if (isThereAtLeastOneRendererAndOneComposer()) {
+				// tryToDistributeTheScene();
+				// }
 				
-				if (finishedFrame || forceFrameStart) {
-					startNewFrame(clockCount);
-					
-					updateXith3DScheduledOperations(clockCount, frameTime, timingMode);
-					
-					updateFPS(clockCount, timingMode);
-				}
-				
-				if (updateManager.hasPendingUpdates()) {
-					sendPendingUpdates();
-				}
-			}
-		} else if (sessionState == SessionState.OPENING) {
-			iterator = messages.iterator();
-			while (iterator.hasNext()) {
-				message = iterator.next();
-				if (message.getType() == MessageType.SESSION_STARTED) {
-					onSessionStarted(message);
-					iterator.remove();
-				}
+				return;
 			}
 			
-			if (isSessionReadyToStart()) {
-				startNewSession();
+			processFinishedFrameMessages(messages);
+			
+			if (finishedFrame || forceFrameStart) {
+				startNewFrame(clockCount);
+				updateXith3DScheduledOperations(clockCount, frameTime, timingMode);
+				updateFPS(clockCount, timingMode);
+			}
+			
+			if (updateManager.hasPendingUpdates()) {
+				sendPendingUpdates();
 			}
 		}
+		else if (sessionState == SessionState.CLOSED) {
+			if (isThereAtLeastOneRendererAndOneComposer()) {
+				openSession();
+			}
+		}
+		else {
+			throw new AssertionError(sessionState);
+		}
+	}
+	
+	private void processFinishedFrameMessages(Queue<Message> messages) {
+		Message message;
+		Iterator<Message> iterator;
+		
+		iterator = messages.iterator();
+		while (iterator.hasNext()) {
+			message = iterator.next();
+			if (message.getType() == MessageType.FINISHED_FRAME) {
+				onFinishedFrame(message);
+				iterator.remove();
+			}
+		}
+	}
+	
+	private boolean processConnectAndDisconnectMessages(Queue<Message> messages) {
+		boolean clusterConfigurationChanged = false;
+		Iterator<Message> iterator = messages.iterator();
+		while (iterator.hasNext()) {
+			Message message = iterator.next();
+			if (message.getType() == MessageType.CONNECTED) {
+				onConnected(message.getSource());
+			} else if (message.getType() == MessageType.DISCONNECTED) {
+				onDisconnected(message.getSource());
+			} else {
+				continue;
+			}
+			
+			clusterConfigurationChanged = true;
+			iterator.remove();
+		}
+		
+		return clusterConfigurationChanged;
 	}
 	
 	private void updateFPS(long clockCount, TimingMode timingMode) {
