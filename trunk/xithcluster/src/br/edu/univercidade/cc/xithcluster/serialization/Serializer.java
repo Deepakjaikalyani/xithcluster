@@ -8,7 +8,7 @@ import java.io.IOException;
 
 public abstract class Serializer<T> {
 	
-	public final byte[] serialize(T data) throws IOException {
+	public byte[] serialize(T data) throws IOException {
 		ByteArrayOutputStream buffer;
 		DataOutputStream out;
 		
@@ -20,7 +20,7 @@ public abstract class Serializer<T> {
 		return buffer.toByteArray();
 	}
 	
-	public final T deserialize(byte[] arg0) throws IOException {
+	public T deserialize(byte[] arg0) throws IOException {
 		return doDeserialization(new DataInputStream(new ByteArrayInputStream(arg0)));
 	}
 	
