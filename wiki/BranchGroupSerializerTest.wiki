@@ -1,5 +1,0 @@
-<h2>BranchGroupSerializer</h2>
-	<ul>
-		<li>Should serialize and deserialize branch group</li>
-	</ul>
-

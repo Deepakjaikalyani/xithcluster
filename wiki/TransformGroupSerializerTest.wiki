@@ -1,5 +1,0 @@
-<h2>TransformGroupSerializer</h2>
-	<ul>
-		<li>Should serialize and deserialize transform group</li>
-	</ul>
-

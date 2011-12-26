@@ -1,5 +1,0 @@
-<h2>GroupSerializer</h2>
-	<ul>
-		<li>Should serialize and deserialize group</li>
-	</ul>
-
