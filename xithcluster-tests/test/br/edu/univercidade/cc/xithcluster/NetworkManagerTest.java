@@ -36,11 +36,16 @@ public class NetworkManagerTest {
 	
 	@Test
 	public void testShouldAssignRendererIdWhenANewRendererConnects() {
-		expectToReadNewRendererConnection();
+		expect(connectionMock.getLocalPort()).andReturn(RENDERERS_CONNECTION_PORT);
+		expectToSetRendererId(0);
+		connectionMock.setAutoflush(false);
+		
+		replay(connectionMock);
+		
+		// Forcing session state as opened.
+		networkManager.sessionState = SessionState.OPENED;
 		
 		Queue<Message> messages = new PriorityQueue<Message>(Arrays.asList(new Message(MessageType.CONNECTED, connectionMock)));
-		
-		networkManager.sessionState = SessionState.OPENED;
 		
 		// ---
 		
@@ -51,22 +56,19 @@ public class NetworkManagerTest {
 		verify(connectionMock);
 	}
 	
-	private void expectToReadNewRendererConnection() {
-		expect(connectionMock.getLocalPort()).andReturn(RENDERERS_CONNECTION_PORT);
-		connectionMock.setAttachment(0);
-		connectionMock.setAutoflush(false);
-		replay(connectionMock);
-	}
-	
 	@Test
 	public void testShouldCloseSessionWhenANewRendererConnects() {
-		expectToReadNewRendererConnection();
+		expect(connectionMock.getLocalPort()).andReturn(RENDERERS_CONNECTION_PORT);
+		expectToSetRendererId(0);
+		connectionMock.setAutoflush(false);
+		
+		replay(connectionMock);
+		
+		// Forcing session state as opened.
+		networkManager.sessionState = SessionState.OPENED;
 		
 		Queue<Message> messages = new PriorityQueue<Message>(1);
-		
 		messages.add(new Message(MessageType.CONNECTED, connectionMock));
-		
-		networkManager.sessionState = SessionState.OPENED;
 		
 		// ---
 		
@@ -79,13 +81,43 @@ public class NetworkManagerTest {
 		assertThat(networkManager.sessionState, equalTo(SessionState.CLOSED));
 	}
 	
-	@Test
-	public void testShouldCloseSessionWhenRendererDisconnects() {
-		fail();
+	private void expectToSetRendererId(int rendererId) {
+		connectionMock.setAttachment(rendererId);
 	}
 	
 	@Test
-	public void testShouldCloseSessionWhenNewComposerConnects() {
+	public void testShouldCloseSessionAndRemoveReferenceWhenRendererDisconnects() {
+		expect(connectionMock.getLocalPort()).andReturn(RENDERERS_CONNECTION_PORT);
+		expectToGetRendererId(0);
+		replay(connectionMock);
+		
+		// Adding connection mock as a renderer connection.
+		networkManager.renderersConnections.add(connectionMock);
+		
+		// Forcing session state as opened.
+		networkManager.sessionState = SessionState.OPENED;
+		
+		Queue<Message> messages = new PriorityQueue<Message>(1);
+		messages.add(new Message(MessageType.DISCONNECTED, connectionMock));
+		
+		// ---
+		
+		networkManager.processMessages(1L, 1L, TimingMode.MILLISECONDS, messages);
+		
+		// ---
+		
+		verify(connectionMock);
+		
+		assertThat(networkManager.sessionState, equalTo(SessionState.CLOSED));
+		assertThat(networkManager.renderersConnections.size(), equalTo(0));
+	}
+	
+	private void expectToGetRendererId(int rendererId) {
+		expect(connectionMock.getAttachment()).andReturn(rendererId);
+	}
+	
+	@Test
+	public void testShouldCloseSessionAndRemoveReferenceWhenNewComposerConnects() {
 		fail();
 	}
 	

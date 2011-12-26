@@ -68,7 +68,7 @@ public final class NetworkManager extends OperationSchedulerImpl {
 	
 	private FPSCounter fpsCounter;
 	
-	private List<INonBlockingConnection> renderersConnections = Collections.synchronizedList(new ArrayList<INonBlockingConnection>());
+	protected List<INonBlockingConnection> renderersConnections = Collections.synchronizedList(new ArrayList<INonBlockingConnection>());
 	
 	protected SessionState sessionState = SessionState.CLOSED;
 	
