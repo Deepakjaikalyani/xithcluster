@@ -179,6 +179,8 @@ public final class BufferUtils {
 		if (arg0 == null) {
 			throw new IllegalArgumentException();
 		}
+	
+		arg0.rewind();
 		
 		buffer = new float[arg0.limit()];
 		arg0.get(buffer);
@@ -194,7 +196,25 @@ public final class BufferUtils {
 			throw new IllegalArgumentException();
 		}
 		
+		arg0.rewind();
+		
 		buffer = new int[arg0.limit()];
+		arg0.get(buffer);
+		arg0.rewind();
+		
+		return buffer;
+	}
+	
+	public static byte[] unsafeBufferRead(ByteBuffer arg0) {
+		byte[] buffer;
+		
+		if (arg0 == null) {
+			return null;
+		}
+		
+		arg0.rewind();
+		
+		buffer = new byte[arg0.limit()];
 		arg0.get(buffer);
 		arg0.rewind();
 		
@@ -207,6 +227,8 @@ public final class BufferUtils {
 		if (arg0 == null) {
 			throw new IllegalArgumentException();
 		}
+		
+		arg0.rewind();
 		
 		buffer = new byte[arg0.limit()];
 		arg0.get(buffer);
