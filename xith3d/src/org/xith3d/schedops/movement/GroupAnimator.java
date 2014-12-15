@@ -160,6 +160,11 @@ public abstract class GroupAnimator implements Animatable
         t3dMain = transform;
     }
     
+    public final Transform3D getTransform()
+    {
+    	return t3dMain;
+    }
+    
     /**
      * Moves this Group by the specified vector-components.
      * 

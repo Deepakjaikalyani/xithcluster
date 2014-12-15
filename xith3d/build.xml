@@ -73,7 +73,7 @@
     </target>
 
     <target name="-post-jar">
-        <jar file="${dist.jar}" update="true" manifest="manifest.mf">
+        <jar file="${dist.jar}" update="true">
             <manifest>
                 <attribute name="Built-By" value="${user.name}"/>
                 <attribute name="Built-Date" value="${build.date}"/>

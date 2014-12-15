@@ -29,7 +29,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="third-party/sound/ogg-vorbis/vorbis.jar"/>
-	<classpathentry kind="lib" path="third-party/xml/jibx/jibx-run.jar"/>
 	<classpathentry exported="true" kind="lib" path="third-party/math/openmali.jar" sourcepath="/openmali/src"/>
 	<classpathentry exported="true" kind="lib" path="third-party/jagatoo.jar" sourcepath="/jagatoo/src"/>
 	<classpathentry exported="true" kind="lib" path="third-party/particles/jops.jar"/>
@@ -42,5 +41,6 @@
 			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="xith3d/third-party/lwjgl/natives"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="third-party/xml/jibx-run.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

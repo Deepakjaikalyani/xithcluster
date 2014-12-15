@@ -967,7 +967,7 @@ public class SerializationHelper {
 			writeEnum(out, textureImage.getFormat());
 			out.writeInt(textureImage.getWidth());
 			out.writeInt(textureImage.getHeight());
-			writeByteArray(out, BufferUtils.safeBufferRead(textureImage.getDataBuffer()));
+			writeByteArray(out, BufferUtils.unsafeBufferRead(textureImage.getDataBuffer()));
 			
 			if (textureImage instanceof TextureImage2D) {
 				out.writeInt(TIT_TEXTURE_IMAGE_2D);
@@ -1576,17 +1576,20 @@ public class SerializationHelper {
 			
 			out.writeInt(type);
 			writeTransformationDirectives(out, groupAnimator.getTransformationDirectives());
+			writeTransform3D(out, groupAnimator.getTransform());
 		}
 	}
 	
 	public static GroupAnimator readGroupAnimator(DataInputStream in) throws IOException {
 		int type;
 		TransformationDirectives transformationDirectives;
+		Transform3D transform;
 		GroupAnimator groupAnimator;
 		
 		if (nullCheck(in)) {
 			type = in.readInt();
 			transformationDirectives = readTransformationDirectives(in);
+			transform = readTransform3D(in);
 			
 			switch (type) {
 			case GA_ROTATOR:
@@ -1598,6 +1601,8 @@ public class SerializationHelper {
 			default:
 				throw new IOException("Unexpected group animator type: " + type);
 			}
+			
+			groupAnimator.setTransform(transform);
 			
 			return groupAnimator;
 		} else {

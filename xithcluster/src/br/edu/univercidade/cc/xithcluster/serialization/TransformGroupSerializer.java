@@ -12,7 +12,6 @@ public class TransformGroupSerializer extends Serializer<TransformGroup> impleme
 		SerializationHelper.writeString(out, transformGroup.getName());
 		out.writeInt(transformGroup.numChildren());
 		SerializationHelper.writeTransform3D(out, transformGroup.getTransform());
-		SerializationHelper.writePoint3f(out, transformGroup.getPosition());
 	}
 	
 	@Override
@@ -24,7 +23,6 @@ public class TransformGroupSerializer extends Serializer<TransformGroup> impleme
 		transformGroup.setName(SerializationHelper.readString(in));
 		transformGroup.setUserData(NUMBER_OF_CHILDREN_USER_DATA, in.readInt());
 		transformGroup.setTransform(SerializationHelper.readTransform3D(in));
-		transformGroup.setPosition(SerializationHelper.readPoint3f(in));
 		
 		return transformGroup;
 	}
